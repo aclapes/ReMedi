@@ -1,0 +1,30 @@
+#pragma once
+
+#include <opencv2/opencv.hpp>
+
+class Frame
+{
+public:
+	// Constructors
+	Frame(void);
+	Frame(cv::Mat mat);
+	Frame(const Frame&);
+	~Frame(void);
+
+	// Operators
+	Frame& operator=(const Frame& other);
+
+	// Methods
+	bool isValid();
+
+	cv::Mat getMat();
+	void getMat(cv::Mat&);
+
+	void setMat(cv::Mat);
+	void setMat(cv::Mat, cv::Mat);
+
+protected:
+	// Members
+	cv::Mat m_Mat;
+};
+
