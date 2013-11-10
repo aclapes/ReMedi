@@ -11,11 +11,11 @@ void Remedi::Run()
 	 * Load data
 	 */
 
-#ifdef __APPLE__
 	// Create a reader pointing the data streams
+#ifdef _WIN32
+	Reader reader("../Data/C240/","../Data/S240/");
+#elif __APPLE__
 	Reader reader("../../Data/C240/","../../Data/S240/");
-#elif _WIN32
-    Reader reader("../Data/C240/","../Data/S240/");
 #endif
 
 	/*
@@ -50,7 +50,6 @@ void Remedi::Run()
 		cin >> nPoints;
 
 		registerer.setNumPoints(nPoints);
-        registerer.interact();
 		registerer.computeTransformation(dFrameA, dFrameB); // find the transformation
 
 		registerer.saveTransformation("transformation.yml");
@@ -67,14 +66,15 @@ void Remedi::Run()
 	DepthFrame dBackgroundA, dBackgroundB;
 
 	pcl::visualization::PCLVisualizer::Ptr pViz (new pcl::visualization::PCLVisualizer);
-    pViz->addCoordinateSystem();
 
-    float posCorrespThres = 0.07; // 7 cm
-	Monitorizer monitorizer(posCorrespThres);
+	float posCorrespThresParam = 0.07; // 7 cm
+	Monitorizer monitorizer (posCorrespThresParam);
 
 	/*
 	 * Loop
 	 */
+
+	/*cv::namedWindow("BS");*/
 
 	DepthFrame dFrameA, dFrameB;
 	bool bSuccess = reader.getNextDepthPairedFrames(dFrameA, dFrameB); // able to read, not finished
@@ -86,8 +86,8 @@ void Remedi::Run()
 	{
 		if ( !bgSubtractorA.isReady() && !bgSubtractorB.isReady() ) // Background subtraction
 		{
-			bgSubtractorA(dFrameA, dBackgroundA, 0.02);
-			bgSubtractorB(dFrameB, dBackgroundB, 0.02);
+			bgSubtractorA(dFrameA, dBackgroundA, 0.05);
+			bgSubtractorB(dFrameB, dBackgroundB, 0.05);
 		}
 		else	// Proceed normally
 		{
@@ -101,7 +101,11 @@ void Remedi::Run()
 
 			registerer.visualizeRegistration(pViz, regCloudA, regCloudB, 1); // update in just 1ms
 
-//			monitorizer.handle...
+			monitorizer.monitor(regCloudA, regCloudB);
+
+			//monitorizer.handleCloudjectDrops(...);
+			//monitorizer.handleCloudjectPicks(...);
+
 		}
 
 		bSuccess = reader.getNextDepthPairedFrames(dFrameA, dFrameB);

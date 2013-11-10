@@ -6,6 +6,7 @@
 #include "InteractiveRegisterer.h"
 #include "BackgroundSubtractor.h"
 #include "Monitorizer.h"
+#include "Cloudject.hpp"
 
 
 class Remedi
