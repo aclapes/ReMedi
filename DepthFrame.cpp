@@ -7,12 +7,32 @@ DepthFrame::DepthFrame(void) : Frame()
 
 DepthFrame::DepthFrame(cv::Mat mat) : Frame(mat)
 {
-	// Projective depth
-	m_projDepthMat = m_Mat / 8;
+	//// Projective depth
+	//m_projDepthMat = m_Mat / 8;
 
-	// Player index map
-	m_UIDMat = m_Mat - (8 * m_projDepthMat);
-	m_UIDMat.convertTo(m_UIDMat, CV_8UC1);
+	//// Player index map
+	//m_UIDMat = m_Mat - (8 * m_projDepthMat);
+	//m_UIDMat.convertTo(m_UIDMat, CV_8UC1);
+
+	//mat.convertTo(mat, CV_16UC1);
+	m_projDepthMat.create(mat.rows, mat.cols, CV_16UC1);
+	m_UIDMat.create(mat.rows, mat.cols, CV_8UC1);
+
+	const unsigned short playerMask = 0x0007; 
+
+	for (int y = 0; y < mat.rows; y++) for (int x = 0; x < mat.cols; x++)
+	{
+		unsigned short d = mat.at<unsigned short>(y,x);
+		m_projDepthMat.at<unsigned short>(y,x) = d >> 3;
+		m_UIDMat.at<unsigned char>(y,x) = static_cast<unsigned char>(d & playerMask);
+	}
+
+	int erosionSize = 2;
+	cv::Mat element = cv::getStructuringElement( cv::MORPH_ELLIPSE,
+                                       cv::Size( 2*erosionSize + 1, 2*erosionSize+1 ),
+                                       cv::Point( erosionSize, erosionSize ) );
+
+	cv::dilate(m_UIDMat, m_UIDMat, element);
 }
 
 

@@ -19,7 +19,7 @@ void Monitorizer::handleCloudjectDrops()
 	// Detect present objects
 	std::vector<Cloudject> detectedCjs;
 	m_cjDetector.detect(m_CloudA, m_CloudB, m_LeafSize, detectedCjs);
-	std::cout << "detected: " << detectedCjs.size() << std::endl;
+
 	// Check for new appearitions
 	std::vector<Cloudject> newCjs;
 	appeared(detectedCjs, newCjs);

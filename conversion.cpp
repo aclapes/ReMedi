@@ -73,23 +73,23 @@ void PointCloudToMat(pcl::PointCloud<pcl::PointXYZ>& cloud, cv::Mat& mat)
 void passthroughFilter(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, pcl::PointXYZ min, pcl::PointXYZ max, 
 	pcl::PointCloud<pcl::PointXYZ>& cloudF)
 {
-	cloudF = *pCloud;
-	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudF (&cloudF);
-
 	pcl::PassThrough<pcl::PointXYZ> pt;
 
-	pt.setInputCloud(pCloudF);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudFx (new pcl::PointCloud<pcl::PointXYZ>());
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudFxy (new pcl::PointCloud<pcl::PointXYZ>());
+
+	pt.setInputCloud(pCloud);
 	pt.setFilterFieldName("x");
 	pt.setFilterLimits(min.x, max.x);
-	pt.filter(*pCloudF);
+	pt.filter(*pCloudFx);
 
-	pt.setInputCloud(pCloudF);
+	pt.setInputCloud(pCloudFx);
 	pt.setFilterFieldName("y");
 	pt.setFilterLimits(min.y, max.y);
-	pt.filter(*pCloudF);
+	pt.filter(*pCloudFxy);
 
-	pt.setInputCloud(pCloudF);
+	pt.setInputCloud(pCloudFxy);
 	pt.setFilterFieldName("z");
 	pt.setFilterLimits(min.z, max.z);
-	pt.filter(*pCloudF);
+	pt.filter(cloudF);
 }

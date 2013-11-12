@@ -70,8 +70,6 @@ void Remedi::Run()
 	BackgroundSubtractor bgSubtractorA(nFrames, nMixtures);
 	BackgroundSubtractor bgSubtractorB(nFrames, nMixtures);
 
-	DepthFrame dBackgroundA, dBackgroundB;
-
 	float leafSize = 0.01;
 	float posCorrespThresParam = 0.07; // 7 cm
 	Monitorizer monitorizer (leafSize, posCorrespThresParam);
@@ -85,16 +83,16 @@ void Remedi::Run()
 	DepthFrame dFrameA, dFrameB;
 	bool bSuccess = reader.getNextDepthPairedFrames(dFrameA, dFrameB); // able to read, not finished
 
-	bgSubtractorA(dFrameA, dBackgroundA, 1);
-	bgSubtractorB(dFrameB, dBackgroundB, 1);
+	bgSubtractorA(dFrameA, 1);
+	bgSubtractorB(dFrameB, 1);
 
 	bool initViz = false;
 	while (bSuccess)
 	{
 		if ( !bgSubtractorA.isReady() && !bgSubtractorB.isReady() ) // Background subtraction
 		{
-			bgSubtractorA(dFrameA, dBackgroundA, 0.02);
-			bgSubtractorB(dFrameB, dBackgroundB, 0.02);
+			bgSubtractorA(dFrameA, 0.02);
+			bgSubtractorB(dFrameB, 0.02);
 		}
 		else if (!initViz)
 		{

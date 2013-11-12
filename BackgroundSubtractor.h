@@ -10,7 +10,7 @@ public:
 	BackgroundSubtractor(int, int);
 	~BackgroundSubtractor(void);
 
-	void operator()(DepthFrame, DepthFrame&, float alpha = 0);
+	void operator()(DepthFrame, float alpha = 0);
 
 	bool isReady();
 
@@ -19,7 +19,5 @@ public:
 private:
 	cv::BackgroundSubtractorMOG2*	m_pSubtractor;
 	int								m_NFrames;
-
-	Frame							m_BackgroundModel;
 };
 

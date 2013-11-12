@@ -7,6 +7,8 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/filters/passthrough.h>
+#include <pcl/common/common.h>
+#include <pcl/io/io.h>
 
 
 void MatToPointCloud(cv::Mat&, pcl::PointCloud<pcl::PointXYZ>&);

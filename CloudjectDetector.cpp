@@ -24,7 +24,7 @@ void CloudjectDetector::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::
 	//sor.filter (*pCloudR);
 
 	pcl::ApproximateVoxelGrid<PointT> avg;
-	avg.setInputCloud(pCloudR);
+	avg.setInputCloud(pCloud);
 	avg.setLeafSize(leafSize, leafSize, leafSize);
 	avg.filter(*pCloudF);
 
@@ -34,14 +34,15 @@ void CloudjectDetector::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::
 
 	std::vector<pcl::PointIndices> clusterIndices;
 	pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-	ec.setClusterTolerance (3 * leafSize); // cm
-	ec.setMinClusterSize (100);
-	ec.setMaxClusterSize (25000);
+	ec.setClusterTolerance (2 * leafSize); // cm
+	ec.setMinClusterSize (50);
+	ec.setMaxClusterSize (1200);
 	ec.setSearchMethod (tree);
 	ec.setInputCloud (pCloudF);
 	ec.extract (clusterIndices);
 
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersF; // clusters filtered
+	//// debug
+	//  std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersF; // clusters filtered
 
 	pcl::PassThrough<PointT> pt;
 	PointT min, max;
@@ -54,43 +55,42 @@ void CloudjectDetector::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::
 			pClusterF->points.push_back (pCloudF->points[*pit]); //*
 		pClusterF->width = pClusterF->points.size();
 		pClusterF->height = 1;
-		pClusterF->is_dense = false;
-
-		//std::cout << "PointCloud representing the Cluster: " << cluster->points.size () << " data points." << std::endl;
+		pClusterF->is_dense = true;
 		
+		pcl::getMinMax3D(*pClusterF, min, max);
 
+		pcl::PointCloud<pcl::PointXYZ>::Ptr pCluster (new pcl::PointCloud<pcl::PointXYZ>);
+		passthroughFilter(pCloud, min, max, *pCluster);
 
-		//pcl::getMinMax3D(*pClusterF, min, max);
+		std::cout << "PointCloud representing the Cluster: " << pCluster->points.size () << " data points." << std::endl;
 
-		//pcl::PointCloud<pcl::PointXYZ>::Ptr pCluster (new pcl::PointCloud<pcl::PointXYZ>);
-		//passthroughFilter(pCloud, min, max, *pCluster);
-
-		clusters.push_back(pClusterF);
+		clusters.push_back(pCluster);
 
 		j++;
 	}
 
-	if (clusters.size() > 0)
-	{
-		pcl::visualization::PCLVisualizer::Ptr pViz (new pcl::visualization::PCLVisualizer());
-		pViz->addCoordinateSystem();
-		std::cout << "extracted clusters" << std::endl;
-		srand(0);
-		for (int i = 0; i < clusters.size(); i++)
-		{		
-			std::stringstream ss;
-			ss << i;
-			pViz->addPointCloud(clusters[i], ss.str());
-			float r = ((float) (rand() % 255)) / (2 * 255.0) + .5;
-			float g = ((float) (rand() % 255)) / (2 * 255.0) + .5;
-			float b = ((float) (rand() % 255)) / (2 * 255.0) + .5;
-			 pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, ss.str());
-			std::cout << clusters[i]->points.size() << std::endl;
-		}
+	//// debug
+	//if (clusters.size() > 0)
+	//{
+	//	pcl::visualization::PCLVisualizer::Ptr pViz (new pcl::visualization::PCLVisualizer());
+	//	pViz->addCoordinateSystem();
+	//	std::cout << "extracted clusters" << std::endl;
+	//	srand(0);
+	//	for (int i = 0; i < clusters.size(); i++)
+	//	{		
+	//		std::stringstream ss;
+	//		ss << i;
+	//		pViz->addPointCloud(clusters[i], ss.str());
+	//		float r = ((float) (rand() % 255)) / (2 * 255.0) + .5;
+	//		float g = ((float) (rand() % 255)) / (2 * 255.0) + .5;
+	//		float b = ((float) (rand() % 255)) / (2 * 255.0) + .5;
+	//		 pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, ss.str());
+	//		std::cout << clusters[i]->points.size() << std::endl;
+	//	}
 
-		while(!pViz->wasStopped())
-			pViz->spin();
-	}
+	//	while(!pViz->wasStopped())
+	//		pViz->spin();
+	//}
 
 
 }

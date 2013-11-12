@@ -23,23 +23,19 @@ bool BackgroundSubtractor::isReady()
 }
 
 
-void BackgroundSubtractor::operator()(DepthFrame frame, DepthFrame& background, float alpha)
+void BackgroundSubtractor::operator()(DepthFrame frame, float alpha)
 {
 	if (!isReady())
 	{
 		cv::Mat frameMatF;
 		frame.getMat().convertTo(frameMatF, type);
-		cv::Mat maskMat;
 		
-		//cv::cvtColor(, frameMat3c, CV_GRAY2BGR);
-
+		cv::Mat maskMat;
 		(*m_pSubtractor)(frameMatF, maskMat, alpha);
-		//m_pSubtractor.getBackgroundImage(backgroundMat);
-		//cv::cvtColor(backgroundMat3c, backgroundMat, CV_BGR2GRAY);
-		background = DepthFrame(maskMat);
 
 		m_NFrames--;
-//        
+
+//        // debug
 //        cv::imshow("BS", maskMat);
 //        cv::waitKey(0.5);
 	}
@@ -50,12 +46,11 @@ void BackgroundSubtractor::operator()(DepthFrame frame, DepthFrame& background, 
 		frame.getMat().convertTo(frameMatF, type);
 		cv::Mat maskMat;
 		(*m_pSubtractor)(frameMatF, maskMat, alpha);
-		background = DepthFrame(maskMat);
-		m_BackgroundModel = DepthFrame(maskMat);
-        
-        cv::namedWindow("BS");
-        cv::imshow("BS", maskMat);
-        cv::waitKey();
+     
+		//// debug
+  //      cv::namedWindow("BS");
+  //      cv::imshow("BS", maskMat);
+  //      cv::waitKey(100);
 	}
 }
 
@@ -66,8 +61,8 @@ void BackgroundSubtractor::subtract(DepthFrame frame, DepthFrame& foreground)
 	(*m_pSubtractor)(frame.getMat(), maskMat, 0); // learning rate = 0
 
 	// Erode and dilate mask
-	int erosion_size = 2;
-	int dilation_size = 2;
+	int erosion_size = 3;
+	int dilation_size = 3;
 
 	cv::Mat erode_element = cv::getStructuringElement( cv::MORPH_ERODE,
                                 cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
