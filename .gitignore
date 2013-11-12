@@ -22,4 +22,14 @@
 # Visual studio files
 *.sdf
 *.opensdf
+*.rc
+*.ico
+*.aps
+*.vcproj
+*.user
+*.sln
+*.suo
 
+# Directories
+build
+Data

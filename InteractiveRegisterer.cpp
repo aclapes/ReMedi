@@ -427,15 +427,13 @@ void InteractiveRegisterer::visualizeRegistration(pcl::PointCloud<pcl::PointXYZ>
 
 
 void InteractiveRegisterer::visualizeRegistration(pcl::visualization::PCLVisualizer::Ptr pViz,
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr cloudB, int updateTime)
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr cloudB)
 {
 	pViz->removePointCloud("cloud left");
     pViz->removePointCloud("cloud right");
 
     pViz->addPointCloud (cloudA, "cloud left");
-    pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "cloud left");
+    pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.5, 0, 0, "cloud left");
     pViz->addPointCloud (cloudB, "cloud right");
-    pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "cloud right");
-        
-    pViz->spinOnce(updateTime);
+    pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 0.5, 0, "cloud right");
 }

@@ -2,10 +2,10 @@
 
 int type = CV_16UC1;
 
+
 BackgroundSubtractor::BackgroundSubtractor(int nFrames, int nmixtures) : m_NFrames(nFrames)
 {
-	
-	m_pSubtractor = new cv::BackgroundSubtractorMOG2(nFrames, nmixtures, false);
+	m_pSubtractor = new cv::BackgroundSubtractorMOG2(m_NFrames, nmixtures, false);
 	//m_pSubtractor->initialize(cv::Size(640,480), type);
 
 	m_pSubtractor->set("backgroundRatio", 0.999);

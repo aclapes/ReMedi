@@ -2,6 +2,7 @@
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
 #include "Cloudject.hpp"
 #include "CloudjectDetector.h"
@@ -15,12 +16,14 @@ class Monitorizer
 	typedef Cloudject<PointT, pcl::FPFHSignature33> Cloudject;
 
 public:
-	Monitorizer(float posCorrespThres);
+	Monitorizer(float leafSize, float posCorrespThres);
 	~Monitorizer(void);
 
 	void monitor(PointCloudPtr cloudA, PointCloudPtr cloudB);
-	void handleCloudjectDrops(std::vector<Cloudject>& cloudjects);
+	void handleCloudjectDrops();
 	//void handleCloudjectPicks(std::vector<Cloudject>& cloudjects);
+
+	void visualizeCloudjects(pcl::visualization::PCLVisualizer::Ptr pViz);
 
 private:
 	void appeared(std::vector<Cloudject> detecteds, std::vector<Cloudject>& appeareds);
@@ -39,6 +42,7 @@ private:
 
 	std::vector<Cloudject> m_cloudjects; // yet present
 
-	float m_posCorrespThres; // dist thres to state wheter two cloudjects are the same based on pos criterion
+	float m_LeafSize;
+	float m_PosCorrespThres; // dist thres to state wheter two cloudjects are the same based on pos criterion
 };
 

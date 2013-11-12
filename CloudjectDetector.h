@@ -7,6 +7,11 @@
 #include <pcl/filters/extract_indices.h>
 #include <pcl/kdtree/kdtree.h>
 #include <pcl/segmentation/extract_clusters.h>
+#include <pcl/filters/approximate_voxel_grid.h>
+#include <pcl/filters/passthrough.h>
+#include <pcl/filters/statistical_outlier_removal.h>
+
+#include "conversion.h"
 
 #include <vector>
 
@@ -14,18 +19,19 @@
 
 class CloudjectDetector
 {
-	typedef Cloudject<pcl::PointXYZ, pcl::FPFHSignature33> Cloudject;
+	typedef pcl::PointXYZ PointT;
+	typedef Cloudject<PointT, pcl::FPFHSignature33> Cloudject;
 
 public:
 	CloudjectDetector(void);
 	~CloudjectDetector(void);
 
 	void detect( pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr,
-		std::vector<Cloudject>& );
+		float leafSize, std::vector<Cloudject>& );
 
 private:
 	// Methods
-	void extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::Ptr, 
+	void extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::Ptr, float leafSize,
 		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clusters);
 
 	void findCorrespondences(

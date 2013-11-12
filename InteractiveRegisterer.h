@@ -80,7 +80,7 @@ public:
 
 	void visualizeRegistration(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr);
 	void visualizeRegistration(pcl::visualization::PCLVisualizer::Ptr, 
-		pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr, int updateTime);
+		pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr);
     
     void interact();
     

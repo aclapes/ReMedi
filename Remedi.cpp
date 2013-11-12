@@ -19,7 +19,7 @@ void Remedi::Run()
 #endif
 
 	/*
-	 * Registration (paired frames)
+	 * REGISTRATION (paired frames)
 	 */
 
 	InteractiveRegisterer registerer;
@@ -55,6 +55,11 @@ void Remedi::Run()
 		registerer.saveTransformation("transformation.yml");
 	}
 
+
+	/*
+	 * BACKGROUND SUBTRACTION
+	 */
+
 	int nFrames, nMixtures; // BS parameters
 	cout << "(BS) Number of frames: ";
 	cin >> nFrames;
@@ -63,18 +68,18 @@ void Remedi::Run()
 	
 	BackgroundSubtractor bgSubtractorA(nFrames, nMixtures);
 	BackgroundSubtractor bgSubtractorB(nFrames, nMixtures);
+
 	DepthFrame dBackgroundA, dBackgroundB;
 
-	pcl::visualization::PCLVisualizer::Ptr pViz (new pcl::visualization::PCLVisualizer);
-
+	float leafSize = 0.01;
 	float posCorrespThresParam = 0.07; // 7 cm
-	Monitorizer monitorizer (posCorrespThresParam);
+	Monitorizer monitorizer (leafSize, posCorrespThresParam);
 
 	/*
 	 * Loop
 	 */
 
-	/*cv::namedWindow("BS");*/
+	pcl::visualization::PCLVisualizer::Ptr pViz;
 
 	DepthFrame dFrameA, dFrameB;
 	bool bSuccess = reader.getNextDepthPairedFrames(dFrameA, dFrameB); // able to read, not finished
@@ -82,12 +87,18 @@ void Remedi::Run()
 	bgSubtractorA(dFrameA, dBackgroundA, 1);
 	bgSubtractorB(dFrameB, dBackgroundB, 1);
 
+	bool initViz = false;
 	while (bSuccess)
 	{
 		if ( !bgSubtractorA.isReady() && !bgSubtractorB.isReady() ) // Background subtraction
 		{
-			bgSubtractorA(dFrameA, dBackgroundA, 0.05);
-			bgSubtractorB(dFrameB, dBackgroundB, 0.05);
+			bgSubtractorA(dFrameA, dBackgroundA, 0.02);
+			bgSubtractorB(dFrameB, dBackgroundB, 0.02);
+		}
+		else if (!initViz)
+		{
+			 pViz = pcl::visualization::PCLVisualizer::Ptr(new pcl::visualization::PCLVisualizer);
+			 initViz = true;
 		}
 		else	// Proceed normally
 		{
@@ -99,13 +110,17 @@ void Remedi::Run()
 			pcl::PointCloud<pcl::PointXYZ>::Ptr regCloudB (new pcl::PointCloud<pcl::PointXYZ>());
 			registerer.getRegisteredClouds(fgDFrameA, fgDFrameB, regCloudA, regCloudB, false);
 
-			registerer.visualizeRegistration(pViz, regCloudA, regCloudB, 1); // update in just 1ms
+			registerer.visualizeRegistration(pViz, regCloudA, regCloudB); // update in just 1ms
 
 			monitorizer.monitor(regCloudA, regCloudB);
 
-			//monitorizer.handleCloudjectDrops(...);
+			//sstd::vector<Cloudject<pcl::PointXYZ,pcl::FPFHSignature33> > drops;
+			monitorizer.handleCloudjectDrops(/*drops*/);
 			//monitorizer.handleCloudjectPicks(...);
 
+			monitorizer.visualizeCloudjects(pViz);
+
+			pViz->spinOnce(50);
 		}
 
 		bSuccess = reader.getNextDepthPairedFrames(dFrameA, dFrameB);
