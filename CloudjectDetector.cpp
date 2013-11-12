@@ -34,9 +34,9 @@ void CloudjectDetector::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::
 
 	std::vector<pcl::PointIndices> clusterIndices;
 	pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-	ec.setClusterTolerance (2 * leafSize); // cm
-	ec.setMinClusterSize (50);
-	ec.setMaxClusterSize (1200);
+	ec.setClusterTolerance (7 * leafSize); // cm
+	ec.setMinClusterSize (100);
+	ec.setMaxClusterSize (1000);
 	ec.setSearchMethod (tree);
 	ec.setInputCloud (pCloudF);
 	ec.extract (clusterIndices);
@@ -62,7 +62,11 @@ void CloudjectDetector::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::
 		pcl::PointCloud<pcl::PointXYZ>::Ptr pCluster (new pcl::PointCloud<pcl::PointXYZ>);
 		passthroughFilter(pCloud, min, max, *pCluster);
 
-		std::cout << "PointCloud representing the Cluster: " << pCluster->points.size () << " data points." << std::endl;
+		std::stringstream ss;
+		Eigen::Vector4f centroid;
+		pcl::compute3DCentroid(*pClusterF, centroid);
+		ss << centroid.x() << ", " << centroid.y() << ", " << centroid.z();
+		std::cout << "PointCloud representing the Cluster (" << ss.str() << "): " << pCluster->points.size () << "(" << pClusterF->points.size() << ") data points." << std::endl;
 
 		clusters.push_back(pCluster);
 
