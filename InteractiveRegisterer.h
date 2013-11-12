@@ -85,7 +85,7 @@ public:
     void interact();
     
 private:
-    boost::shared_ptr<pcl::visualization::PCLVisualizer> cloud_viewer_;
+    pcl::visualization::PCLVisualizer::Ptr cloud_viewer_;
     int viewport_left_, viewport_right_;
         
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_left_, cloud_right_;

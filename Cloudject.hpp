@@ -6,7 +6,7 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/common/centroid.h>
 
-#include "Descriptor.hpp"
+//#include "Descriptor.hpp"
 
 template<typename PointT, typename U>
 class CloudjectBase
@@ -16,7 +16,7 @@ class CloudjectBase
 public:
 	CloudjectBase(void) {}
 
-	CloudjectBase(PointCloudPtr viewA, float leafSize = 0.0)
+	CloudjectBase(int id, PointCloudPtr viewA, float leafSize = 0.0) : m_ID(id)
 	{
 		if (leafSize > 0.0)
 		{
@@ -38,7 +38,7 @@ public:
 	}
 
 
-	CloudjectBase(PointCloudPtr viewA, PointCloudPtr viewB, float leafSize = 0.0)
+	CloudjectBase(int id, PointCloudPtr viewA, PointCloudPtr viewB, float leafSize = 0.0) : m_ID(id)
 	{
 		if (leafSize > 0.0)
 		{
@@ -63,7 +63,7 @@ public:
 	}
 
 
-	CloudjectBase(const char* viewPathA, const char* viewPathB, float leafSize = 0.0)
+	CloudjectBase(int id, const char* viewPathA, const char* viewPathB, float leafSize = 0.0) : m_ID(id)
 	{
 		PointCloudPtr viewA (new PointCloud);
 		PointCloudPtr viewB (new PointCloud);
@@ -90,6 +90,7 @@ public:
 
 	CloudjectBase(const CloudjectBase& cloudject)
 	{
+		m_ID	= cloudject.m_ID;
 		m_ViewA = cloudject.m_ViewA;
 		m_ViewB = cloudject.m_ViewB;
 		m_Pos	= cloudject.m_Pos;
@@ -97,6 +98,12 @@ public:
 
 
 	virtual ~CloudjectBase(void) {}
+
+
+	int getID()
+	{
+		return m_ID;
+	}
 
 
 	PointT getPos()
@@ -130,6 +137,7 @@ protected:
 
 	// Members
 
+	int m_ID;
 	PointCloudPtr m_ViewA, m_ViewB;
 	PointT m_Pos;
 };
@@ -143,17 +151,18 @@ class Cloudject : public CloudjectBase<PointT,U>
 
 public:
 	Cloudject() : CloudjectBase<PointT,U>() {}
-	Cloudject(PointCloudPtr viewA, float leafSize = 0.0) 
-		: CloudjectBase<PointT,U>(viewA, leafSize) {}
-	Cloudject(PointCloudPtr viewA, PointCloudPtr viewB, float leafSize = 0.0) 
-		: CloudjectBase<PointT,U>(viewA, viewB, leafSize) {}
-	Cloudject(const char* viewPathA, const char* viewPathB, float leafSize = 0.0) 
-		: CloudjectBase<PointT,U>(viewPathA, viewPathB, leafSize) {}
+	Cloudject(int id, PointCloudPtr viewA, float leafSize = 0.0) 
+		: CloudjectBase<PointT,U>(id, viewA, leafSize) {}
+	Cloudject(int id, PointCloudPtr viewA, PointCloudPtr viewB, float leafSize = 0.0) 
+		: CloudjectBase<PointT,U>(id, viewA, viewB, leafSize) {}
+	Cloudject(int id, const char* viewPathA, const char* viewPathB, float leafSize = 0.0) 
+		: CloudjectBase<PointT,U>(id, viewPathA, viewPathB, leafSize) {}
 	Cloudject(const Cloudject<PointT,U>& cloudject) 
 		: CloudjectBase<PointT,U>(cloudject) {}
 
 	virtual ~Cloudject() {}
 
+	PointT getID() { return CloudjectBase<PointT,U>::getID(); }
 	PointT getPos() { return CloudjectBase<PointT,U>::getPos(); }
 	PointCloudPtr getViewA() { return CloudjectBase<PointT,U>::getViewA(); }
 	PointCloudPtr getViewB() { return CloudjectBase<PointT,U>::getViewB(); }
@@ -172,20 +181,21 @@ class Cloudject<pcl::PointXYZ, pcl::FPFHSignature33> : public CloudjectBase<pcl:
 public:
 	Cloudject() 
 		: CloudjectBase<pcl::PointXYZ,pcl::FPFHSignature33>() {}
-	Cloudject(pcl::PointCloud<pcl::PointXYZ>::Ptr viewA, float leafSize = 0.0) 
-		: CloudjectBase<pcl::PointXYZ,pcl::FPFHSignature33>(viewA, leafSize) {}
-	Cloudject(pcl::PointCloud<pcl::PointXYZ>::Ptr viewA, pcl::PointCloud<pcl::PointXYZ>::Ptr viewB, float leafSize = 0.0) 
-		: CloudjectBase<pcl::PointXYZ,pcl::FPFHSignature33>(viewA, viewB, leafSize) {}
-	Cloudject(const char* viewPathA, const char* viewPathB, float leafSize = 0.0) 
-		: CloudjectBase<pcl::PointXYZ,pcl::FPFHSignature33>(viewPathA, viewPathB, leafSize) {}
+	Cloudject(int id, pcl::PointCloud<pcl::PointXYZ>::Ptr viewA, float leafSize = 0.0) 
+		: CloudjectBase<pcl::PointXYZ,pcl::FPFHSignature33>(id, viewA, leafSize) {}
+	Cloudject(int id, pcl::PointCloud<pcl::PointXYZ>::Ptr viewA, pcl::PointCloud<pcl::PointXYZ>::Ptr viewB, float leafSize = 0.0) 
+		: CloudjectBase<pcl::PointXYZ,pcl::FPFHSignature33>(id, viewA, viewB, leafSize) {}
+	Cloudject(int id, const char* viewPathA, const char* viewPathB, float leafSize = 0.0)  
+		: CloudjectBase<pcl::PointXYZ,pcl::FPFHSignature33>(id, viewPathA, viewPathB, leafSize) {}
 	Cloudject(const Cloudject<pcl::PointXYZ,pcl::FPFHSignature33>& cloudject) 
 		: CloudjectBase<pcl::PointXYZ,pcl::FPFHSignature33>(cloudject) {}
 
 	virtual ~Cloudject() {}
 
-	pcl::PointXYZ getPos() { return CloudjectBase::getPos(); }
-	pcl::PointCloud<pcl::PointXYZ>::Ptr getViewA() { return CloudjectBase::getViewA(); }
-	pcl::PointCloud<pcl::PointXYZ>::Ptr getViewB() { return CloudjectBase::getViewB(); }
+	int getID() { return CloudjectBase<pcl::PointXYZ,pcl::FPFHSignature33>::getID(); }
+	pcl::PointXYZ getPos() { return CloudjectBase<pcl::PointXYZ,pcl::FPFHSignature33>::getPos(); }
+	pcl::PointCloud<pcl::PointXYZ>::Ptr getViewA() { return CloudjectBase<pcl::PointXYZ,pcl::FPFHSignature33>::getViewA(); }
+	pcl::PointCloud<pcl::PointXYZ>::Ptr getViewB() { return CloudjectBase<pcl::PointXYZ,pcl::FPFHSignature33>::getViewB(); }
 
 	void describe(pcl::PointCloud<pcl::FPFHSignature33>::Ptr descA, pcl::PointCloud<pcl::FPFHSignature33>::Ptr descB)
 	{

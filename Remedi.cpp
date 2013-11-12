@@ -48,8 +48,9 @@ void Remedi::Run()
 		int nPoints;
 		std::cout << "-> Select the number of points: ";
 		cin >> nPoints;
-
 		registerer.setNumPoints(nPoints);
+
+		registerer.interact();
 		registerer.computeTransformation(dFrameA, dFrameB); // find the transformation
 
 		registerer.saveTransformation("transformation.yml");
@@ -124,6 +125,7 @@ void Remedi::Run()
 		}
 
 		bSuccess = reader.getNextDepthPairedFrames(dFrameA, dFrameB);
+		std::cout << reader.getFrameID() << std::endl;
 	}
 
 }

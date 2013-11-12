@@ -14,6 +14,8 @@ public:
 	void loadColorStreams(const char*, const char*);
 	void loadDepthStreams(const char*, const char*);
 
+	void getFrameID();
+
 	bool getNextColorFrame(ColorFrame&);
 	bool getNextDepthFrame(DepthFrame&);
 	bool getColorFrame(int fID, ColorFrame&);

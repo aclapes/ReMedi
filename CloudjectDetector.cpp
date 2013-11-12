@@ -17,11 +17,11 @@ void CloudjectDetector::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::
 	pcl::PointCloud<PointT>::Ptr pCloudR (new pcl::PointCloud<PointT>());
 	pcl::PointCloud<PointT>::Ptr pCloudF (new pcl::PointCloud<PointT>());
 
-	pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
-	sor.setInputCloud (pCloud);
-	sor.setMeanK (10);
-	sor.setStddevMulThresh (1.0);
-	sor.filter (*pCloudR);
+	//pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+	//sor.setInputCloud (pCloud);
+	//sor.setMeanK (10);
+	//sor.setStddevMulThresh (1.0);
+	//sor.filter (*pCloudR);
 
 	pcl::ApproximateVoxelGrid<PointT> avg;
 	avg.setInputCloud(pCloudR);
@@ -34,9 +34,9 @@ void CloudjectDetector::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::
 
 	std::vector<pcl::PointIndices> clusterIndices;
 	pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-	ec.setClusterTolerance (8 * leafSize); // cm
-	ec.setMinClusterSize (200);
-	ec.setMaxClusterSize (700);
+	ec.setClusterTolerance (3 * leafSize); // cm
+	ec.setMinClusterSize (100);
+	ec.setMaxClusterSize (25000);
 	ec.setSearchMethod (tree);
 	ec.setInputCloud (pCloudF);
 	ec.extract (clusterIndices);
@@ -284,13 +284,13 @@ void CloudjectDetector::detect( pcl::PointCloud<pcl::PointXYZ>::Ptr viewA, pcl::
 	// Create cloudejcts from detected clusters in views' pointclouds
 
 	for (int i = 0; i < correspsA.size(); i++) // correspsA.size() == correspsB.size() !!
-		m_Cloudjects.push_back(Cloudject(correspsA[i], correspsB[i]));
+		m_Cloudjects.push_back(Cloudject(0, correspsA[i], correspsB[i]));
 
 	for (int i = 0; i < leftoversA.size(); i++)
-		m_Cloudjects.push_back(Cloudject(leftoversA[i]));
+		m_Cloudjects.push_back(Cloudject(0, leftoversA[i]));
 
 	for (int i = 0; i < leftoversB.size(); i++)
-		m_Cloudjects.push_back(Cloudject(leftoversB[i]));
+		m_Cloudjects.push_back(Cloudject(0,			leftoversB[i]));
 
 
 }

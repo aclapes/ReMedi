@@ -5,7 +5,8 @@
 
 InteractiveRegisterer::InteractiveRegisterer()
 :
-	corresps_ (new pcl::Correspondences), lefties_ (new pcl::PointCloud<pcl::PointXYZ> ()), righties_ (new pcl::PointCloud<pcl::PointXYZ> ())
+	corresps_ (new pcl::Correspondences), lefties_ (new pcl::PointCloud<pcl::PointXYZ> ()), righties_ (new pcl::PointCloud<pcl::PointXYZ> ()),
+		viewport_left_(0), viewport_right_(1)
 {
     lefties_->height = 1;
     lefties_->width = 0; // we will increment in width
