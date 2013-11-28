@@ -7,37 +7,29 @@ DepthFrame::DepthFrame(void) : Frame()
 
 DepthFrame::DepthFrame(cv::Mat mat) : Frame(mat)
 {
-	//// Projective depth
-	//m_projDepthMat = m_Mat / 8;
+	// Projective depth
+	m_projDepthMat = m_Mat / 8;
 
-	//// Player index map
-	//m_UIDMat = m_Mat - (8 * m_projDepthMat);
-	//m_UIDMat.convertTo(m_UIDMat, CV_8UC1);
+	// Player index map
+	m_UIDMat = m_Mat - (8 * m_projDepthMat);
+	m_UIDMat.convertTo(m_UIDMat, CV_8UC1);
+}
 
-	//mat.convertTo(mat, CV_16UC1);
-	m_projDepthMat.create(mat.rows, mat.cols, CV_16UC1);
-	m_UIDMat.create(mat.rows, mat.cols, CV_8UC1);
 
-	const unsigned short playerMask = 0x0007; 
+DepthFrame::DepthFrame(cv::Mat fg, cv::Mat mask) : Frame(fg), m_Mask(mask)
+{
+	// Projective depth
+	m_projDepthMat = m_Mat / 8;
 
-	for (int y = 0; y < mat.rows; y++) for (int x = 0; x < mat.cols; x++)
-	{
-		unsigned short d = mat.at<unsigned short>(y,x);
-		m_projDepthMat.at<unsigned short>(y,x) = d >> 3;
-		m_UIDMat.at<unsigned char>(y,x) = static_cast<unsigned char>(d & playerMask);
-	}
-
-	int erosionSize = 2;
-	cv::Mat element = cv::getStructuringElement( cv::MORPH_ELLIPSE,
-                                       cv::Size( 2*erosionSize + 1, 2*erosionSize+1 ),
-                                       cv::Point( erosionSize, erosionSize ) );
-
-	cv::dilate(m_UIDMat, m_UIDMat, element);
+	// Player index map
+	m_UIDMat = m_Mat - (8 * m_projDepthMat);
+	m_UIDMat.convertTo(m_UIDMat, CV_8UC1);
 }
 
 
 DepthFrame::DepthFrame(const DepthFrame& other) : Frame(other)
 {
+	other.m_Mask.copyTo(m_Mask);
 	other.m_projDepthMat.copyTo(m_projDepthMat);
 	other.m_UIDMat.copyTo(m_UIDMat);
 }
@@ -45,6 +37,7 @@ DepthFrame::DepthFrame(const DepthFrame& other) : Frame(other)
 
 DepthFrame::~DepthFrame(void)
 {
+	m_Mask.release();
 	m_projDepthMat.release();
 	m_UIDMat.release();
 
@@ -54,12 +47,24 @@ DepthFrame::~DepthFrame(void)
 
 DepthFrame& DepthFrame::operator=(const DepthFrame& other)
 {
+	other.m_Mask.copyTo(m_Mask);
 	other.m_projDepthMat.copyTo(m_projDepthMat);
 	other.m_UIDMat.copyTo(m_UIDMat);
 
 	Frame::operator=(other);
 
 	return *this;
+}
+
+cv::Mat DepthFrame::getMask()
+{
+	return m_Mask;
+}
+
+
+void DepthFrame::setMask(cv::Mat mask)
+{
+	m_Mask = mask;
 }
 
 
@@ -71,9 +76,15 @@ bool DepthFrame::isValid()
 
 cv::Mat DepthFrame::getDepthMap(cv::Mat& depthMap)
 {
-	m_Mat.copyTo(depthMap);
+	m_projDepthMat.copyTo(depthMap);
 
-	return m_Mat;
+	return m_projDepthMat;
+}
+
+
+cv::Mat DepthFrame::getDepthMap()
+{
+	return m_projDepthMat;
 }
 
 
@@ -88,25 +99,42 @@ cv::Mat DepthFrame::getUserFreeDepthMap(cv::Mat& ufDepthMap)
 }
 
 
-pcl::PointCloud<pcl::PointXYZ>& DepthFrame::getPointCloud()
+void DepthFrame::getPointCloud(pcl::PointCloud<pcl::PointXYZ>& cloud)
 {
-	pcl::PointCloud<pcl::PointXYZ>* pCloud = new pcl::PointCloud<pcl::PointXYZ>();
-
-	MatToPointCloud(m_projDepthMat, *pCloud);
-
-	return *pCloud;
+	MatToPointCloud(m_projDepthMat, cloud);
 }
 
 
-pcl::PointCloud<pcl::PointXYZ>& DepthFrame::getUserFreePointCloud()
+void DepthFrame::getForegroundPointCloud(pcl::PointCloud<pcl::PointXYZ>& cloud)
 {
-	pcl::PointCloud<pcl::PointXYZ>* pCloud = new pcl::PointCloud<pcl::PointXYZ>();
+	cv::Mat fgProjDepthMat;
+	m_projDepthMat.copyTo(fgProjDepthMat, m_Mask);
 
+	cv::namedWindow("getForegroundPointCloud");
+	cv::imshow("getForegroundPointCloud", m_Mask);
+	cv::waitKey();
+	MatToPointCloud(fgProjDepthMat, cloud);
+}
+
+
+void DepthFrame::getUserFreePointCloud(pcl::PointCloud<pcl::PointXYZ>& cloud)
+{
 	// Remove player from depth, setting user region depth values to 0 (like measurment errors)
 	cv::Mat userFreeProjDepthMat;
 	getUserFreeDepthMap(userFreeProjDepthMat);
 
-	MatToPointCloud(userFreeProjDepthMat, *pCloud);
+	MatToPointCloud(userFreeProjDepthMat, cloud);
+}
 
-	return *pCloud;
+
+void DepthFrame::getForegroundUserFreePointCloud(pcl::PointCloud<pcl::PointXYZ>& cloud)
+{
+	// Remove player from depth, setting user region depth values to 0 (like measurment errors)
+	cv::Mat userFreeProjDepthMat;
+	getUserFreeDepthMap(userFreeProjDepthMat);
+
+	cv::Mat fgUserFreeProjDepthMat;
+	userFreeProjDepthMat.copyTo(fgUserFreeProjDepthMat, m_Mask);
+
+	MatToPointCloud(fgUserFreeProjDepthMat, cloud);
 }

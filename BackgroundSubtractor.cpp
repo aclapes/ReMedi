@@ -5,10 +5,11 @@ int type = CV_16UC1;
 
 BackgroundSubtractor::BackgroundSubtractor(int nFrames, int nmixtures) : m_NFrames(nFrames)
 {
-	m_pSubtractor = new cv::BackgroundSubtractorMOG2(m_NFrames, nmixtures, false);
-	//m_pSubtractor->initialize(cv::Size(640,480), type);
+	m_pSubtractorA = new cv::BackgroundSubtractorMOG2(m_NFrames, nmixtures, false);
+	m_pSubtractorB = new cv::BackgroundSubtractorMOG2(m_NFrames, nmixtures, false);
 
-	m_pSubtractor->set("backgroundRatio", 0.999);
+	m_pSubtractorA->set("backgroundRatio", 0.999);
+	m_pSubtractorB->set("backgroundRatio", 0.999);
 }
 
 
@@ -25,44 +26,54 @@ bool BackgroundSubtractor::isReady()
 
 void BackgroundSubtractor::operator()(DepthFrame frame, float alpha)
 {
-	if (!isReady())
-	{
-		cv::Mat frameMatF;
-		frame.getMat().convertTo(frameMatF, type);
-		
-		cv::Mat maskMat;
-		(*m_pSubtractor)(frameMatF, maskMat, alpha);
+	(*this)(m_pSubtractorA, frame, alpha);
 
-		m_NFrames--;
+	m_NFrames--;
+}
 
-//        // debug
-//        cv::imshow("BS", maskMat);
-//        cv::waitKey(0.5);
-	}
 
-	if (isReady())
-	{
-		cv::Mat frameMatF;
-		frame.getMat().convertTo(frameMatF, type);
-		cv::Mat maskMat;
-		(*m_pSubtractor)(frameMatF, maskMat, alpha);
-     
-		//// debug
-  //      cv::namedWindow("BS");
-  //      cv::imshow("BS", maskMat);
-  //      cv::waitKey(100);
-	}
+void BackgroundSubtractor::operator()(DepthFrame frameA, DepthFrame frameB, float alpha)
+{
+	(*this)(m_pSubtractorA, frameA, alpha);
+	(*this)(m_pSubtractorB, frameB, alpha);
+
+	m_NFrames--;
+}
+
+
+void BackgroundSubtractor::operator()(cv::BackgroundSubtractorMOG2* pSubtractor, DepthFrame& frame, float alpha)
+{
+	cv::Mat frameMatF;
+	frame.getDepthMap().convertTo(frameMatF, type);
+	
+	cv::Mat maskMat;
+	(*pSubtractor)(frameMatF, maskMat, alpha);
 }
 
 
 void BackgroundSubtractor::subtract(DepthFrame frame, DepthFrame& foreground)
 {
+	subtract(m_pSubtractorA, frame, foreground);
+}
+
+
+void BackgroundSubtractor::subtract(DepthFrame frameA, DepthFrame frameB, DepthFrame& foregroundA, DepthFrame& foregroundB)
+{
+	subtract(m_pSubtractorA, frameA, foregroundA);
+	subtract(m_pSubtractorB, frameB, foregroundB);
+}
+
+
+void BackgroundSubtractor::subtract(cv::BackgroundSubtractorMOG2* pSubtractor, DepthFrame& frame, DepthFrame& foreground)
+{
 	cv::Mat maskMat;
-	(*m_pSubtractor)(frame.getMat(), maskMat, 0); // learning rate = 0
+	cv::Mat frameMatF;
+	frame.getDepthMap().convertTo(frameMatF, type);
+	(*pSubtractor)(frameMatF, maskMat, 0); // learning rate = 0
 
 	// Erode and dilate mask
-	int erosion_size = 3;
-	int dilation_size = 3;
+	int erosion_size = 2;
+	int dilation_size = 2;
 
 	cv::Mat erode_element = cv::getStructuringElement( cv::MORPH_ERODE,
                                 cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
@@ -74,8 +85,7 @@ void BackgroundSubtractor::subtract(DepthFrame frame, DepthFrame& foreground)
 	cv::erode(maskMat, maskMat, erode_element);
 	cv::dilate(maskMat, maskMat, dilate_element);
 
-	cv::Mat fgMat;
-	frame.getMat().copyTo(fgMat, maskMat);
-	foreground = DepthFrame(fgMat);
+	foreground = DepthFrame(frame);
+	foreground.setMask(maskMat);
 	//foreground.setMat(frame.getMat(), maskMat);
 }

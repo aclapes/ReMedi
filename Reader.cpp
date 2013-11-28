@@ -12,12 +12,6 @@ Reader::~Reader(void)
 }
 
 
-int Reader::getFrameID()
-{
-	return m_dCounter;
-}
-
-
 void Reader::readNextColorFrame(const char* dataPath, ColorFrame& frame)
 {
 	std::stringstream ss;

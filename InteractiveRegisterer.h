@@ -53,8 +53,8 @@ public:
 
 	void setNumPoints(int);
 
-    void translate(const pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointXYZ, pcl::PointCloud<pcl::PointXYZ>::Ptr);
-    void translate(const pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Vector4f, pcl::PointCloud<pcl::PointXYZ>::Ptr);
+    void translate(const pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointXYZ, pcl::PointCloud<pcl::PointXYZ>&);
+    void translate(const pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Vector4f, pcl::PointCloud<pcl::PointXYZ>&);
     
     void keyboardCallback(const pcl::visualization::KeyboardEvent&, void*);
     void mouseCallback(const pcl::visualization::MouseEvent&, void*);
@@ -75,17 +75,18 @@ public:
 	void saveTransformation(const char*);
 
 	void getRegisteredClouds(DepthFrame, DepthFrame, 
-		pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr,
-		bool userPoints = true);
+		pcl::PointCloud<pcl::PointXYZ>&, pcl::PointCloud<pcl::PointXYZ>&,
+		bool backgroundPoints = true, bool userPoints = true);
 
 	void visualizeRegistration(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr);
 	void visualizeRegistration(pcl::visualization::PCLVisualizer::Ptr, 
 		pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr);
+	void visualizeRegistration(DepthFrame, DepthFrame);
     
     void interact();
     
 private:
-    pcl::visualization::PCLVisualizer::Ptr cloud_viewer_;
+    boost::shared_ptr<pcl::visualization::PCLVisualizer> cloud_viewer_;
     int viewport_left_, viewport_right_;
         
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_left_, cloud_right_;

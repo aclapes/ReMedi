@@ -1,12 +1,9 @@
 #pragma once
 
 #include "Reader.h"
-#include "DepthFrame.h"
-
 #include "InteractiveRegisterer.h"
 #include "BackgroundSubtractor.h"
-#include "Monitorizer.h"
-#include "Cloudject.hpp"
+#include "TableModeler.h"
 
 
 class Remedi
@@ -21,10 +18,7 @@ public:
 	void Run();
 
 private:
-
-	//// Private members
-	//ImageFileReader					m_imageFileReader;
-	//InteractiveCloudRegisterer		m_InteractiveCloudRegisterer;
-	//BackgroundSubtractor			m_BackgroundSubtractor;
-	//Monitorizer						m_Monitorizer;
+	void waitForBackgroundSubtraction(Reader& reader, BackgroundSubtractor& bs);
+	void interactWithRegisterer(InteractiveRegisterer& registerer, Reader& reader); // ugly: to pass the reader
+	void modelTables(TableModeler& tableModeler, InteractiveRegisterer& registerer, Reader& reader);
 };

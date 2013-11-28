@@ -11,20 +11,39 @@ CloudjectDetector::~CloudjectDetector(void)
 }
 
 
-void CloudjectDetector::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud,
-	float leafSize, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clusters )
+void CloudjectDetector::setInputClouds( pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB )
+{
+	m_pCloudA = pCloudA;
+	m_pCloudB = pCloudB;
+}
+
+
+void CloudjectDetector::setLeafSize(float leafSize)
+{
+	m_LeafSize = leafSize;
+}
+
+
+void CloudjectDetector::setMaxCorrespondenceDistance(float maxCorrespDist)
+{
+	m_MaxCorrespondenceDistance = maxCorrespDist;
+}
+
+
+void CloudjectDetector::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, 
+	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clusters )
 {
 	pcl::PointCloud<PointT>::Ptr pCloudR (new pcl::PointCloud<PointT>());
 	pcl::PointCloud<PointT>::Ptr pCloudF (new pcl::PointCloud<PointT>());
 
-	//pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
-	//sor.setInputCloud (pCloud);
-	//sor.setMeanK (10);
-	//sor.setStddevMulThresh (1.0);
-	//sor.filter (*pCloudR);
+	pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+	sor.setInputCloud (pCloud);
+	sor.setMeanK (10);
+	sor.setStddevMulThresh (1.0);
+	sor.filter (*pCloudR);
 
 	pcl::ApproximateVoxelGrid<PointT> avg;
-	avg.setInputCloud(pCloud);
+	avg.setInputCloud(pCloudR);
 	avg.setLeafSize(leafSize, leafSize, leafSize);
 	avg.filter(*pCloudF);
 
@@ -34,15 +53,14 @@ void CloudjectDetector::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::
 
 	std::vector<pcl::PointIndices> clusterIndices;
 	pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-	ec.setClusterTolerance (7 * leafSize); // cm
-	ec.setMinClusterSize (100);
-	ec.setMaxClusterSize (1000);
+	ec.setClusterTolerance (8 * m_LeafSize); // cm
+	ec.setMinClusterSize (200);
+	ec.setMaxClusterSize (700);
 	ec.setSearchMethod (tree);
 	ec.setInputCloud (pCloudF);
 	ec.extract (clusterIndices);
 
-	//// debug
-	//  std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersF; // clusters filtered
+	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersF; // clusters filtered
 
 	pcl::PassThrough<PointT> pt;
 	PointT min, max;
@@ -55,25 +73,22 @@ void CloudjectDetector::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::
 			pClusterF->points.push_back (pCloudF->points[*pit]); //*
 		pClusterF->width = pClusterF->points.size();
 		pClusterF->height = 1;
-		pClusterF->is_dense = true;
+		pClusterF->is_dense = false;
+
+		//std::cout << "PointCloud representing the Cluster: " << cluster->points.size () << " data points." << std::endl;
 		
-		pcl::getMinMax3D(*pClusterF, min, max);
 
-		pcl::PointCloud<pcl::PointXYZ>::Ptr pCluster (new pcl::PointCloud<pcl::PointXYZ>);
-		passthroughFilter(pCloud, min, max, *pCluster);
 
-		std::stringstream ss;
-		Eigen::Vector4f centroid;
-		pcl::compute3DCentroid(*pClusterF, centroid);
-		ss << centroid.x() << ", " << centroid.y() << ", " << centroid.z();
-		std::cout << "PointCloud representing the Cluster (" << ss.str() << "): " << pCluster->points.size () << "(" << pClusterF->points.size() << ") data points." << std::endl;
+		//pcl::getMinMax3D(*pClusterF, min, max);
 
-		clusters.push_back(pCluster);
+		//pcl::PointCloud<pcl::PointXYZ>::Ptr pCluster (new pcl::PointCloud<pcl::PointXYZ>);
+		//passthroughFilter(pCloud, min, max, *pCluster);
+
+		clusters.push_back(pClusterF);
 
 		j++;
 	}
 
-	//// debug
 	//if (clusters.size() > 0)
 	//{
 	//	pcl::visualization::PCLVisualizer::Ptr pViz (new pcl::visualization::PCLVisualizer());
@@ -126,6 +141,26 @@ float CloudjectDetector::clustersCentroidsDistance(pcl::PointCloud<pcl::PointXYZ
 	return sqrtf( powf(centroidA.x() - centroidB.x(), 2) 
 				+ powf(centroidA.y() - centroidB.y(), 2) 
 				+ powf(centroidA.z() - centroidB.z(), 2));
+}
+
+
+float CloudjectDetector::centroidsDistance(Eigen::Vector4f centroid1, Eigen::Vector4f centroid2)
+{
+	return sqrtf( powf(centroid1.x() - centroid2.x(), 2) 
+				+ powf(centroid1.y() - centroid2.y(), 2) 
+				+ powf(centroid1.z() - centroid2.z(), 2));
+}
+
+
+void CloudjectDetector::computeCentroids(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters, 
+	std::vector<Eigen::Vector4f>& centroids)
+{
+	for (int i = 0; i < clusters.size(); i++)
+	{
+		Eigen::Vector4f centroid;
+		pcl::compute3DCentroid(*(clusters[i]), centroid);
+		centroids.push_back(centroid);
+	}
 }
 
 
@@ -270,31 +305,151 @@ void CloudjectDetector::findCorrespondences(
 }
 
 
-void CloudjectDetector::detect( pcl::PointCloud<pcl::PointXYZ>::Ptr viewA, pcl::PointCloud<pcl::PointXYZ>::Ptr viewB,
-	float leafSize, std::vector<Cloudject>& cloudjects )
+void CloudjectDetector::findCorrespondences2(
+	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersA, 
+	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersB, 
+	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& correspsA,
+	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& correspsB,
+	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& leftoversA,
+	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& leftoversB)
+{
+
+	// Variables initialization
+
+	// Each cluster in the smaller list could have a correspondence in the larger one. non-sense in the other way
+	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters; // pending to match (smaller list)
+	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> candidates; // to match with (larger list)
+
+	if (clustersA.size() <= clustersB.size())
+	{
+		clusters = clustersA;
+		candidates = clustersB;
+	}
+	else
+	{
+		clusters = clustersB;
+		candidates = clustersA;
+	}
+
+
+	std::vector<Eigen::Vector4f> centroids, centroidsCandidates;
+
+	computeCentroids(clusters, centroids);
+	computeCentroids(candidates, centroidsCandidates);
+
+	std::vector<int> correspondences, correspondencesCandidates;
+	std::vector<float> minimumDistances;
+
+	std::fill_n(correspondences, centroids.size(), -1);
+	std::fill_n(correspondencesCandidates, centroidsCandidates.size(), -1);
+	std::fill_n(minimumDistances, centroids.size(), std::numeric_limits<float>::infinity());
+
+
+	// Make the correspondences
+
+	float dist;
+	for (int i = 0; i < centroids.size(); i++)
+	{
+		for (int j = 0; j < centroidsCandidates.size(); j++)
+		{
+			dist = centroidsDistance(centroids[i], centroidsCandidates[j]);
+			if (dist < m_MaxCorrespondenceDistance && dist < minimumDistances[i])
+			{
+				correspondences[i] = j; 
+				minimumDistances[i] = dist;
+				
+				correspondencesCandidates[j] = i;
+				// Deal with having the cluster assigned to a candidate (i in the list of candidates)
+				bool found = false;
+				for (int jj = 0; jj < j && !found; jj++)
+					if (found = (correspondencesCandidates[jj] == i))
+						correspondencesCandidates[jj] = -1;
+				
+				// Aaaaand also with having the candidate assigned already to other cluster (j in the list of clusters)
+				int ii;
+				found = false;
+				for (ii = 0; ii < i && !found; ii++)
+					found = (correspondences[ii] == correspondences[i]);
+				
+				// If the case is found (very rare)...
+				if (found)
+				{
+					if (dist < minimumDistances[ii]) // the new corresponde wins
+					{
+						correspondences[ii] = -1; // unassign the previous
+					}
+					else
+					{
+						correspondences[i] = -1;
+						correspondencesCandidates[j] = ii;
+					}
+				}
+			}
+		}
+	}
+
+
+	// Index the clusters
+
+	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> corresps, correspsCandidates, leftovers, leftoversCandidates;
+
+	for (int i = 0; i < clusters.size(); i++)
+	{
+		if (correspondences[i] < 0)
+			leftovers.push_back( clusters[i] );
+		else
+		{
+			corresps.push_back( clusters[i] );
+			correspsCandidates.push_back( candidates[correspondences[i]] );
+		}
+	}
+
+	for (int i = 0; i < candidates.size(); i++)
+		if (correspondencesCandidates[i] < 0)
+			leftoversCandidates.push_back( candidates[i] );
+	
+
+	if (clustersA.size() <= clustersB.size())
+	{
+		correspsA = corresps;
+		correspsB = correspsCandidates;
+		leftoversA = leftovers;
+		leftoversB = leftoversCandidates;
+	}
+	else
+	{
+		correspsA = correspsCandidates;
+		correspsB = corresps;
+		leftoversA = leftoversCandidates;
+		leftoversB = leftovers;
+	}
+
+	std::cout << correspsA.size() << " " << correspsB.size() << " " << leftoversA.size() << " " << leftoversB.size() << std::endl;
+}
+
+
+void CloudjectDetector::detect( std::vector<Cloudject>& cloudjects )
 {
 	// Extract clusters from each view separately
 	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersA, clustersB;
 
-	extractClustersFromView(viewA, leafSize, clustersA);
-	extractClustersFromView(viewB, leafSize, clustersB);
+	extractClustersFromView(m_pCloudA, clustersA);
+	extractClustersFromView(m_pCloudB, clustersB);
 
 	// Merge clusters extracted separately
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> correspsA, correspsB;
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> leftoversA, leftoversB; // clouds just seen in one image
+	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> correspsA, correspsB, leftoversA, leftoversB; // clouds just seen in one image
 
-	findCorrespondences(clustersA, clustersB, correspsA, correspsB, leftoversA, leftoversB);
+	findCorrespondences2(clustersA, clustersB, correspsA, correspsB, leftoversA, leftoversB);
 
 	// Create cloudejcts from detected clusters in views' pointclouds
 
 	for (int i = 0; i < correspsA.size(); i++) // correspsA.size() == correspsB.size() !!
-		m_Cloudjects.push_back(Cloudject(0, correspsA[i], correspsB[i]));
+		m_Cloudjects.push_back(Cloudject(correspsA[i], correspsB[i]));
 
 	for (int i = 0; i < leftoversA.size(); i++)
-		m_Cloudjects.push_back(Cloudject(0, leftoversA[i]));
+		m_Cloudjects.push_back(Cloudject(leftoversA[i]));
 
 	for (int i = 0; i < leftoversB.size(); i++)
-		m_Cloudjects.push_back(Cloudject(0,			leftoversB[i]));
-
+		m_Cloudjects.push_back(Cloudject(leftoversB[i]));
 
 }

@@ -1,5 +1,11 @@
 #include "Remedi.h"
 
+#include "Monitorizer.h"
+#include "MonitorizerParams.hpp"
+#include "DepthFrame.h"
+#include "TableModeler.h"
+#include "Table.hpp"
+
 Remedi::Remedi()
 {
 	
@@ -23,7 +29,76 @@ void Remedi::Run()
 	 */
 
 	InteractiveRegisterer registerer;
+	interactWithRegisterer(registerer, reader);
+
+	/*
+	 * PLANE SEGMENTATION
+	 */
+
+	TableModeler tableModeler;
+	modelTables(tableModeler, registerer, reader);
 	
+	
+	/*
+	 * BACKGROUND SUBTRACTION
+	 */
+
+	int nFrames, nMixtures; // BS parameters
+	cout << "(BS) Number of frames: ";
+	cin >> nFrames;
+	cout << "(BS) Number of mixtures: ";
+	cin >> nMixtures;
+	
+	BackgroundSubtractor bgSubtractor(nFrames, nMixtures);
+	waitForBackgroundSubtraction(reader, bgSubtractor);
+	
+	MonitorizerParams monitorParams;
+	monitorParams.tmpCoherence = 2;
+	monitorParams.motionThresh = 5; // 100 cm
+	monitorParams.leafSize = 0.01;
+	monitorParams.posCorrespThresh = 0.07; // 7 cm
+	Monitorizer monitorizer (&registerer, &tableModeler, monitorParams);
+
+	/*
+	 * Loop
+	 */
+
+	DepthFrame dFrameA, dFrameB;
+	bool bSuccess = reader.getNextDepthPairedFrames(dFrameA, dFrameB); // able to read, not finished
+	while (bSuccess)
+	{
+		DepthFrame fgDFrameA, fgDFrameB;
+		bgSubtractor.subtract(dFrameA, dFrameB, fgDFrameA, fgDFrameB);
+
+		monitorizer.monitor(fgDFrameA, fgDFrameB);
+
+		monitorizer.handleCloudjectDrops(/*drops*/);
+
+		bSuccess = reader.getNextDepthPairedFrames(dFrameA, dFrameB);
+	}
+}
+
+
+void Remedi::waitForBackgroundSubtraction(Reader& reader, BackgroundSubtractor& bs)
+{
+	DepthFrame dFrameA, dFrameB;
+	reader.getNextDepthPairedFrames(dFrameA, dFrameB);
+
+	bs(dFrameA, dFrameB, 1);
+
+	while (!bs.isReady())
+	{
+		bs(dFrameA, dFrameB, 0.02);
+
+		reader.getNextDepthPairedFrames(dFrameA, dFrameB);
+	}
+}
+
+
+void Remedi::interactWithRegisterer(InteractiveRegisterer& registerer, Reader& reader)
+{
+	DepthFrame dFrameA, dFrameB;
+
 	// Ask wheter re-select a set of points
 	// or use a previously computed transformation
 	char c;
@@ -32,11 +107,12 @@ void Remedi::Run()
 	if (c != 'n' && c != 'N') // re-use transformation
 	{
 		registerer.loadTransformation("transformation.yml");
+
+		reader.getDepthPairedFrames(2, dFrameA, dFrameB);
+		registerer.visualizeRegistration(dFrameA, dFrameB);
 	}
 	else // re-select points
 	{
-		DepthFrame dFrameA, dFrameB;
-		
 		// Select the paired frames two register
 		int fID;
 		std::cout << "-> Select a frame ID: ";
@@ -48,85 +124,38 @@ void Remedi::Run()
 		int nPoints;
 		std::cout << "-> Select the number of points: ";
 		cin >> nPoints;
-		registerer.setNumPoints(nPoints);
 
+		registerer.setNumPoints(nPoints);
 		registerer.interact();
 		registerer.computeTransformation(dFrameA, dFrameB); // find the transformation
 
 		registerer.saveTransformation("transformation.yml");
 	}
-
-
-	/*
-	 * BACKGROUND SUBTRACTION
-	 */
-
-	int nFrames, nMixtures; // BS parameters
-	cout << "(BS) Number of frames: ";
-	cin >> nFrames;
-	cout << "(BS) Number of mixtures: ";
-	cin >> nMixtures;
-	
-	BackgroundSubtractor bgSubtractorA(nFrames, nMixtures);
-	BackgroundSubtractor bgSubtractorB(nFrames, nMixtures);
-
-	float leafSize = 0.01;
-	float posCorrespThresParam = 0.07; // 7 cm
-	Monitorizer monitorizer (leafSize, posCorrespThresParam);
-
-	/*
-	 * Loop
-	 */
-
-	pcl::visualization::PCLVisualizer::Ptr pViz;
-
-	DepthFrame dFrameA, dFrameB;
-	bool bSuccess = reader.getNextDepthPairedFrames(dFrameA, dFrameB); // able to read, not finished
-
-	bgSubtractorA(dFrameA, 1);
-	bgSubtractorB(dFrameB, 1);
-
-	bool initViz = false;
-	while (bSuccess)
-	{
-		if ( !bgSubtractorA.isReady() && !bgSubtractorB.isReady() ) // Background subtraction
-		{
-			bgSubtractorA(dFrameA, 0.02);
-			bgSubtractorB(dFrameB, 0.02);
-		}
-		else if (!initViz)
-		{
-			 pViz = pcl::visualization::PCLVisualizer::Ptr(new pcl::visualization::PCLVisualizer);
-			 initViz = true;
-		}
-		else	// Proceed normally
-		{
-			DepthFrame fgDFrameA, fgDFrameB;
-			bgSubtractorA.subtract(dFrameA, fgDFrameA);
-			bgSubtractorB.subtract(dFrameB, fgDFrameB);
-
-			pcl::PointCloud<pcl::PointXYZ>::Ptr regCloudA (new pcl::PointCloud<pcl::PointXYZ>());
-			pcl::PointCloud<pcl::PointXYZ>::Ptr regCloudB (new pcl::PointCloud<pcl::PointXYZ>());
-			registerer.getRegisteredClouds(fgDFrameA, fgDFrameB, regCloudA, regCloudB, false);
-
-			registerer.visualizeRegistration(pViz, regCloudA, regCloudB); // update in just 1ms
-
-			monitorizer.monitor(regCloudA, regCloudB);
-
-			//sstd::vector<Cloudject<pcl::PointXYZ,pcl::FPFHSignature33> > drops;
-			monitorizer.handleCloudjectDrops(/*drops*/);
-			//monitorizer.handleCloudjectPicks(...);
-
-			monitorizer.visualizeCloudjects(pViz);
-
-			pViz->spinOnce(50);
-		}
-
-		bSuccess = reader.getNextDepthPairedFrames(dFrameA, dFrameB);
-		std::cout << reader.getFrameID() << std::endl;
-	}
-
 }
+
+
+void Remedi::modelTables(TableModeler& tableModeler, InteractiveRegisterer& registerer, Reader& reader)
+{
+	DepthFrame dFrameA, dFrameB;
+	reader.getDepthPairedFrames(2, dFrameA, dFrameB);
+
+	pcl::PointCloud<pcl::PointXYZ>::Ptr rCloudA (new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr rCloudB (new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr tableA (new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr tableB (new pcl::PointCloud<pcl::PointXYZ>);
+
+	registerer.getRegisteredClouds(dFrameA, dFrameB, *rCloudA, *rCloudB, true, false);
+
+	tableModeler.setInputClouds(rCloudA, rCloudB);
+	tableModeler.setLeafSize(0.02); // 2cm
+	tableModeler.setNormalRadius(0.05);
+	tableModeler.setSACIters(200);
+	tableModeler.setSACDistThresh(0.03);
+	tableModeler.setYOffset(0.4);
+
+	tableModeler.model(*tableA, *tableB);
+}
+
 
 Remedi::~Remedi()
 {

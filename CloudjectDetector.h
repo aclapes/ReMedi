@@ -25,13 +25,20 @@ class CloudjectDetector
 public:
 	CloudjectDetector(void);
 	~CloudjectDetector(void);
+	
+	void setInputClouds( pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr );
 
-	void detect( pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr,
-		float leafSize, std::vector<Cloudject>& );
+	void setLeafSize(float);
+	void setMaxCorrespondenceDistance(float);
+
+	void detect(std::vector<Cloudject>&);
 
 private:
 	// Methods
-	void extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::Ptr, float leafSize,
+	void computeCentroids(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters, 
+		std::vector<Eigen::Vector4f>& centroids);
+
+	void extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::Ptr,
 		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clusters);
 
 	void findCorrespondences(
@@ -42,9 +49,19 @@ private:
 		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& leftoversA,
 		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& leftoversB);
 
-	float clustersBoxDistance(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr);
-	float clustersCentroidsDistance(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr);
+	void findCorrespondences2(
+		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersA,
+		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersB,
+		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& correspsA,
+		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& correspsB,
+		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& leftoversA,
+		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& leftoversB);
 
+	float clustersBoxDistance(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr);
+	
+	float centroidsDistance(Eigen::Vector4f, Eigen::Vector4f);
+	float clustersCentroidsDistance(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr);
+	
 	void variate(
 		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& P, 
 		int n, 
@@ -70,7 +87,14 @@ private:
 	float correspondenceDistance(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&,
 		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&);
 
+	//
 	// Members
+	//
+
+	pcl::PointCloud<pcl::PointXYZ>::Ptr m_pCloudA, m_pCloudB;
+
+	float m_LeafSize;
+	float m_MaxCorrespondenceDistance;
 
 	std::vector<Cloudject> m_Cloudjects;
 };
