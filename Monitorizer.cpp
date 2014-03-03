@@ -117,13 +117,6 @@ void Monitorizer::monitor(DepthFrame dFrameA, DepthFrame dFrameB)
 }
 
 
-void Monitorizer::monitor(PointCloudPtr cloudA, PointCloudPtr cloudB)
-{
-	m_CloudA = cloudA;
-	m_CloudB = cloudB;
-}
-
-
 void Monitorizer::updateHistory(DepthFrame dFrameA, DepthFrame dFrameB)
 {
 	bufferDepthFrame(m_DepthStreamBufferA, dFrameA);

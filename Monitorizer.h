@@ -35,7 +35,6 @@ public:
 	void setParams(MonitorizerParams);
 
 	void monitor(DepthFrame, DepthFrame);
-	void monitor(PointCloudPtr, PointCloudPtr); // deprecated
 
 	void updateHistory(DepthFrame, DepthFrame);
 	bool isHistoryComplete();

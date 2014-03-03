@@ -1,0 +1,121 @@
+TCompilerIdC
+v6
+r1
+cCheck dependencies
+cCompileC ./CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/i386/CMakeCCompilerId.o /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/CMakeCCompilerId.c normal i386 c com.apple.compilers.llvm.clang.1_0.compiler
+cLd /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/./CompilerIdC normal i386
+cPhaseScriptExecution Run\ Script /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/./CompilerIdC.build/Debug/CompilerIdC.build/Script-2C8FEB8E15DC1A1A00E56A5D.sh
+
+N/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk
+c000000005243E79F00000000000000AA
+t1380181919
+s170
+
+N/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/SDKSettings.plist
+c00000000530FCFA6000000000000044C
+t1393545126
+s1100
+
+N/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/System/Library/CoreServices/SystemVersion.plist
+c00000000530FCFA600000000000001DB
+t1393545126
+s475
+
+N/Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/CMakeCCompilerId.c
+c0000000053147C150000000000002E9F
+t1393851413
+s11935
+
+N/Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/CompilerIdC
+t2
+s0
+
+N/Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/i386/CMakeCCompilerId.o
+t1393851419
+s3460
+
+N/Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/i386/CompilerIdC.LinkFileList
+c0000000053147C1A00000000000000A2
+t1393851418
+s162
+
+N/Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/Script-2C8FEB8E15DC1A1A00E56A5D.sh
+c0000000053147C1A000000000000002A
+t1393851418
+s42
+
+CCheck dependencies
+r0
+lSLF06#21%IDEActivityLogSection1@2#32"com.apple.dt.IDE.BuildLogSection18"Check dependencies18"Check dependenciesb83cfe99b3c4b841^9ef08a9ab3c4b841^---0#1#1#--18"Check dependencies36"22BD2A68-D949-4D3A-8E9C-F6B826DE004A-
+
+CCompileC ./CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/i386/CMakeCCompilerId.o /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/CMakeCCompilerId.c normal i386 c com.apple.compilers.llvm.clang.1_0.compiler
+s415544218.573864
+e415544219.131702
+r1
+xCompileC
+x./CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/i386/CMakeCCompilerId.o
+x/Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/CMakeCCompilerId.c
+xnormal
+xi386
+xc
+xcom.apple.compilers.llvm.clang.1_0.compiler
+d/Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/CMakeCCompilerId.c
+lSLF06#21%IDEActivityLogSection1@2#32"com.apple.dt.IDE.BuildLogSection107"Compile /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/CMakeCCompilerId.c168"CompileC ./CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/i386/CMakeCCompilerId.o CMakeCCompilerId.c normal i386 c com.apple.compilers.llvm.clang.1_0.compiler4913939ab3c4b841^77d7219bb3c4b841^---0#0#1#-19%DVTDocumentLocation2@106"file:///Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/CMakeCCompilerId.c0000000000000000^2567"CompileC ./CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/i386/CMakeCCompilerId.o CMakeCCompilerId.c normal i386 c com.apple.compilers.llvm.clang.1_0.compiler    cd /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC    setenv LANG en_US.US-ASCII    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c -arch i386 -fmessage-length=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit=0 -Wno-trigraphs -fpascal-strings -Os -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-shorten-64-to-32 -Wpointer-sign -Wno-newline-eof -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk -fasm-blocks -fstrict-aliasing -Wdeprecated-declarations -mmacosx-version-min=10.9 -g -fvisibility=hidden -Wno-sign-conversion -I/Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/./CompilerIdC.build/Debug/CompilerIdC.build/CompilerIdC.hmap -I/Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/include -I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -I/Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/./CompilerIdC.build/Debug/CompilerIdC.build/DerivedSources/i386 -I/Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/./CompilerIdC.build/Debug/CompilerIdC.build/DerivedSources -F/Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC -MMD -MT dependencies -MF /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/./CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/i386/CMakeCCompilerId.d --serialize-diagnostics /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/./CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/i386/CMakeCCompilerId.dia -c /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/CMakeCCompilerId.c -o /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/i386/CMakeCCompilerId.o36"047F0402-331A-4CE7-9803-945C5A9A9FAD-
+b7537E8B9-6FCD-4E4F-BB4E-76CA71CA1CD4
+
+CLd /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/./CompilerIdC normal i386
+s415544219.133031
+e415544219.303652
+r1
+xLd
+x/Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/./CompilerIdC
+xnormal
+xi386
+d/Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/i386/CompilerIdC.LinkFileList
+d/Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/i386/CMakeCCompilerId.o
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/libSystem.dylib
+d/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/5.0/lib/darwin/libclang_rt.eprintf.a
+d/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/5.0/lib/darwin/libclang_rt.osx.a
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libcache.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libcommonCrypto.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libcompiler_rt.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libcopyfile.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libcorecrypto.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libdispatch.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libdyld.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libkeymgr.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/liblaunch.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libmacho.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libquarantine.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libremovefile.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libsystem_asl.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libsystem_blocks.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libsystem_c.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libsystem_configuration.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libsystem_dnssd.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libsystem_info.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libsystem_kernel.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libsystem_m.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libsystem_malloc.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libsystem_network.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libsystem_notify.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libsystem_platform.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libsystem_pthread.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libsystem_sandbox.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libunc.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libunwind.dylib
+d/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/lib/system/libxpc.dylib
+lSLF06#21%IDEActivityLogSection1@2#32"com.apple.dt.IDE.BuildLogSection99"Link /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/./CompilerIdC28"Ld ./CompilerIdC normal i386b326229bb3c4b841^e3c64d9bb3c4b841^---0#0#1#--1057"Ld ./CompilerIdC normal i386    cd /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC    setenv MACOSX_DEPLOYMENT_TARGET 10.9    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -arch i386 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk -L/Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC -F/Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC -filelist /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/./CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/i386/CompilerIdC.LinkFileList -mmacosx-version-min=10.9 -Xlinker -dependency_info -Xlinker /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/./CompilerIdC.build/Debug/CompilerIdC.build/Objects-normal/i386/CompilerIdC_dependency_info.dat -o /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/./CompilerIdC36"819F1271-4C70-4BA7-B2B6-343EFB560296-
+b7537E8B9-6FCD-4E4F-BB4E-76CA71CA1CD4
+
+CPhaseScriptExecution Run\ Script /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/./CompilerIdC.build/Debug/CompilerIdC.build/Script-2C8FEB8E15DC1A1A00E56A5D.sh
+s415544219.305237
+e415544219.343003
+r1
+xPhaseScriptExecution
+xRun Script
+x/Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/./CompilerIdC.build/Debug/CompilerIdC.build/Script-2C8FEB8E15DC1A1A00E56A5D.sh
+oGCC_VERSION=com.apple.compilers.llvm.clang.1_0
+lSLF06#21%IDEActivityLogSection1@2#32"com.apple.dt.IDE.BuildLogSection36"Run custom shell script 'Run Script'111"PhaseScriptExecution Run\ Script ./CompilerIdC.build/Debug/CompilerIdC.build/Script-2C8FEB8E15DC1A1A00E56A5D.sha8ac4e9bb3c4b841^3ecf579bb3c4b841^-47"GCC_VERSION=com.apple.compilers.llvm.clang.1_01(21%IDEActivityLogMessage2@47"GCC_VERSION=com.apple.compilers.llvm.clang.1_0-415544219#0#47#-0#-----0#0#1#--375"PhaseScriptExecution Run\ Script ./CompilerIdC.build/Debug/CompilerIdC.build/Script-2C8FEB8E15DC1A1A00E56A5D.sh    cd /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC    /bin/sh -c /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeFiles/2.8.12/CompilerIdC/./CompilerIdC.build/Debug/CompilerIdC.build/Script-2C8FEB8E15DC1A1A00E56A5D.sh36"8590F760-3848-48DD-9CDA-41927305BD21-
+b7537E8B9-6FCD-4E4F-BB4E-76CA71CA1CD4
+

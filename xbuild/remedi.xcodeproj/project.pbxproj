@@ -1,0 +1,1412 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		36FFCAD7E9444ED6BDE61B54 /* ZERO_CHECK */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 75604FE5352E46818DE90FA6 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */;
+			buildPhases = (
+				5AD9A8125196492FA44E1D2C /* CMake Rules */,
+			);
+			dependencies = (
+			);
+			name = ZERO_CHECK;
+			productName = ZERO_CHECK;
+		};
+		43AF43C75E6E457EA069056D /* ALL_BUILD */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 8B394CCA460F4A62A5ABCBE5 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */;
+			buildPhases = (
+				08F019C570704AE7826D8886 /* CMake Rules */,
+			);
+			dependencies = (
+				146A37A2A6B54E15BEA4912B /* PBXTargetDependency */,
+				43D70AD7380448C6AB821A09 /* PBXTargetDependency */,
+			);
+			name = ALL_BUILD;
+			productName = ALL_BUILD;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		10721EA918C4B52000371667 /* BackgroundSubtractor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721E8918C4B52000371667 /* BackgroundSubtractor.cpp */; };
+		10721EAA18C4B52000371667 /* CloudjectDetector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721E8C18C4B52000371667 /* CloudjectDetector.cpp */; };
+		10721EAC18C4B52000371667 /* ColorFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721E9118C4B52000371667 /* ColorFrame.cpp */; };
+		10721EAD18C4B52000371667 /* conversion.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721E9318C4B52000371667 /* conversion.cpp */; };
+		10721EAE18C4B52000371667 /* debug.m in Sources */ = {isa = PBXBuildFile; fileRef = 10721E9518C4B52000371667 /* debug.m */; };
+		10721EAF18C4B52000371667 /* DepthFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721E9618C4B52000371667 /* DepthFrame.cpp */; };
+		10721EB018C4B52000371667 /* Frame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721E9918C4B52000371667 /* Frame.cpp */; };
+		10721EB118C4B52000371667 /* InteractiveRegisterer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721E9B18C4B52000371667 /* InteractiveRegisterer.cpp */; };
+		10721EB218C4B52000371667 /* Monitorizer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721E9E18C4B52000371667 /* Monitorizer.cpp */; };
+		10721EB318C4B52000371667 /* Reader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721EA118C4B52000371667 /* Reader.cpp */; };
+		10721EB418C4B52000371667 /* Remedi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721EA418C4B52000371667 /* Remedi.cpp */; };
+		10721EB518C4B52000371667 /* TableModeler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721EA718C4B52000371667 /* TableModeler.cpp */; };
+		F6AD5CEC8FEB4A848342E2CA /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 43537AED816A4A5BAD98876A /* main.cpp */; settings = {COMPILER_FLAGS = ""; }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		03561C517B24444093AECCF3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2861B47F3E96429AA9A3A32B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 36FFCAD7E9444ED6BDE61B54;
+			remoteInfo = ZERO_CHECK;
+		};
+		221FD1DED61F43DA86C4A1DB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2861B47F3E96429AA9A3A32B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 36FFCAD7E9444ED6BDE61B54;
+			remoteInfo = ZERO_CHECK;
+		};
+		8E22C74E0FC34AD2AFD89A9C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2861B47F3E96429AA9A3A32B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 46686BC30A844669B89C54E1;
+			remoteInfo = remedi;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		10721E8918C4B52000371667 /* BackgroundSubtractor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BackgroundSubtractor.cpp; sourceTree = "<group>"; };
+		10721E8A18C4B52000371667 /* BackgroundSubtractor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BackgroundSubtractor.h; sourceTree = "<group>"; };
+		10721E8B18C4B52000371667 /* Cloudject.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Cloudject.hpp; sourceTree = "<group>"; };
+		10721E8C18C4B52000371667 /* CloudjectDetector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CloudjectDetector.cpp; sourceTree = "<group>"; };
+		10721E8D18C4B52000371667 /* CloudjectDetector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CloudjectDetector.h; sourceTree = "<group>"; };
+		10721E9018C4B52000371667 /* CloudjectModel.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = CloudjectModel.hpp; sourceTree = "<group>"; };
+		10721E9118C4B52000371667 /* ColorFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ColorFrame.cpp; sourceTree = "<group>"; };
+		10721E9218C4B52000371667 /* ColorFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ColorFrame.h; sourceTree = "<group>"; };
+		10721E9318C4B52000371667 /* conversion.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = conversion.cpp; sourceTree = "<group>"; };
+		10721E9418C4B52000371667 /* conversion.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = conversion.h; sourceTree = "<group>"; };
+		10721E9518C4B52000371667 /* debug.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = debug.m; sourceTree = "<group>"; };
+		10721E9618C4B52000371667 /* DepthFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DepthFrame.cpp; sourceTree = "<group>"; };
+		10721E9718C4B52000371667 /* DepthFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DepthFrame.h; sourceTree = "<group>"; };
+		10721E9818C4B52000371667 /* Descriptor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Descriptor.hpp; sourceTree = "<group>"; };
+		10721E9918C4B52000371667 /* Frame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Frame.cpp; sourceTree = "<group>"; };
+		10721E9A18C4B52000371667 /* Frame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Frame.h; sourceTree = "<group>"; };
+		10721E9B18C4B52000371667 /* InteractiveRegisterer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = InteractiveRegisterer.cpp; sourceTree = "<group>"; };
+		10721E9C18C4B52000371667 /* InteractiveRegisterer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = InteractiveRegisterer.h; sourceTree = "<group>"; };
+		10721E9D18C4B52000371667 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		10721E9E18C4B52000371667 /* Monitorizer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Monitorizer.cpp; sourceTree = "<group>"; };
+		10721E9F18C4B52000371667 /* Monitorizer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Monitorizer.h; sourceTree = "<group>"; };
+		10721EA018C4B52000371667 /* MonitorizerParams.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MonitorizerParams.hpp; sourceTree = "<group>"; };
+		10721EA118C4B52000371667 /* Reader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Reader.cpp; sourceTree = "<group>"; };
+		10721EA218C4B52000371667 /* Reader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Reader.h; sourceTree = "<group>"; };
+		10721EA318C4B52000371667 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.md; sourceTree = "<group>"; };
+		10721EA418C4B52000371667 /* Remedi.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Remedi.cpp; sourceTree = "<group>"; };
+		10721EA518C4B52000371667 /* Remedi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Remedi.h; sourceTree = "<group>"; };
+		10721EA618C4B52000371667 /* Table.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Table.hpp; sourceTree = "<group>"; };
+		10721EA718C4B52000371667 /* TableModeler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TableModeler.cpp; sourceTree = "<group>"; };
+		10721EA818C4B52000371667 /* TableModeler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TableModeler.h; sourceTree = "<group>"; };
+		43537AED816A4A5BAD98876A /* main.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; path = main.cpp; sourceTree = SOURCE_ROOT; };
+		7F7A1D454D4C4C0CA5B8CDC6 /* CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		9C7258635DE94F6E89753E13 /* remedi */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = remedi; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		10F67897CFF0479B953F54FE /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				3C4DE25E65DE4AF992BB85C1 /* ALL_BUILD */,
+				94036A4EBB044C81BA299235 /* ZERO_CHECK */,
+				86D77857DE82494483F89798 /* remedi */,
+			);
+			name = Sources;
+			sourceTree = "<group>";
+		};
+		16A9AE1BE9534B2CA7208E25 /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				10721E8918C4B52000371667 /* BackgroundSubtractor.cpp */,
+				10721E8A18C4B52000371667 /* BackgroundSubtractor.h */,
+				10721E8B18C4B52000371667 /* Cloudject.hpp */,
+				10721E8C18C4B52000371667 /* CloudjectDetector.cpp */,
+				10721E8D18C4B52000371667 /* CloudjectDetector.h */,
+				10721E9018C4B52000371667 /* CloudjectModel.hpp */,
+				10721E9118C4B52000371667 /* ColorFrame.cpp */,
+				10721E9218C4B52000371667 /* ColorFrame.h */,
+				10721E9318C4B52000371667 /* conversion.cpp */,
+				10721E9418C4B52000371667 /* conversion.h */,
+				10721E9518C4B52000371667 /* debug.m */,
+				10721E9618C4B52000371667 /* DepthFrame.cpp */,
+				10721E9718C4B52000371667 /* DepthFrame.h */,
+				10721E9818C4B52000371667 /* Descriptor.hpp */,
+				10721E9918C4B52000371667 /* Frame.cpp */,
+				10721E9A18C4B52000371667 /* Frame.h */,
+				10721E9B18C4B52000371667 /* InteractiveRegisterer.cpp */,
+				10721E9C18C4B52000371667 /* InteractiveRegisterer.h */,
+				10721E9D18C4B52000371667 /* LICENSE */,
+				10721E9E18C4B52000371667 /* Monitorizer.cpp */,
+				10721E9F18C4B52000371667 /* Monitorizer.h */,
+				10721EA018C4B52000371667 /* MonitorizerParams.hpp */,
+				10721EA118C4B52000371667 /* Reader.cpp */,
+				10721EA218C4B52000371667 /* Reader.h */,
+				10721EA318C4B52000371667 /* README.md */,
+				10721EA418C4B52000371667 /* Remedi.cpp */,
+				10721EA518C4B52000371667 /* Remedi.h */,
+				10721EA618C4B52000371667 /* Table.hpp */,
+				10721EA718C4B52000371667 /* TableModeler.cpp */,
+				10721EA818C4B52000371667 /* TableModeler.h */,
+				43537AED816A4A5BAD98876A /* main.cpp */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		3C4DE25E65DE4AF992BB85C1 /* ALL_BUILD */ = {
+			isa = PBXGroup;
+			children = (
+				46AEFB1E5A874FC0A1E0CB35 /* CMake Rules */,
+				7F7A1D454D4C4C0CA5B8CDC6 /* CMakeLists.txt */,
+			);
+			name = ALL_BUILD;
+			sourceTree = "<group>";
+		};
+		46AEFB1E5A874FC0A1E0CB35 /* CMake Rules */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = "CMake Rules";
+			sourceTree = "<group>";
+		};
+		49D9EFF8E89D472EA069BDAD /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		86D77857DE82494483F89798 /* remedi */ = {
+			isa = PBXGroup;
+			children = (
+				16A9AE1BE9534B2CA7208E25 /* Source Files */,
+				7F7A1D454D4C4C0CA5B8CDC6 /* CMakeLists.txt */,
+			);
+			name = remedi;
+			sourceTree = "<group>";
+		};
+		881735B9599F478F91FC2A14 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9C7258635DE94F6E89753E13 /* remedi */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		8FB04694E08148E38DDF31F1 = {
+			isa = PBXGroup;
+			children = (
+				10F67897CFF0479B953F54FE /* Sources */,
+				49D9EFF8E89D472EA069BDAD /* Resources */,
+				881735B9599F478F91FC2A14 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		94036A4EBB044C81BA299235 /* ZERO_CHECK */ = {
+			isa = PBXGroup;
+			children = (
+				97ED2F61CC6C4F04AE7734CD /* CMake Rules */,
+				7F7A1D454D4C4C0CA5B8CDC6 /* CMakeLists.txt */,
+			);
+			name = ZERO_CHECK;
+			sourceTree = "<group>";
+		};
+		97ED2F61CC6C4F04AE7734CD /* CMake Rules */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = "CMake Rules";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		46686BC30A844669B89C54E1 /* remedi */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ECDEA9107F8B4FE7A87D0BE6 /* Build configuration list for PBXNativeTarget "remedi" */;
+			buildPhases = (
+				7E36965A82E0414AB5E68E89 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				26C90628818B4503B2A48DE0 /* PBXTargetDependency */,
+			);
+			name = remedi;
+			productName = remedi;
+			productReference = 9C7258635DE94F6E89753E13 /* remedi */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		2861B47F3E96429AA9A3A32B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+			};
+			buildConfigurationList = 166C85DEA68B4BE0B9E97E8C /* Build configuration list for PBXProject "remedi" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 8FB04694E08148E38DDF31F1;
+			projectDirPath = ..;
+			projectRoot = "";
+			targets = (
+				43AF43C75E6E457EA069056D /* ALL_BUILD */,
+				36FFCAD7E9444ED6BDE61B54 /* ZERO_CHECK */,
+				46686BC30A844669B89C54E1 /* remedi */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		08F019C570704AE7826D8886 /* CMake Rules */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake Rules";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "make -C /Users/aclapes/Documents/Code/Github/ReMedi/xbuild -f /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeScripts/ALL_BUILD_cmakeRulesBuildPhase.make$CONFIGURATION all";
+			showEnvVarsInLog = 0;
+		};
+		5AD9A8125196492FA44E1D2C /* CMake Rules */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake Rules";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "make -C /Users/aclapes/Documents/Code/Github/ReMedi/xbuild -f /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/CMakeScripts/ZERO_CHECK_cmakeRulesBuildPhase.make$CONFIGURATION all";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7E36965A82E0414AB5E68E89 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				10721EA918C4B52000371667 /* BackgroundSubtractor.cpp in Sources */,
+				10721EAC18C4B52000371667 /* ColorFrame.cpp in Sources */,
+				10721EB018C4B52000371667 /* Frame.cpp in Sources */,
+				10721EAE18C4B52000371667 /* debug.m in Sources */,
+				10721EB518C4B52000371667 /* TableModeler.cpp in Sources */,
+				10721EAD18C4B52000371667 /* conversion.cpp in Sources */,
+				10721EB118C4B52000371667 /* InteractiveRegisterer.cpp in Sources */,
+				10721EAA18C4B52000371667 /* CloudjectDetector.cpp in Sources */,
+				10721EB218C4B52000371667 /* Monitorizer.cpp in Sources */,
+				10721EB418C4B52000371667 /* Remedi.cpp in Sources */,
+				F6AD5CEC8FEB4A848342E2CA /* main.cpp in Sources */,
+				10721EB318C4B52000371667 /* Reader.cpp in Sources */,
+				10721EAF18C4B52000371667 /* DepthFrame.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		146A37A2A6B54E15BEA4912B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 36FFCAD7E9444ED6BDE61B54 /* ZERO_CHECK */;
+			targetProxy = 221FD1DED61F43DA86C4A1DB /* PBXContainerItemProxy */;
+		};
+		26C90628818B4503B2A48DE0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 36FFCAD7E9444ED6BDE61B54 /* ZERO_CHECK */;
+			targetProxy = 03561C517B24444093AECCF3 /* PBXContainerItemProxy */;
+		};
+		43D70AD7380448C6AB821A09 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 46686BC30A844669B89C54E1 /* remedi */;
+			targetProxy = 8E22C74E0FC34AD2AFD89A9C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		16FF2C3096044489BD806566 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					DISABLE_OPENNI,
+					DISABLE_PCAP,
+					DISABLE_PNG,
+					EIGEN_USE_NEW_STDVECTOR,
+					EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET,
+					FLANN_STATIC,
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/opt/local/include/vtk-5.10",
+					"/usr/local/include/pcl-1.7",
+					/opt/local/include/eigen3,
+					/opt/local/include,
+					/usr/local/include/opencv,
+					/usr/local/include,
+				);
+				INSTALL_PATH = "";
+				OTHER_CFLAGS = "  ";
+				OTHER_LDFLAGS = " ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/aclapes/Documents/Code/Github/ReMedi/xbuild;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = MinSizeRel;
+		};
+		388DC06DECC64B57814EDA1A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					DISABLE_OPENNI,
+					DISABLE_PCAP,
+					DISABLE_PNG,
+					EIGEN_USE_NEW_STDVECTOR,
+					EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET,
+					FLANN_STATIC,
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/opt/local/include/vtk-5.10",
+					"/usr/local/include/pcl-1.7",
+					/opt/local/include/eigen3,
+					/opt/local/include,
+					/usr/local/include/opencv,
+					/usr/local/include,
+				);
+				INSTALL_PATH = "";
+				OTHER_CFLAGS = "  ";
+				OTHER_LDFLAGS = " ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/aclapes/Documents/Code/Github/ReMedi/xbuild;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Debug;
+		};
+		5588EBB30F2642E38DA95D5E /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					DISABLE_OPENNI,
+					DISABLE_PCAP,
+					DISABLE_PNG,
+					EIGEN_USE_NEW_STDVECTOR,
+					EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET,
+					FLANN_STATIC,
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/opt/local/include/vtk-5.10",
+					"/usr/local/include/pcl-1.7",
+					/opt/local/include/eigen3,
+					/opt/local/include,
+					/usr/local/include/opencv,
+					/usr/local/include,
+				);
+				INSTALL_PATH = "";
+				OTHER_CFLAGS = "  ";
+				OTHER_LDFLAGS = " ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/aclapes/Documents/Code/Github/ReMedi/xbuild;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = RelWithDebInfo;
+		};
+		5884DC5BAA2641AE80509D31 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					DISABLE_OPENNI,
+					DISABLE_PCAP,
+					DISABLE_PNG,
+					EIGEN_USE_NEW_STDVECTOR,
+					EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET,
+					FLANN_STATIC,
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/opt/local/include/vtk-5.10",
+					"/usr/local/include/pcl-1.7",
+					/opt/local/include/eigen3,
+					/opt/local/include,
+					/usr/local/include/opencv,
+					/usr/local/include,
+				);
+				INSTALL_PATH = "";
+				LD_RUNPATH_SEARCH_PATHS = /usr/local/lib;
+				LIBRARY_SEARCH_PATHS = (
+					"/usr/local/lib/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)",
+					/usr/local/lib,
+				);
+				OTHER_CFLAGS = "      ";
+				OTHER_CPLUSPLUSFLAGS = "      ";
+				OTHER_LDFLAGS = (
+					"-Wl,-search_paths_first",
+					"-Wl,-headerpad_max_install_names",
+					/usr/local/lib/libopencv_videostab.2.4.8.dylib,
+					/usr/local/lib/libopencv_video.2.4.8.dylib,
+					/usr/local/lib/libopencv_ts.a,
+					/usr/local/lib/libopencv_superres.2.4.8.dylib,
+					/usr/local/lib/libopencv_stitching.2.4.8.dylib,
+					/usr/local/lib/libopencv_photo.2.4.8.dylib,
+					/usr/local/lib/libopencv_ocl.2.4.8.dylib,
+					/usr/local/lib/libopencv_objdetect.2.4.8.dylib,
+					/usr/local/lib/libopencv_nonfree.2.4.8.dylib,
+					/usr/local/lib/libopencv_ml.2.4.8.dylib,
+					/usr/local/lib/libopencv_legacy.2.4.8.dylib,
+					/usr/local/lib/libopencv_imgproc.2.4.8.dylib,
+					/usr/local/lib/libopencv_highgui.2.4.8.dylib,
+					/usr/local/lib/libopencv_gpu.2.4.8.dylib,
+					/usr/local/lib/libopencv_flann.2.4.8.dylib,
+					/usr/local/lib/libopencv_features2d.2.4.8.dylib,
+					/usr/local/lib/libopencv_core.2.4.8.dylib,
+					/usr/local/lib/libopencv_contrib.2.4.8.dylib,
+					/usr/local/lib/libopencv_calib3d.2.4.8.dylib,
+					"/opt/local/lib/libboost_system-mt.dylib",
+					"/opt/local/lib/libboost_filesystem-mt.dylib",
+					"/opt/local/lib/libboost_thread-mt.dylib",
+					"/opt/local/lib/libboost_date_time-mt.dylib",
+					"/opt/local/lib/libboost_iostreams-mt.dylib",
+					"/opt/local/lib/libboost_serialization-mt.dylib",
+					/usr/local/lib/libpcl_common.dylib,
+					/usr/local/lib/libpcl_octree.dylib,
+					"/opt/local/lib/vtk-5.10/libvtkCommon.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkRendering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkHybrid.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkCharts.5.10.1.dylib",
+					/usr/local/lib/libpcl_io.dylib,
+					"/opt/local/lib/libflann_cpp_s-gd.a",
+					/usr/local/lib/libpcl_kdtree.dylib,
+					/usr/local/lib/libpcl_search.dylib,
+					/usr/local/lib/libpcl_sample_consensus.dylib,
+					/usr/local/lib/libpcl_filters.dylib,
+					/usr/local/lib/libpcl_features.dylib,
+					/usr/local/lib/libpcl_ml.dylib,
+					/usr/local/lib/libpcl_segmentation.dylib,
+					/usr/local/lib/libpcl_visualization.dylib,
+					/opt/local/lib/libqhull6.dylib,
+					/usr/local/lib/libpcl_surface.dylib,
+					/usr/local/lib/libpcl_registration.dylib,
+					/usr/local/lib/libpcl_keypoints.dylib,
+					/usr/local/lib/libpcl_tracking.dylib,
+					/usr/local/lib/libpcl_recognition.dylib,
+					/usr/local/lib/libpcl_stereo.dylib,
+					/usr/local/lib/libpcl_outofcore.dylib,
+					/usr/local/lib/libpcl_people.dylib,
+					"/opt/local/lib/libboost_system-mt.dylib",
+					"/opt/local/lib/libboost_filesystem-mt.dylib",
+					"/opt/local/lib/libboost_thread-mt.dylib",
+					"/opt/local/lib/libboost_date_time-mt.dylib",
+					"/opt/local/lib/libboost_iostreams-mt.dylib",
+					"/opt/local/lib/libboost_serialization-mt.dylib",
+					/opt/local/lib/libqhull6.dylib,
+					"/opt/local/lib/libflann_cpp_s-gd.a",
+					"/opt/local/lib/vtk-5.10/libvtkCommon.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkRendering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkHybrid.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkCharts.5.10.1.dylib",
+					/usr/local/lib/libopencv_nonfree.2.4.8.dylib,
+					/usr/local/lib/libopencv_ocl.2.4.8.dylib,
+					/usr/local/lib/libopencv_gpu.2.4.8.dylib,
+					/usr/local/lib/libopencv_photo.2.4.8.dylib,
+					/usr/local/lib/libopencv_objdetect.2.4.8.dylib,
+					/usr/local/lib/libopencv_legacy.2.4.8.dylib,
+					/usr/local/lib/libopencv_video.2.4.8.dylib,
+					/usr/local/lib/libopencv_ml.2.4.8.dylib,
+					/usr/local/lib/libopencv_calib3d.2.4.8.dylib,
+					/usr/local/lib/libopencv_features2d.2.4.8.dylib,
+					/usr/local/lib/libopencv_highgui.2.4.8.dylib,
+					/usr/local/lib/libopencv_imgproc.2.4.8.dylib,
+					/usr/local/lib/libopencv_flann.2.4.8.dylib,
+					/usr/local/lib/libopencv_core.2.4.8.dylib,
+					/usr/local/lib/libpcl_common.dylib,
+					/usr/local/lib/libpcl_octree.dylib,
+					/usr/local/lib/libpcl_io.dylib,
+					/usr/local/lib/libpcl_kdtree.dylib,
+					/usr/local/lib/libpcl_search.dylib,
+					/usr/local/lib/libpcl_sample_consensus.dylib,
+					/usr/local/lib/libpcl_filters.dylib,
+					/usr/local/lib/libpcl_features.dylib,
+					/usr/local/lib/libpcl_ml.dylib,
+					/usr/local/lib/libpcl_segmentation.dylib,
+					/usr/local/lib/libpcl_visualization.dylib,
+					/usr/local/lib/libpcl_surface.dylib,
+					/usr/local/lib/libpcl_registration.dylib,
+					/usr/local/lib/libpcl_keypoints.dylib,
+					/usr/local/lib/libpcl_tracking.dylib,
+					/usr/local/lib/libpcl_recognition.dylib,
+					/usr/local/lib/libpcl_stereo.dylib,
+					/usr/local/lib/libpcl_outofcore.dylib,
+					/usr/local/lib/libpcl_people.dylib,
+					"/opt/local/lib/vtk-5.10/libvtkViews.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkInfovis.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkWidgets.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkHybrid.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkVolumeRendering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkRendering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkGraphics.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkImaging.5.10.1.dylib",
+					/opt/local/lib/libQtGui.dylib,
+					/opt/local/lib/libQtSql.dylib,
+					/opt/local/lib/libQtCore.dylib,
+					"-lobjc",
+					"/opt/local/lib/vtk-5.10/libvtkIO.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkFiltering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkCommon.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtksys.5.10.1.dylib",
+					"-lm",
+				);
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = remedi;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/aclapes/Documents/Code/Github/ReMedi/xbuild;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Debug;
+		};
+		58858A6163644B819CF33CA3 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					DISABLE_OPENNI,
+					DISABLE_PCAP,
+					DISABLE_PNG,
+					EIGEN_USE_NEW_STDVECTOR,
+					EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET,
+					FLANN_STATIC,
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/opt/local/include/vtk-5.10",
+					"/usr/local/include/pcl-1.7",
+					/opt/local/include/eigen3,
+					/opt/local/include,
+					/usr/local/include/opencv,
+					/usr/local/include,
+				);
+				INSTALL_PATH = "";
+				LD_RUNPATH_SEARCH_PATHS = /usr/local/lib;
+				LIBRARY_SEARCH_PATHS = (
+					"/usr/local/lib/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)",
+					/usr/local/lib,
+				);
+				OTHER_CFLAGS = "      -DNDEBUG  ";
+				OTHER_CPLUSPLUSFLAGS = "      -DNDEBUG  ";
+				OTHER_LDFLAGS = (
+					"-Wl,-search_paths_first",
+					"-Wl,-headerpad_max_install_names",
+					/usr/local/lib/libopencv_videostab.2.4.8.dylib,
+					/usr/local/lib/libopencv_video.2.4.8.dylib,
+					/usr/local/lib/libopencv_ts.a,
+					/usr/local/lib/libopencv_superres.2.4.8.dylib,
+					/usr/local/lib/libopencv_stitching.2.4.8.dylib,
+					/usr/local/lib/libopencv_photo.2.4.8.dylib,
+					/usr/local/lib/libopencv_ocl.2.4.8.dylib,
+					/usr/local/lib/libopencv_objdetect.2.4.8.dylib,
+					/usr/local/lib/libopencv_nonfree.2.4.8.dylib,
+					/usr/local/lib/libopencv_ml.2.4.8.dylib,
+					/usr/local/lib/libopencv_legacy.2.4.8.dylib,
+					/usr/local/lib/libopencv_imgproc.2.4.8.dylib,
+					/usr/local/lib/libopencv_highgui.2.4.8.dylib,
+					/usr/local/lib/libopencv_gpu.2.4.8.dylib,
+					/usr/local/lib/libopencv_flann.2.4.8.dylib,
+					/usr/local/lib/libopencv_features2d.2.4.8.dylib,
+					/usr/local/lib/libopencv_core.2.4.8.dylib,
+					/usr/local/lib/libopencv_contrib.2.4.8.dylib,
+					/usr/local/lib/libopencv_calib3d.2.4.8.dylib,
+					"/opt/local/lib/libboost_system-mt.dylib",
+					"/opt/local/lib/libboost_filesystem-mt.dylib",
+					"/opt/local/lib/libboost_thread-mt.dylib",
+					"/opt/local/lib/libboost_date_time-mt.dylib",
+					"/opt/local/lib/libboost_iostreams-mt.dylib",
+					"/opt/local/lib/libboost_serialization-mt.dylib",
+					/usr/local/lib/libpcl_common.dylib,
+					/usr/local/lib/libpcl_octree.dylib,
+					"/opt/local/lib/vtk-5.10/libvtkCommon.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkRendering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkHybrid.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkCharts.5.10.1.dylib",
+					/usr/local/lib/libpcl_io.dylib,
+					/opt/local/lib/libflann_cpp_s.a,
+					/usr/local/lib/libpcl_kdtree.dylib,
+					/usr/local/lib/libpcl_search.dylib,
+					/usr/local/lib/libpcl_sample_consensus.dylib,
+					/usr/local/lib/libpcl_filters.dylib,
+					/usr/local/lib/libpcl_features.dylib,
+					/usr/local/lib/libpcl_ml.dylib,
+					/usr/local/lib/libpcl_segmentation.dylib,
+					/usr/local/lib/libpcl_visualization.dylib,
+					/opt/local/lib/libqhullstatic.a,
+					/usr/local/lib/libpcl_surface.dylib,
+					/usr/local/lib/libpcl_registration.dylib,
+					/usr/local/lib/libpcl_keypoints.dylib,
+					/usr/local/lib/libpcl_tracking.dylib,
+					/usr/local/lib/libpcl_recognition.dylib,
+					/usr/local/lib/libpcl_stereo.dylib,
+					/usr/local/lib/libpcl_outofcore.dylib,
+					/usr/local/lib/libpcl_people.dylib,
+					"/opt/local/lib/libboost_system-mt.dylib",
+					"/opt/local/lib/libboost_filesystem-mt.dylib",
+					"/opt/local/lib/libboost_thread-mt.dylib",
+					"/opt/local/lib/libboost_date_time-mt.dylib",
+					"/opt/local/lib/libboost_iostreams-mt.dylib",
+					"/opt/local/lib/libboost_serialization-mt.dylib",
+					/opt/local/lib/libqhullstatic.a,
+					/opt/local/lib/libflann_cpp_s.a,
+					"/opt/local/lib/vtk-5.10/libvtkCommon.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkRendering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkHybrid.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkCharts.5.10.1.dylib",
+					/usr/local/lib/libopencv_nonfree.2.4.8.dylib,
+					/usr/local/lib/libopencv_ocl.2.4.8.dylib,
+					/usr/local/lib/libopencv_gpu.2.4.8.dylib,
+					/usr/local/lib/libopencv_photo.2.4.8.dylib,
+					/usr/local/lib/libopencv_objdetect.2.4.8.dylib,
+					/usr/local/lib/libopencv_legacy.2.4.8.dylib,
+					/usr/local/lib/libopencv_video.2.4.8.dylib,
+					/usr/local/lib/libopencv_ml.2.4.8.dylib,
+					/usr/local/lib/libopencv_calib3d.2.4.8.dylib,
+					/usr/local/lib/libopencv_features2d.2.4.8.dylib,
+					/usr/local/lib/libopencv_highgui.2.4.8.dylib,
+					/usr/local/lib/libopencv_imgproc.2.4.8.dylib,
+					/usr/local/lib/libopencv_flann.2.4.8.dylib,
+					/usr/local/lib/libopencv_core.2.4.8.dylib,
+					/usr/local/lib/libpcl_common.dylib,
+					/usr/local/lib/libpcl_octree.dylib,
+					/usr/local/lib/libpcl_io.dylib,
+					/usr/local/lib/libpcl_kdtree.dylib,
+					/usr/local/lib/libpcl_search.dylib,
+					/usr/local/lib/libpcl_sample_consensus.dylib,
+					/usr/local/lib/libpcl_filters.dylib,
+					/usr/local/lib/libpcl_features.dylib,
+					/usr/local/lib/libpcl_ml.dylib,
+					/usr/local/lib/libpcl_segmentation.dylib,
+					/usr/local/lib/libpcl_visualization.dylib,
+					/usr/local/lib/libpcl_surface.dylib,
+					/usr/local/lib/libpcl_registration.dylib,
+					/usr/local/lib/libpcl_keypoints.dylib,
+					/usr/local/lib/libpcl_tracking.dylib,
+					/usr/local/lib/libpcl_recognition.dylib,
+					/usr/local/lib/libpcl_stereo.dylib,
+					/usr/local/lib/libpcl_outofcore.dylib,
+					/usr/local/lib/libpcl_people.dylib,
+					"/opt/local/lib/vtk-5.10/libvtkViews.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkInfovis.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkWidgets.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkHybrid.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkVolumeRendering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkRendering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkGraphics.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkImaging.5.10.1.dylib",
+					/opt/local/lib/libQtGui.dylib,
+					/opt/local/lib/libQtSql.dylib,
+					/opt/local/lib/libQtCore.dylib,
+					"-lobjc",
+					"/opt/local/lib/vtk-5.10/libvtkIO.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkFiltering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkCommon.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtksys.5.10.1.dylib",
+					"-lm",
+				);
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = remedi;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/aclapes/Documents/Code/Github/ReMedi/xbuild;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = MinSizeRel;
+		};
+		604A35CDD42D4EC2B5F94499 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk;
+				SYMROOT = /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/build;
+			};
+			name = RelWithDebInfo;
+		};
+		61702B3B87A8410AB77905C5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					DISABLE_OPENNI,
+					DISABLE_PCAP,
+					DISABLE_PNG,
+					EIGEN_USE_NEW_STDVECTOR,
+					EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET,
+					FLANN_STATIC,
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/opt/local/include/vtk-5.10",
+					"/usr/local/include/pcl-1.7",
+					/opt/local/include/eigen3,
+					/opt/local/include,
+					/usr/local/include/opencv,
+					/usr/local/include,
+				);
+				INSTALL_PATH = "";
+				OTHER_CFLAGS = "  ";
+				OTHER_LDFLAGS = " ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/aclapes/Documents/Code/Github/ReMedi/xbuild;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Debug;
+		};
+		68A777D345354CBA992AF8EB /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					DISABLE_OPENNI,
+					DISABLE_PCAP,
+					DISABLE_PNG,
+					EIGEN_USE_NEW_STDVECTOR,
+					EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET,
+					FLANN_STATIC,
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/opt/local/include/vtk-5.10",
+					"/usr/local/include/pcl-1.7",
+					/opt/local/include/eigen3,
+					/opt/local/include,
+					/usr/local/include/opencv,
+					/usr/local/include,
+				);
+				INSTALL_PATH = "";
+				LD_RUNPATH_SEARCH_PATHS = /usr/local/lib;
+				LIBRARY_SEARCH_PATHS = (
+					"/usr/local/lib/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)",
+					/usr/local/lib,
+				);
+				OTHER_CFLAGS = "         -DNDEBUG  ";
+				OTHER_CPLUSPLUSFLAGS = "         -DNDEBUG  ";
+				OTHER_LDFLAGS = (
+					"-Wl,-search_paths_first",
+					"-Wl,-headerpad_max_install_names",
+					/usr/local/lib/libopencv_videostab.2.4.8.dylib,
+					/usr/local/lib/libopencv_video.2.4.8.dylib,
+					/usr/local/lib/libopencv_ts.a,
+					/usr/local/lib/libopencv_superres.2.4.8.dylib,
+					/usr/local/lib/libopencv_stitching.2.4.8.dylib,
+					/usr/local/lib/libopencv_photo.2.4.8.dylib,
+					/usr/local/lib/libopencv_ocl.2.4.8.dylib,
+					/usr/local/lib/libopencv_objdetect.2.4.8.dylib,
+					/usr/local/lib/libopencv_nonfree.2.4.8.dylib,
+					/usr/local/lib/libopencv_ml.2.4.8.dylib,
+					/usr/local/lib/libopencv_legacy.2.4.8.dylib,
+					/usr/local/lib/libopencv_imgproc.2.4.8.dylib,
+					/usr/local/lib/libopencv_highgui.2.4.8.dylib,
+					/usr/local/lib/libopencv_gpu.2.4.8.dylib,
+					/usr/local/lib/libopencv_flann.2.4.8.dylib,
+					/usr/local/lib/libopencv_features2d.2.4.8.dylib,
+					/usr/local/lib/libopencv_core.2.4.8.dylib,
+					/usr/local/lib/libopencv_contrib.2.4.8.dylib,
+					/usr/local/lib/libopencv_calib3d.2.4.8.dylib,
+					"/opt/local/lib/libboost_system-mt.dylib",
+					"/opt/local/lib/libboost_filesystem-mt.dylib",
+					"/opt/local/lib/libboost_thread-mt.dylib",
+					"/opt/local/lib/libboost_date_time-mt.dylib",
+					"/opt/local/lib/libboost_iostreams-mt.dylib",
+					"/opt/local/lib/libboost_serialization-mt.dylib",
+					/usr/local/lib/libpcl_common.dylib,
+					/usr/local/lib/libpcl_octree.dylib,
+					"/opt/local/lib/vtk-5.10/libvtkCommon.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkRendering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkHybrid.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkCharts.5.10.1.dylib",
+					/usr/local/lib/libpcl_io.dylib,
+					/opt/local/lib/libflann_cpp_s.a,
+					/usr/local/lib/libpcl_kdtree.dylib,
+					/usr/local/lib/libpcl_search.dylib,
+					/usr/local/lib/libpcl_sample_consensus.dylib,
+					/usr/local/lib/libpcl_filters.dylib,
+					/usr/local/lib/libpcl_features.dylib,
+					/usr/local/lib/libpcl_ml.dylib,
+					/usr/local/lib/libpcl_segmentation.dylib,
+					/usr/local/lib/libpcl_visualization.dylib,
+					/opt/local/lib/libqhullstatic.a,
+					/usr/local/lib/libpcl_surface.dylib,
+					/usr/local/lib/libpcl_registration.dylib,
+					/usr/local/lib/libpcl_keypoints.dylib,
+					/usr/local/lib/libpcl_tracking.dylib,
+					/usr/local/lib/libpcl_recognition.dylib,
+					/usr/local/lib/libpcl_stereo.dylib,
+					/usr/local/lib/libpcl_outofcore.dylib,
+					/usr/local/lib/libpcl_people.dylib,
+					"/opt/local/lib/libboost_system-mt.dylib",
+					"/opt/local/lib/libboost_filesystem-mt.dylib",
+					"/opt/local/lib/libboost_thread-mt.dylib",
+					"/opt/local/lib/libboost_date_time-mt.dylib",
+					"/opt/local/lib/libboost_iostreams-mt.dylib",
+					"/opt/local/lib/libboost_serialization-mt.dylib",
+					/opt/local/lib/libqhullstatic.a,
+					/opt/local/lib/libflann_cpp_s.a,
+					"/opt/local/lib/vtk-5.10/libvtkCommon.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkRendering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkHybrid.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkCharts.5.10.1.dylib",
+					/usr/local/lib/libopencv_nonfree.2.4.8.dylib,
+					/usr/local/lib/libopencv_ocl.2.4.8.dylib,
+					/usr/local/lib/libopencv_gpu.2.4.8.dylib,
+					/usr/local/lib/libopencv_photo.2.4.8.dylib,
+					/usr/local/lib/libopencv_objdetect.2.4.8.dylib,
+					/usr/local/lib/libopencv_legacy.2.4.8.dylib,
+					/usr/local/lib/libopencv_video.2.4.8.dylib,
+					/usr/local/lib/libopencv_ml.2.4.8.dylib,
+					/usr/local/lib/libopencv_calib3d.2.4.8.dylib,
+					/usr/local/lib/libopencv_features2d.2.4.8.dylib,
+					/usr/local/lib/libopencv_highgui.2.4.8.dylib,
+					/usr/local/lib/libopencv_imgproc.2.4.8.dylib,
+					/usr/local/lib/libopencv_flann.2.4.8.dylib,
+					/usr/local/lib/libopencv_core.2.4.8.dylib,
+					/usr/local/lib/libpcl_common.dylib,
+					/usr/local/lib/libpcl_octree.dylib,
+					/usr/local/lib/libpcl_io.dylib,
+					/usr/local/lib/libpcl_kdtree.dylib,
+					/usr/local/lib/libpcl_search.dylib,
+					/usr/local/lib/libpcl_sample_consensus.dylib,
+					/usr/local/lib/libpcl_filters.dylib,
+					/usr/local/lib/libpcl_features.dylib,
+					/usr/local/lib/libpcl_ml.dylib,
+					/usr/local/lib/libpcl_segmentation.dylib,
+					/usr/local/lib/libpcl_visualization.dylib,
+					/usr/local/lib/libpcl_surface.dylib,
+					/usr/local/lib/libpcl_registration.dylib,
+					/usr/local/lib/libpcl_keypoints.dylib,
+					/usr/local/lib/libpcl_tracking.dylib,
+					/usr/local/lib/libpcl_recognition.dylib,
+					/usr/local/lib/libpcl_stereo.dylib,
+					/usr/local/lib/libpcl_outofcore.dylib,
+					/usr/local/lib/libpcl_people.dylib,
+					"/opt/local/lib/vtk-5.10/libvtkViews.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkInfovis.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkWidgets.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkHybrid.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkVolumeRendering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkRendering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkGraphics.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkImaging.5.10.1.dylib",
+					/opt/local/lib/libQtGui.dylib,
+					/opt/local/lib/libQtSql.dylib,
+					/opt/local/lib/libQtCore.dylib,
+					"-lobjc",
+					"/opt/local/lib/vtk-5.10/libvtkIO.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkFiltering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkCommon.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtksys.5.10.1.dylib",
+					"-lm",
+				);
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = remedi;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/aclapes/Documents/Code/Github/ReMedi/xbuild;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = RelWithDebInfo;
+		};
+		71480FD486FE41169FCB6377 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					DISABLE_OPENNI,
+					DISABLE_PCAP,
+					DISABLE_PNG,
+					EIGEN_USE_NEW_STDVECTOR,
+					EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET,
+					FLANN_STATIC,
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/opt/local/include/vtk-5.10",
+					"/usr/local/include/pcl-1.7",
+					/opt/local/include/eigen3,
+					/opt/local/include,
+					/usr/local/include/opencv,
+					/usr/local/include,
+				);
+				INSTALL_PATH = "";
+				OTHER_CFLAGS = "  ";
+				OTHER_LDFLAGS = " ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/aclapes/Documents/Code/Github/ReMedi/xbuild;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Release;
+		};
+		8179B2B4063748B699EA130E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk;
+				SYMROOT = /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/build;
+			};
+			name = Debug;
+		};
+		8D08164632C44C5EA3C8640B /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk;
+				SYMROOT = /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/build;
+			};
+			name = MinSizeRel;
+		};
+		9F1E8CFA7A63421CAF32ADFB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk;
+				SYMROOT = /Users/aclapes/Documents/Code/Github/ReMedi/xbuild/build;
+			};
+			name = Release;
+		};
+		BE974901F41F4092B34E51A9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					DISABLE_OPENNI,
+					DISABLE_PCAP,
+					DISABLE_PNG,
+					EIGEN_USE_NEW_STDVECTOR,
+					EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET,
+					FLANN_STATIC,
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/opt/local/include/vtk-5.10",
+					"/usr/local/include/pcl-1.7",
+					/opt/local/include/eigen3,
+					/opt/local/include,
+					/usr/local/include/opencv,
+					/usr/local/include,
+				);
+				INSTALL_PATH = "";
+				LD_RUNPATH_SEARCH_PATHS = /usr/local/lib;
+				LIBRARY_SEARCH_PATHS = (
+					"/usr/local/lib/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)",
+					/usr/local/lib,
+				);
+				OTHER_CFLAGS = "      -DNDEBUG  ";
+				OTHER_CPLUSPLUSFLAGS = "      -DNDEBUG  ";
+				OTHER_LDFLAGS = (
+					"-Wl,-search_paths_first",
+					"-Wl,-headerpad_max_install_names",
+					/usr/local/lib/libopencv_videostab.2.4.8.dylib,
+					/usr/local/lib/libopencv_video.2.4.8.dylib,
+					/usr/local/lib/libopencv_ts.a,
+					/usr/local/lib/libopencv_superres.2.4.8.dylib,
+					/usr/local/lib/libopencv_stitching.2.4.8.dylib,
+					/usr/local/lib/libopencv_photo.2.4.8.dylib,
+					/usr/local/lib/libopencv_ocl.2.4.8.dylib,
+					/usr/local/lib/libopencv_objdetect.2.4.8.dylib,
+					/usr/local/lib/libopencv_nonfree.2.4.8.dylib,
+					/usr/local/lib/libopencv_ml.2.4.8.dylib,
+					/usr/local/lib/libopencv_legacy.2.4.8.dylib,
+					/usr/local/lib/libopencv_imgproc.2.4.8.dylib,
+					/usr/local/lib/libopencv_highgui.2.4.8.dylib,
+					/usr/local/lib/libopencv_gpu.2.4.8.dylib,
+					/usr/local/lib/libopencv_flann.2.4.8.dylib,
+					/usr/local/lib/libopencv_features2d.2.4.8.dylib,
+					/usr/local/lib/libopencv_core.2.4.8.dylib,
+					/usr/local/lib/libopencv_contrib.2.4.8.dylib,
+					/usr/local/lib/libopencv_calib3d.2.4.8.dylib,
+					"/opt/local/lib/libboost_system-mt.dylib",
+					"/opt/local/lib/libboost_filesystem-mt.dylib",
+					"/opt/local/lib/libboost_thread-mt.dylib",
+					"/opt/local/lib/libboost_date_time-mt.dylib",
+					"/opt/local/lib/libboost_iostreams-mt.dylib",
+					"/opt/local/lib/libboost_serialization-mt.dylib",
+					/usr/local/lib/libpcl_common.dylib,
+					/usr/local/lib/libpcl_octree.dylib,
+					"/opt/local/lib/vtk-5.10/libvtkCommon.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkRendering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkHybrid.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkCharts.5.10.1.dylib",
+					/usr/local/lib/libpcl_io.dylib,
+					/opt/local/lib/libflann_cpp_s.a,
+					/usr/local/lib/libpcl_kdtree.dylib,
+					/usr/local/lib/libpcl_search.dylib,
+					/usr/local/lib/libpcl_sample_consensus.dylib,
+					/usr/local/lib/libpcl_filters.dylib,
+					/usr/local/lib/libpcl_features.dylib,
+					/usr/local/lib/libpcl_ml.dylib,
+					/usr/local/lib/libpcl_segmentation.dylib,
+					/usr/local/lib/libpcl_visualization.dylib,
+					/opt/local/lib/libqhullstatic.a,
+					/usr/local/lib/libpcl_surface.dylib,
+					/usr/local/lib/libpcl_registration.dylib,
+					/usr/local/lib/libpcl_keypoints.dylib,
+					/usr/local/lib/libpcl_tracking.dylib,
+					/usr/local/lib/libpcl_recognition.dylib,
+					/usr/local/lib/libpcl_stereo.dylib,
+					/usr/local/lib/libpcl_outofcore.dylib,
+					/usr/local/lib/libpcl_people.dylib,
+					"/opt/local/lib/libboost_system-mt.dylib",
+					"/opt/local/lib/libboost_filesystem-mt.dylib",
+					"/opt/local/lib/libboost_thread-mt.dylib",
+					"/opt/local/lib/libboost_date_time-mt.dylib",
+					"/opt/local/lib/libboost_iostreams-mt.dylib",
+					"/opt/local/lib/libboost_serialization-mt.dylib",
+					/opt/local/lib/libqhullstatic.a,
+					/opt/local/lib/libflann_cpp_s.a,
+					"/opt/local/lib/vtk-5.10/libvtkCommon.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkRendering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkHybrid.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkCharts.5.10.1.dylib",
+					/usr/local/lib/libopencv_nonfree.2.4.8.dylib,
+					/usr/local/lib/libopencv_ocl.2.4.8.dylib,
+					/usr/local/lib/libopencv_gpu.2.4.8.dylib,
+					/usr/local/lib/libopencv_photo.2.4.8.dylib,
+					/usr/local/lib/libopencv_objdetect.2.4.8.dylib,
+					/usr/local/lib/libopencv_legacy.2.4.8.dylib,
+					/usr/local/lib/libopencv_video.2.4.8.dylib,
+					/usr/local/lib/libopencv_ml.2.4.8.dylib,
+					/usr/local/lib/libopencv_calib3d.2.4.8.dylib,
+					/usr/local/lib/libopencv_features2d.2.4.8.dylib,
+					/usr/local/lib/libopencv_highgui.2.4.8.dylib,
+					/usr/local/lib/libopencv_imgproc.2.4.8.dylib,
+					/usr/local/lib/libopencv_flann.2.4.8.dylib,
+					/usr/local/lib/libopencv_core.2.4.8.dylib,
+					/usr/local/lib/libpcl_common.dylib,
+					/usr/local/lib/libpcl_octree.dylib,
+					/usr/local/lib/libpcl_io.dylib,
+					/usr/local/lib/libpcl_kdtree.dylib,
+					/usr/local/lib/libpcl_search.dylib,
+					/usr/local/lib/libpcl_sample_consensus.dylib,
+					/usr/local/lib/libpcl_filters.dylib,
+					/usr/local/lib/libpcl_features.dylib,
+					/usr/local/lib/libpcl_ml.dylib,
+					/usr/local/lib/libpcl_segmentation.dylib,
+					/usr/local/lib/libpcl_visualization.dylib,
+					/usr/local/lib/libpcl_surface.dylib,
+					/usr/local/lib/libpcl_registration.dylib,
+					/usr/local/lib/libpcl_keypoints.dylib,
+					/usr/local/lib/libpcl_tracking.dylib,
+					/usr/local/lib/libpcl_recognition.dylib,
+					/usr/local/lib/libpcl_stereo.dylib,
+					/usr/local/lib/libpcl_outofcore.dylib,
+					/usr/local/lib/libpcl_people.dylib,
+					"/opt/local/lib/vtk-5.10/libvtkViews.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkInfovis.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkWidgets.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkHybrid.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkVolumeRendering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkRendering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkGraphics.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkImaging.5.10.1.dylib",
+					/opt/local/lib/libQtGui.dylib,
+					/opt/local/lib/libQtSql.dylib,
+					/opt/local/lib/libQtCore.dylib,
+					"-lobjc",
+					"/opt/local/lib/vtk-5.10/libvtkIO.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkFiltering.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtkCommon.5.10.1.dylib",
+					"/opt/local/lib/vtk-5.10/libvtksys.5.10.1.dylib",
+					"-lm",
+				);
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = remedi;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/aclapes/Documents/Code/Github/ReMedi/xbuild;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Release;
+		};
+		C7041B5F15334BF4AD35CD16 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					DISABLE_OPENNI,
+					DISABLE_PCAP,
+					DISABLE_PNG,
+					EIGEN_USE_NEW_STDVECTOR,
+					EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET,
+					FLANN_STATIC,
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/opt/local/include/vtk-5.10",
+					"/usr/local/include/pcl-1.7",
+					/opt/local/include/eigen3,
+					/opt/local/include,
+					/usr/local/include/opencv,
+					/usr/local/include,
+				);
+				INSTALL_PATH = "";
+				OTHER_CFLAGS = "  ";
+				OTHER_LDFLAGS = " ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/aclapes/Documents/Code/Github/ReMedi/xbuild;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = RelWithDebInfo;
+		};
+		E4CAA59197C34D4799CB4D9A /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					DISABLE_OPENNI,
+					DISABLE_PCAP,
+					DISABLE_PNG,
+					EIGEN_USE_NEW_STDVECTOR,
+					EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET,
+					FLANN_STATIC,
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/opt/local/include/vtk-5.10",
+					"/usr/local/include/pcl-1.7",
+					/opt/local/include/eigen3,
+					/opt/local/include,
+					/usr/local/include/opencv,
+					/usr/local/include,
+				);
+				INSTALL_PATH = "";
+				OTHER_CFLAGS = "  ";
+				OTHER_LDFLAGS = " ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/aclapes/Documents/Code/Github/ReMedi/xbuild;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = MinSizeRel;
+		};
+		E4CADC2F4D864E7CA55CA35C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					DISABLE_OPENNI,
+					DISABLE_PCAP,
+					DISABLE_PNG,
+					EIGEN_USE_NEW_STDVECTOR,
+					EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET,
+					FLANN_STATIC,
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"/opt/local/include/vtk-5.10",
+					"/usr/local/include/pcl-1.7",
+					/opt/local/include/eigen3,
+					/opt/local/include,
+					/usr/local/include/opencv,
+					/usr/local/include,
+				);
+				INSTALL_PATH = "";
+				OTHER_CFLAGS = "  ";
+				OTHER_LDFLAGS = " ";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				SYMROOT = /Users/aclapes/Documents/Code/Github/ReMedi/xbuild;
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		166C85DEA68B4BE0B9E97E8C /* Build configuration list for PBXProject "remedi" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8179B2B4063748B699EA130E /* Debug */,
+				9F1E8CFA7A63421CAF32ADFB /* Release */,
+				8D08164632C44C5EA3C8640B /* MinSizeRel */,
+				604A35CDD42D4EC2B5F94499 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		75604FE5352E46818DE90FA6 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				388DC06DECC64B57814EDA1A /* Debug */,
+				71480FD486FE41169FCB6377 /* Release */,
+				E4CAA59197C34D4799CB4D9A /* MinSizeRel */,
+				5588EBB30F2642E38DA95D5E /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8B394CCA460F4A62A5ABCBE5 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				61702B3B87A8410AB77905C5 /* Debug */,
+				E4CADC2F4D864E7CA55CA35C /* Release */,
+				16FF2C3096044489BD806566 /* MinSizeRel */,
+				C7041B5F15334BF4AD35CD16 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		ECDEA9107F8B4FE7A87D0BE6 /* Build configuration list for PBXNativeTarget "remedi" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5884DC5BAA2641AE80509D31 /* Debug */,
+				BE974901F41F4092B34E51A9 /* Release */,
+				58858A6163644B819CF33CA3 /* MinSizeRel */,
+				68A777D345354CBA992AF8EB /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 2861B47F3E96429AA9A3A32B /* Project object */;
+}
