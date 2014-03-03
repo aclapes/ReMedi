@@ -31,5 +31,6 @@
 *.suo
 
 # Directories
-build
-Data
+build/
+xbuild/
+Data/
