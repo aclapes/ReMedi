@@ -112,12 +112,12 @@ public:
 			m_ViewB = PointCloudPtr(new PointCloud);
 
 			downsample(m_OriginalViewA, leafSize, m_ViewA);
-			downsample(m_OriginalViewA, leafSize, m_ViewB);
+			downsample(m_OriginalViewB, leafSize, m_ViewB);
 		}
 		else
 		{
-			m_ViewA = viewA;
-			m_ViewB = viewB;
+			m_ViewA = m_OriginalViewA;
+			m_ViewB = m_OriginalViewB;
 		}
 
 		// Compute centroids' positions
@@ -379,7 +379,7 @@ class LFCloudject : public LFCloudjectBase<PointT,SignatureT> { };
 
 
 template<typename PointT>
-class LFCloudject<typename PointT, pcl::FPFHSignature33> : public LFCloudjectBase<PointT, pcl::FPFHSignature33>
+class LFCloudject<PointT, pcl::FPFHSignature33> : public LFCloudjectBase<PointT, pcl::FPFHSignature33>
 { 
 	typedef typename pcl::PointCloud<PointT>::Ptr PointCloudPtr;
 
@@ -506,7 +506,7 @@ private:
 
 
 template<typename PointT>
-class LFCloudject<typename PointT, pcl::PFHRGBSignature250> : public LFCloudjectBase<PointT, pcl::PFHRGBSignature250>
+class LFCloudject<PointT, pcl::PFHRGBSignature250> : public LFCloudjectBase<PointT, pcl::PFHRGBSignature250>
 { 
 	typedef typename pcl::PointCloud<PointT>::Ptr PointCloudPtr;
 

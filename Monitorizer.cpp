@@ -31,7 +31,7 @@ void Monitorizer::monitor(DepthFrame dFrameA, DepthFrame dFrameB)
 
 	updateHistory(dFrameA, dFrameB);
 
-	if (!isHistoryComplete())
+	if (!isHistoryComplete()) // a minimum buffered history is needed to perform
 		return;
 
 	// From dense depth images to registered point clouds
@@ -70,7 +70,6 @@ void Monitorizer::monitor(DepthFrame dFrameA, DepthFrame dFrameB)
 	CloudjectDetector cjDetector;
 	cjDetector.setInputClouds(pRObjsCloudA, pRObjsCloudB);
 	cjDetector.detect(cloudjects);
-
 
 	// Detect motion
 
