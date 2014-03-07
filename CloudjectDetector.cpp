@@ -1,6 +1,7 @@
 #include "CloudjectDetector.h"
 #include <pcl/visualization/pcl_visualizer.h>
 
+
 CloudjectDetector::CloudjectDetector(void)
 {
 }
@@ -44,7 +45,7 @@ void CloudjectDetector::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::
 
 	pcl::ApproximateVoxelGrid<PointT> avg;
 	avg.setInputCloud(pCloudR);
-	avg.setLeafSize(leafSize, leafSize, leafSize);
+	avg.setLeafSize(m_LeafSize, m_LeafSize, m_LeafSize);
 	avg.filter(*pCloudF);
 
 	// Creating the KdTree object for the search method of the extraction
@@ -340,9 +341,9 @@ void CloudjectDetector::findCorrespondences2(
 	std::vector<int> correspondences, correspondencesCandidates;
 	std::vector<float> minimumDistances;
 
-	std::fill_n(correspondences, centroids.size(), -1);
-	std::fill_n(correspondencesCandidates, centroidsCandidates.size(), -1);
-	std::fill_n(minimumDistances, centroids.size(), std::numeric_limits<float>::infinity());
+//	std::fill_n(correspondences, centroids.size(), -1);
+//	std::fill_n(correspondencesCandidates, centroidsCandidates.size(), -1);
+//	std::fill_n(minimumDistances, centroids.size(), std::numeric_limits<float>::infinity());
 
 
 	// Make the correspondences
@@ -362,7 +363,7 @@ void CloudjectDetector::findCorrespondences2(
 				// Deal with having the cluster assigned to a candidate (i in the list of candidates)
 				bool found = false;
 				for (int jj = 0; jj < j && !found; jj++)
-					if (found = (correspondencesCandidates[jj] == i))
+					if ((found = (correspondencesCandidates[jj] == i)))
 						correspondencesCandidates[jj] = -1;
 				
 				// Aaaaand also with having the candidate assigned already to other cluster (j in the list of clusters)
@@ -447,9 +448,9 @@ void CloudjectDetector::detect( std::vector<Cloudject>& cloudjects )
 		m_Cloudjects.push_back(Cloudject(correspsA[i], correspsB[i]));
 
 	for (int i = 0; i < leftoversA.size(); i++)
-		m_Cloudjects.push_back(Cloudject(leftoversA[i]));
+		m_Cloudjects.push_back( Cloudject(leftoversA[i], MASTER_VIEWPOINT) );
 
 	for (int i = 0; i < leftoversB.size(); i++)
-		m_Cloudjects.push_back(Cloudject(leftoversB[i]));
+		m_Cloudjects.push_back( Cloudject(leftoversB[i], SLAVE_VIEWPOINT) );
 
 }

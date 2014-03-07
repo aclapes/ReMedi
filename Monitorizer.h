@@ -13,19 +13,21 @@
 
 #include "Cloudject.hpp"
 #include "CloudjectDetector.h"
-#include "CloudjectFPFHRecognizer.h"
+
+#include "MotionSegmentator.h"
 
 #include "MonitorizerParams.hpp"
 
 #include "conversion.h"
 
+using namespace std;
 
 class Monitorizer
 {
 	typedef pcl::PointXYZ PointT;
 	typedef pcl::PointCloud<PointT> PointCloud;
 	typedef PointCloud::Ptr PointCloudPtr;
-	typedef Cloudject<PointT, pcl::FPFHSignature33> Cloudject;
+	typedef LFCloudject<PointT, pcl::FPFHSignature33> Cloudject;
 
 public:
 	Monitorizer(InteractiveRegisterer*, TableModeler*);
@@ -36,7 +38,7 @@ public:
 
 	void monitor(DepthFrame, DepthFrame);
 
-	void updateHistory(DepthFrame, DepthFrame);
+	void updateFrameHistory(DepthFrame, DepthFrame);
 	bool isHistoryComplete();
 
 	void bufferDepthFrame(std::vector<DepthFrame>&, DepthFrame);
@@ -48,22 +50,21 @@ public:
 	void visualizeCloudjects(pcl::visualization::PCLVisualizer::Ptr pViz);
 
 private:
-	void segmentMotion(cv::Mat&, cv::Mat&, float); // threshold and motion mask
+	void segmentMotion(float, cv::Mat&, cv::Mat&); // threshold and motion mask
 	void segmentMotionInView(std::vector<DepthFrame>, float, cv::Mat&);
 
 	// Temporal coherence per pixel segmentation
-	void segmentPerPixelStatics(cv::Mat&, cv::Mat&, float);
-	void segmentPerPixelStaticsInView(std::vector<DepthFrame>, float, cv::Mat&);
+//	void segmentPerPixelStatics(cv::Mat&, cv::Mat&, float);
+//	void segmentPerPixelStaticsInView(std::vector<DepthFrame>, float, cv::Mat&);
 
 	// Temporal coherence per cluster centroid position constance
 
-	void segmentStatics( std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>, 
-		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&, float );
-	void segmentStaticsInView( std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>, std::vector<std::vector<Eigen::Vector4f>>&, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&, float );
-
+//	void segmentStatics( std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>, 
+//		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&, float );
+//	void segmentStaticsInView( std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>, std::vector<std::vector<Eigen::Vector4f> >&, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&, float );
 
 	void detectCloudjects(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr,
-		 std::vector<Cloudject>&);
+		 std::vector<Cloudject>&, float leafSize = 0.0);
 
 	void extractClusters(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr,
 		 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&, float leafSize);
@@ -76,15 +77,14 @@ private:
 
 	void drop(std::vector<Cloudject> cloudjects);
 	//void pick(std::vector<Cloudject> cloudjects);
+    
+    void updateCentroids(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters, std::vector<Eigen::Vector4f>& centroids);
 
 	// Members
 	MonitorizerParams m_Params;
 
 	InteractiveRegisterer* m_pIR;
 	TableModeler* m_pTableModeler;
-
-	std::vector<DepthFrame> m_DepthStreamBufferA;
-	std::vector<DepthFrame> m_DepthStreamBufferB;
 
 	pcl::visualization::PCLVisualizer::Ptr m_pViz;
 	int m_SceneVp;
@@ -96,8 +96,8 @@ private:
 	PointCloudPtr m_CloudA;
 	PointCloudPtr m_CloudB;
 
-	CloudjectDetector			m_cjDetector;
-	CloudjectFPFHRecognizer		m_cjRecognizer;
+	CloudjectDetector m_cjDetector;
+	MotionSegmentator m_motionSegmentator;
 
 	std::vector<Cloudject> m_cloudjects; // yet present
 

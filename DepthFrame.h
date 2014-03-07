@@ -34,6 +34,7 @@ public:
 	cv::Mat getUserFreeDepthMap(cv::Mat&);
 	void getPointCloud(pcl::PointCloud<pcl::PointXYZ>&);
 	void getForegroundPointCloud(pcl::PointCloud<pcl::PointXYZ>&);
+    void getForegroundPointCloud(cv::Mat mask, pcl::PointCloud<pcl::PointXYZ>&, bool combined = true);
 	void getUserFreePointCloud(pcl::PointCloud<pcl::PointXYZ>&);
 	void getForegroundUserFreePointCloud(pcl::PointCloud<pcl::PointXYZ>&);
 

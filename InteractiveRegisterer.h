@@ -5,7 +5,6 @@
 
 #define MEASURE_FUNCTION_TIME
 #include <pcl/common/time.h> //fps calculations
-#include <pcl/io/openni_grabber.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/boost.h>
 #include <pcl/visualization/image_viewer.h>
@@ -73,6 +72,8 @@ public:
 
 	bool loadTransformation(const char*);
 	void saveTransformation(const char*);
+    
+	void getRegisteredClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>&, pcl::PointCloud<pcl::PointXYZ>&);
 
 	void getRegisteredClouds(DepthFrame, DepthFrame, 
 		pcl::PointCloud<pcl::PointXYZ>&, pcl::PointCloud<pcl::PointXYZ>&,

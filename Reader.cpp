@@ -1,8 +1,7 @@
 #include "Reader.h"
 
-
-Reader::Reader(const char* dataPathA, const char* dataPathB) 
-	: m_DataPathA(dataPathA), m_DataPathB(dataPathB), m_cCounter(0), m_dCounter(0)
+Reader::Reader(std::string dataPathA, std::string dataPathB)
+: m_DataPathA(dataPathA), m_DataPathB(dataPathB), m_cCounter(0), m_dCounter(0)
 {
 }
 
@@ -12,41 +11,41 @@ Reader::~Reader(void)
 }
 
 
-void Reader::readNextColorFrame(const char* dataPath, ColorFrame& frame)
+void Reader::readNextColorFrame(std::string dataPath, ColorFrame& frame)
 {
 	std::stringstream ss;
 	ss << m_cCounter;
-	std::string filePath = std::string(dataPath) + "Color/" + ss.str() + ".png";
+	std::string filePath = dataPath + "Color/" + ss.str() + ".png";
 
 	frame = ColorFrame( cv::imread(filePath.c_str(), CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR) );
 }
 
 
-void Reader::readNextDepthFrame(const char* dataPath, DepthFrame& frame)
+void Reader::readNextDepthFrame(std::string dataPath, DepthFrame& frame)
 {
 	std::stringstream ss;
 	ss << m_dCounter;
-	std::string filePath = std::string(dataPath) + "Depth/" + ss.str() + ".png";
+	std::string filePath = dataPath + "Depth/" + ss.str() + ".png";
 
 	frame = DepthFrame( cv::imread(filePath.c_str(), CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR) );
 }
 
 
-void Reader::readColorFrame(const char* dataPath, int fID, ColorFrame& frame)
+void Reader::readColorFrame(std::string dataPath, int fID, ColorFrame& frame)
 {
 	std::stringstream ss;
 	ss << fID;
-	std::string filePath = std::string(dataPath) + "Color/" + ss.str() + ".png";
+	std::string filePath = dataPath + "Color/" + ss.str() + ".png";
 
 	frame = ColorFrame( cv::imread(filePath.c_str(), CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR) );
 }
 
 
-void Reader::readDepthFrame(const char* dataPath, int fID, DepthFrame& frame)
+void Reader::readDepthFrame(std::string dataPath, int fID, DepthFrame& frame)
 {
 	std::stringstream ss;
 	ss << fID;
-	std::string filePath = std::string(dataPath) + "Depth/" + ss.str() + ".png";
+	std::string filePath = dataPath + "Depth/" + ss.str() + ".png";
 
 	frame = DepthFrame( cv::imread(filePath.c_str(), CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR) );
 }

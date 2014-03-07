@@ -6,7 +6,7 @@
 
 class CloudjectFPFHRecognizer
 {
-	typedef Cloudject<pcl::PointXYZ, pcl::FPFHSignature33> Cloudject;
+	typedef LFCloudject<pcl::PointXYZ, pcl::FPFHSignature33> Cloudject;
 public:
 	CloudjectFPFHRecognizer(void);
 	CloudjectFPFHRecognizer(float normalRadius, float fpfhRadius);

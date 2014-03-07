@@ -20,7 +20,7 @@
 class CloudjectDetector
 {
 	typedef pcl::PointXYZ PointT;
-	typedef Cloudject<PointT, pcl::FPFHSignature33> Cloudject;
+	typedef LFCloudject<pcl::PointXYZ, pcl::FPFHSignature33> Cloudject;
 
 public:
 	CloudjectDetector(void);
@@ -32,7 +32,7 @@ public:
 	void setMaxCorrespondenceDistance(float);
 
 	void detect(std::vector<Cloudject>&);
-
+    
 private:
 	// Methods
 	void computeCentroids(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters, 

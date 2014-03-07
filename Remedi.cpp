@@ -19,10 +19,13 @@ void Remedi::Run()
 
 	// Create a reader pointing the data streams
 #ifdef _WIN32
-	Reader reader("../Data/C240/","../Data/S240/");
+    std::string parentDir = "../";
 #elif __APPLE__
-	Reader reader("../../Data/C240/","../../Data/S240/");
+    std::string parentDir = "../../";
 #endif
+    std::string dataDir = "Data/28_p14_2/Kinects/";
+    Reader reader( parentDir + dataDir + std::string("Depth1/") ,
+                   parentDir + dataDir + std::string("Depth2/") );
 
 	/*
 	 * REGISTRATION (paired frames)
@@ -54,7 +57,7 @@ void Remedi::Run()
 	
 	MonitorizerParams monitorParams;
 	monitorParams.tmpCoherence = 2;
-	monitorParams.motionThresh = 5; // 100 cm
+	monitorParams.motionThresh = 5;
 	monitorParams.leafSize = 0.01;
 	monitorParams.posCorrespThresh = 0.07; // 7 cm
 	Monitorizer monitorizer (&registerer, &tableModeler, monitorParams);

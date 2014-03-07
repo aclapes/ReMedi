@@ -110,9 +110,25 @@ void DepthFrame::getForegroundPointCloud(pcl::PointCloud<pcl::PointXYZ>& cloud)
 	cv::Mat fgProjDepthMat;
 	m_projDepthMat.copyTo(fgProjDepthMat, m_Mask);
 
-	cv::namedWindow("getForegroundPointCloud");
-	cv::imshow("getForegroundPointCloud", m_Mask);
-	cv::waitKey();
+	MatToPointCloud(fgProjDepthMat, cloud);
+}
+
+
+void DepthFrame::getForegroundPointCloud(cv::Mat mask, pcl::PointCloud<pcl::PointXYZ>& cloud, bool combined)
+{
+	cv::Mat fgProjDepthMat;
+    
+    if (combined)
+    {
+        cv::Mat combinedMask;
+        cv::bitwise_and(m_Mask, mask, combinedMask);
+        m_projDepthMat.copyTo(fgProjDepthMat, combinedMask);
+    }
+    else
+    {
+        m_projDepthMat.copyTo(fgProjDepthMat, m_Mask);
+    }
+    
 	MatToPointCloud(fgProjDepthMat, cloud);
 }
 

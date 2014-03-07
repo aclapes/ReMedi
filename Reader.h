@@ -8,6 +8,7 @@ class Reader
 {
 public:
 	Reader(const char*, const char*);
+    Reader(std::string, std::string);
 	~Reader(void);
 
 	// Public methods
@@ -35,8 +36,7 @@ private:
 	bool isValid(DepthFrame);
 
 	// Private members
-	const char*		m_DataPathA;
-	const char*		m_DataPathB;
+    std::string		m_DataPathA, m_DataPathB;
 
 	int				m_cCounter, m_dCounter;
 };

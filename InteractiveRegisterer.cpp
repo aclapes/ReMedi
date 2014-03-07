@@ -383,6 +383,14 @@ bool InteractiveRegisterer::loadTransformation(const char* filePath)
 	}
 }
 
+void InteractiveRegisterer::getRegisteredClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB, pcl::PointCloud<pcl::PointXYZ>& regCloudA, pcl::PointCloud<pcl::PointXYZ>& regCloudB)
+{
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pCtrCloudA (new pcl::PointCloud<pcl::PointXYZ>);
+    translate(pCloudA, m_tLeft, *pCtrCloudA);
+    translate(pCloudB, m_tRight, regCloudB);
+    
+    pcl::transformPointCloud(*pCtrCloudA, regCloudA, m_Transformation);
+}
 
 void InteractiveRegisterer::getRegisteredClouds(DepthFrame frameA, DepthFrame frameB,
 	pcl::PointCloud<pcl::PointXYZ>& regCloudA, pcl::PointCloud<pcl::PointXYZ>& regCloudB, 
@@ -425,7 +433,7 @@ void InteractiveRegisterer::visualizeRegistration(pcl::PointCloud<pcl::PointXYZ>
 	pcl::visualization::PCLVisualizer::Ptr pViz (new pcl::visualization::PCLVisualizer);
     pViz->setWindowName("Fusion viewer");
         
-    pViz->addCoordinateSystem(0.2, 0, 0, 0);
+    pViz->addCoordinateSystem();
         
     pViz->addPointCloud (cloudA, "cloud left");
     pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "cloud left");
@@ -462,7 +470,7 @@ void InteractiveRegisterer::visualizeRegistration(DepthFrame dFrameA, DepthFrame
 	pcl::visualization::PCLVisualizer::Ptr pViz (new pcl::visualization::PCLVisualizer);
     pViz->setWindowName("Fusion viewer");
         
-    pViz->addCoordinateSystem(0.2, 0, 0, 0);
+    pViz->addCoordinateSystem();
         
     pViz->addPointCloud (pCloudA, "cloud left");
     pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "cloud left");

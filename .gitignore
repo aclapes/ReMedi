@@ -30,6 +30,13 @@
 *.sln
 *.suo
 
+# OSX
+.DS_Store
+
+# Xcode
+*.pbxproj
+*.xcuserstate
+
 # Directories
 build/
 xbuild/
