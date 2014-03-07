@@ -7,13 +7,12 @@
 class Reader
 {
 public:
-	Reader(const char*, const char*);
-    Reader(std::string, std::string);
+	Reader(std::string, std::string);
 	~Reader(void);
 
 	// Public methods
-	void loadColorStreams(const char*, const char*);
-	void loadDepthStreams(const char*, const char*);
+	void loadColorStreams(std::string, std::string);
+	void loadDepthStreams(std::string, std::string);
 
 	bool getNextColorFrame(ColorFrame&);
 	bool getNextDepthFrame(DepthFrame&);
@@ -27,10 +26,10 @@ public:
 
 private:
 	// Private methods
-	void readNextColorFrame(const char*, ColorFrame&);
-	void readNextDepthFrame(const char*, DepthFrame&);
-	void readColorFrame(const char*, int fID, ColorFrame&);
-	void readDepthFrame(const char*, int fID, DepthFrame&);
+	void readNextColorFrame(std::string, ColorFrame&);
+	void readNextDepthFrame(std::string, DepthFrame&);
+	void readColorFrame(std::string, int fID, ColorFrame&);
+	void readDepthFrame(std::string, int fID, DepthFrame&);
 
 	bool isValid(ColorFrame);
 	bool isValid(DepthFrame);
