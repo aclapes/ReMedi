@@ -2,6 +2,7 @@
 
 #include <pcl/common/common.h>
 #include <pcl/common/transforms.h>
+#include <pcl/filters/approximate_voxel_grid.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 
 
@@ -17,8 +18,8 @@ TableModeler::~TableModeler()
 }
 
 
-void TableModeler::setInputClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, 
-	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB)
+void TableModeler::setInputClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA,
+                                            pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB)
 {
 	m_pCloudA = pCloudA;
 	m_pCloudB = pCloudB;
@@ -64,10 +65,20 @@ void TableModeler::model(pcl::PointCloud<pcl::PointXYZ>& plane)
 
 void TableModeler::model(pcl::PointCloud<pcl::PointXYZ>& planeA, pcl::PointCloud<pcl::PointXYZ>& planeB)
 {
+    std::cout << "Esitmating plane in B ..." << std::endl;
+	estimate(m_pCloudB, planeB, m_MinB, m_MaxB, m_ytonB);
+    
 	std::cout << "Estimating plane in A ..." << std::endl;
 	estimate(m_pCloudA, planeA, m_MinA, m_MaxA, m_ytonA);
-	std::cout << "Esitmating plane in B ..." << std::endl;
-	estimate(m_pCloudB, planeB, m_MinB, m_MaxB, m_ytonB);
+
+//    m_pViz->addPointCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr(&planeA), "planeA");
+//    m_pViz->addPointCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr(&planeB), "planeB");
+//    m_pViz->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.6, 0.2, 0.2, "biggestCluster");
+//    m_pViz->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.2, 0.6, 0.2, "biggestCluster");
+//    
+//    m_pViz->spin();
+//    
+//    m_pViz->removeAllPointClouds();
 }
 
 
@@ -78,7 +89,8 @@ void TableModeler::estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, pcl::Poi
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudF (new pcl::PointCloud<pcl::PointXYZ>);
     
-	pcl::VoxelGrid<pcl::PointXYZ> sor;
+    
+	pcl::ApproximateVoxelGrid<pcl::PointXYZ> sor;
 	sor.setInputCloud (pCloud);
 	sor.setLeafSize (m_LeafSize, m_LeafSize, m_LeafSize);
 	sor.filter(*pCloudF);
@@ -162,8 +174,9 @@ void TableModeler::estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, pcl::Poi
         pNormalsF.swap (pAuxNormalsF);
 
 		// Check
+        pcl::PointCloud<pcl::PointXYZ>::Ptr pBiggestCluster (new pcl::PointCloud<pcl::PointXYZ>);
 
-		if ( found = isTowardsLookingDirectionPlane(pPlane) )
+		if ( (found = isTowardsLookingDirectionPlane(pPlane)) )
 		{
 			// Compute a transformation in which a bounding box in a convenient base
 
@@ -189,28 +202,34 @@ void TableModeler::estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, pcl::Poi
 			sor.filter (*pPlaneTF);
 
 			pcl::PointCloud<pcl::PointXYZ>::Ptr pBiggestClusterT (new pcl::PointCloud<pcl::PointXYZ>);
-			pcl::PointCloud<pcl::PointXYZ>::Ptr pBiggestCluster (new pcl::PointCloud<pcl::PointXYZ>);
+//			pcl::PointCloud<pcl::PointXYZ>::Ptr pBiggestCluster (new pcl::PointCloud<pcl::PointXYZ>);
+            pBiggestCluster = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
+
 			biggestEuclideanCluster(pPlaneTF, 2.5 * m_LeafSize, *pBiggestClusterT);
 
 			pcl::getMinMax3D(*pBiggestClusterT, min, max);
 
 			pcl::transformPointCloud(*pBiggestClusterT, *pBiggestCluster, yton.inverse());
 
-			// Visualization
-
-	        m_pViz->addPointCloud(pCloudF, "filtered");
-			m_pViz->addPointCloud(pBiggestCluster, "biggestCluster");
-	        m_pViz->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.41, 0.1, 1.0, "biggestCluster");  
-	          
-			m_pViz->spin();
-
-	        m_pViz->removeAllPointClouds();
-
-			
-			pcl::copyPointCloud(*pPlane, plane);
+            pcl::copyPointCloud(*pPlane, plane);
+            
+            // Visualization
+            
+            pcl::visualization::PCLVisualizer pViz(pCloud->header.frame_id);
+            pViz.addCoordinateSystem();
+            pViz.addPointCloud(pCloudF, "filtered");
+            pViz.addPointCloud(pBiggestCluster, "biggestCluster");
+            pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.41, 0.1, 1.0, "biggestCluster");
+            
+            int c = 0;
+            while(c++ < 2)
+            {
+                pViz.spinOnce(1000);
+            }
 
 			return;
 		}
+
 	}
 }
 
@@ -222,7 +241,8 @@ bool TableModeler::isTowardsLookingDirectionPlane(pcl::PointCloud<pcl::PointXYZ>
 		// Is there any point in the camera viewpoint direction (or close to)?
 		// That is having x and y close to 0
 		const pcl::PointXYZ & p =  pPlane->points[i];
-		if (abs(p.x) < 10*m_LeafSize && abs(p.y) < 10*m_LeafSize && abs(p.z) < 10*m_LeafSize)
+        float dist = sqrtf(powf(p.x,2)+powf(p.y,2)+powf(p.z,2));
+		if ( dist > 0 && dist < 2 * m_LeafSize)
 		{
 			return true;
 		}
@@ -230,6 +250,22 @@ bool TableModeler::isTowardsLookingDirectionPlane(pcl::PointCloud<pcl::PointXYZ>
 
 	return false;
 }
+
+
+//bool TableModeler::isPlaneIncludingPoint(pcl::PointCloud<pcl::PointXYZ>::Ptr pPlane, pcl::PointXYZ point)
+//{
+//	for (int i = 0; i < pPlane->points.size(); i++)
+//	{
+//		// Is there any point in the camera viewpoint direction (or close to)?
+//		// That is having x and y close to 0
+//		const pcl::PointXYZ & p =  pPlane->points[i];
+//		if (abs(p.x - point.x) < 10*m_LeafSize && abs(p.y - point.y) < 10*m_LeafSize && abs(p.z - point.z) < 10*m_LeafSize)
+//		{
+//			return true;
+//		}
+//	}
+//	return false;
+//}
 
 
 void TableModeler::segmentTableTop(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, 

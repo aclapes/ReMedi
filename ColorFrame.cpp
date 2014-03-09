@@ -32,3 +32,10 @@ bool ColorFrame::isValid()
 {
 	return Frame::isValid();
 }
+
+void ColorFrame::show(std::string wndName)
+{
+    cv::namedWindow(wndName);
+    cv::imshow(wndName, m_Mat);
+    cv::waitKey();
+}

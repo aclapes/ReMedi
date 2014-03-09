@@ -1,7 +1,10 @@
 #include "Reader.h"
 
-Reader::Reader(std::string dataPathA, std::string dataPathB)
-: m_DataPathA(dataPathA), m_DataPathB(dataPathB), m_cCounter(0), m_dCounter(0)
+Reader::Reader(std::string dataPath,
+               std::string colorDir1, std::string colorDir2,
+               std::string depthDir1, std::string depthDir2)
+: m_DataPath(dataPath), m_colorDir1(colorDir1), m_colorDir2(colorDir2),
+m_depthDir1(depthDir1), m_depthDir2(depthDir2), m_cCounter(0), m_dCounter(0)
 {
 }
 
@@ -10,50 +13,54 @@ Reader::~Reader(void)
 {
 }
 
+void Reader::setSequence(std::string dir)
+{
+     m_SequenceDir = dir;
+}
 
-void Reader::readNextColorFrame(std::string dataPath, ColorFrame& frame)
+void Reader::readNextColorFrame(std::string dataPath, std::string colorDir, ColorFrame& cframe)
 {
 	std::stringstream ss;
 	ss << m_cCounter;
-	std::string filePath = dataPath + "Color/" + ss.str() + ".png";
+	std::string filePath = dataPath + m_SequenceDir + "Kinects/" + colorDir + ss.str() + ".png";
 
-	frame = ColorFrame( cv::imread(filePath.c_str(), CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR) );
+	cframe = ColorFrame( cv::imread(filePath.c_str(), CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR) );
 }
 
 
-void Reader::readNextDepthFrame(std::string dataPath, DepthFrame& frame)
+void Reader::readNextDepthFrame(std::string dataPath, std::string depthDir, DepthFrame& dframe)
 {
 	std::stringstream ss;
 	ss << m_dCounter;
-	std::string filePath = dataPath + "Depth/" + ss.str() + ".png";
+	std::string filePath = dataPath + m_SequenceDir + "Kinects/" + depthDir + ss.str() + ".png";
 
-	frame = DepthFrame( cv::imread(filePath.c_str(), CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR) );
+	dframe = DepthFrame( cv::imread(filePath.c_str(), CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR) );
 }
 
 
-void Reader::readColorFrame(std::string dataPath, int fID, ColorFrame& frame)
+void Reader::readColorFrame(std::string dataPath, std::string colorDir, int fID, ColorFrame& cframe)
 {
 	std::stringstream ss;
 	ss << fID;
-	std::string filePath = dataPath + "Color/" + ss.str() + ".png";
+	std::string filePath = dataPath + m_SequenceDir + "Kinects/" + colorDir + ss.str() + ".png";
 
-	frame = ColorFrame( cv::imread(filePath.c_str(), CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR) );
+	cframe = ColorFrame( cv::imread(filePath.c_str(), CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR) );
 }
 
 
-void Reader::readDepthFrame(std::string dataPath, int fID, DepthFrame& frame)
+void Reader::readDepthFrame(std::string dataPath, std::string depthDir, int fID, DepthFrame& dframe)
 {
 	std::stringstream ss;
 	ss << fID;
-	std::string filePath = dataPath + "Depth/" + ss.str() + ".png";
+	std::string filePath = dataPath + m_SequenceDir + "Kinects/" + depthDir + ss.str() + ".png";
 
-	frame = DepthFrame( cv::imread(filePath.c_str(), CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR) );
+	dframe = DepthFrame( cv::imread(filePath.c_str(), CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR) );
 }
 
 
-bool Reader::getNextColorFrame(ColorFrame& frame)
+bool Reader::getNextColorFrame(std::string colorDir, ColorFrame& frame)
 {
-	readNextColorFrame(m_DataPathA, frame);
+	readNextColorFrame(m_DataPath, colorDir, frame);
 
 	if (frame.isValid())
 	{
@@ -67,9 +74,9 @@ bool Reader::getNextColorFrame(ColorFrame& frame)
 }
 
 
-bool Reader::getNextDepthFrame(DepthFrame& frame)
+bool Reader::getNextDepthFrame(std::string colorDir, DepthFrame& frame)
 {
-	readNextDepthFrame(m_DataPathA, frame);
+	readNextDepthFrame(m_DataPath, colorDir, frame);
 
 	if (frame.isValid())
 	{
@@ -83,9 +90,9 @@ bool Reader::getNextDepthFrame(DepthFrame& frame)
 }
 
 
-bool Reader::getColorFrame(int fID, ColorFrame& frame)
+bool Reader::getColorFrame(std::string colorDir, int fID, ColorFrame& frame)
 {
-	readColorFrame(m_DataPathA, fID, frame);
+	readColorFrame(m_DataPath, colorDir, fID, frame);
 
 	if (frame.isValid())
 	{
@@ -99,9 +106,9 @@ bool Reader::getColorFrame(int fID, ColorFrame& frame)
 }
 
 
-bool Reader::getDepthFrame(int fID, DepthFrame& frame)
+bool Reader::getDepthFrame(std::string depthDir, int fID, DepthFrame& frame)
 {
-	readDepthFrame(m_DataPathA, fID, frame);
+	readDepthFrame(m_DataPath, depthDir, fID, frame);
 
 	if (frame.isValid())
 	{
@@ -117,8 +124,8 @@ bool Reader::getDepthFrame(int fID, DepthFrame& frame)
 
 bool Reader::getNextColorPairedFrames(ColorFrame& frameA, ColorFrame& frameB)
 {
-	readNextColorFrame(m_DataPathA, frameA);
-	readNextColorFrame(m_DataPathB, frameB);
+	getNextColorFrame(m_colorDir1, frameA);
+	getNextColorFrame(m_colorDir2, frameB);
 
 	if (frameA.isValid() && frameB.isValid())
 	{
@@ -134,8 +141,8 @@ bool Reader::getNextColorPairedFrames(ColorFrame& frameA, ColorFrame& frameB)
 
 bool Reader::getNextDepthPairedFrames(DepthFrame& frameA, DepthFrame& frameB)
 {
-	readNextDepthFrame(m_DataPathA, frameA);
-	readNextDepthFrame(m_DataPathB, frameB);
+	getNextDepthFrame(m_depthDir1, frameA);
+	getNextDepthFrame(m_depthDir2, frameB);
 	
 	if (frameA.isValid() && frameB.isValid())
 	{
@@ -151,8 +158,8 @@ bool Reader::getNextDepthPairedFrames(DepthFrame& frameA, DepthFrame& frameB)
 
 bool Reader::getColorPairedFrames(int fID, ColorFrame& frameA, ColorFrame& frameB)
 {
-	readColorFrame(m_DataPathA, fID, frameA);
-	readColorFrame(m_DataPathB, fID, frameB);
+	getColorFrame(m_colorDir1, fID, frameA);
+	getColorFrame(m_colorDir2, fID, frameB);
 
 	if (frameA.isValid() && frameB.isValid()) 
 		return true;
@@ -162,8 +169,8 @@ bool Reader::getColorPairedFrames(int fID, ColorFrame& frameA, ColorFrame& frame
 
 bool Reader::getDepthPairedFrames(int fID, DepthFrame& frameA, DepthFrame& frameB)
 {
-	readDepthFrame(m_DataPathA, fID, frameA);
-	readDepthFrame(m_DataPathB, fID, frameB);
+	getDepthFrame(m_depthDir1, fID, frameA);
+	getDepthFrame(m_colorDir2, fID, frameB);
 
 	if (frameA.isValid() && frameB.isValid()) 
 		return true;

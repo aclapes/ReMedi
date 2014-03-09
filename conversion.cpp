@@ -2,6 +2,23 @@
 
 #include <math.h>
 
+void EigenToPointXYZ(Eigen::Vector4f eigen, pcl::PointXYZ& p)
+{
+    p.x = eigen.x();
+    p.y = eigen.y();
+    p.z = eigen.z();
+}
+
+pcl::PointXYZ EigenToPointXYZ(Eigen::Vector4f eigen)
+{
+    pcl::PointXYZ p;
+    
+    p.x = eigen.x();
+    p.y = eigen.y();
+    p.z = eigen.z();
+    
+    return p;
+}
 
 void MatToPointCloud(cv::Mat& mat, pcl::PointCloud<pcl::PointXYZ>& cloud)
 {
@@ -10,38 +27,68 @@ void MatToPointCloud(cv::Mat& mat, pcl::PointCloud<pcl::PointXYZ>& cloud)
     cloud.resize(cloud.height * cloud.width);
     cloud.is_dense = true;
     
-    // Easy to handle the conversion this way
-    cv::Mat temp = cv::Mat(mat.size(), CV_32F);
-    mat.convertTo(temp, CV_32F);
-    
     float invfocal = 3.501e-3f; // Kinect inverse focal length. If depth map resolution of: 320 x 240
     if (mat.cols == 640) // else if 640 x 480
         invfocal /= 2.0;
     
-	unsigned short z_us;
 	float z;
 	float rwx, rwy, rwz;
 	pcl::PointXYZ p;
-
+    
     for (unsigned int y = 0; y < cloud.height; y++) for (unsigned int x = 0; x < cloud.width; x++)
     {
 		//z_us = mat.at<unsigned short>(y,x) >> 3;
 		z = (float) mat.at<unsigned short>(y,x) /*z_us*/;
-             
+        
 		rwx = (x - 320.0) * invfocal * z;
 		rwy = (y - 240.0) * invfocal * z;
 		rwz = z;
-              
-		p.x = rwx/1000.f; 
+        
+		p.x = rwx/1000.f;
 		p.y = rwy/1000.f;
 		p.z = rwz/1000.f;
 		cloud.at(x,y) = p;
     }
 }
 
+void MatToColoredPointCloud(cv::Mat& depth, cv::Mat& color, pcl::PointCloud<pcl::PointXYZRGB>& cloud)
+{
+	cloud.height = depth.rows;
+    cloud.width =  depth.cols;
+    cloud.resize(cloud.height * cloud.width);
+    cloud.is_dense = true;
+    
+    float invfocal = 3.501e-3f; // Kinect inverse focal length. If depth map resolution of: 320 x 240
+    if (depth.cols == 640) // else if 640 x 480
+        invfocal /= 2.0;
+    
+	float z;
+	float rwx, rwy, rwz;
+	pcl::PointXYZRGB p;
+    
+    for (unsigned int y = 0; y < cloud.height; y++) for (unsigned int x = 0; x < cloud.width; x++)
+    {
+		//z_us = mat.at<unsigned short>(y,x) >> 3;
+		z = (float) depth.at<unsigned short>(y,x) /*z_us*/;
+        
+		rwx = (x - 320.0) * invfocal * z;
+		rwy = (y - 240.0) * invfocal * z;
+		rwz = z;
+        
+		p.x = rwx/1000.f;
+		p.y = rwy/1000.f;
+		p.z = rwz/1000.f;
+        
+        cv::Vec3b c = color.at<cv::Vec3b>(y,x);
+        p.b = c[0];
+        p.g = c[1];
+        p.r = c[2];
+        
+		cloud.at(x,y) = p;
+    }
+}
 
-
-void MatToPointCloud(cv::Mat mat, cv::Mat mask, pcl::PointCloud<pcl::PointXYZ>& cloud)
+void MatToPointCloud(cv::Mat& mat, cv::Mat& mask, pcl::PointCloud<pcl::PointXYZ>& cloud)
 {
 	cloud.height = mat.rows;
     cloud.width =  mat.cols;

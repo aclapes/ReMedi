@@ -22,6 +22,8 @@ public:
 
 	void setMat(cv::Mat);
 	void setMat(cv::Mat, cv::Mat);
+    
+    virtual void show(std::string wndName) = 0;
 
 protected:
 	// Members

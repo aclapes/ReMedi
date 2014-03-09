@@ -11,10 +11,14 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/filters/extract_indices.h>
 
+void EigenToPointXYZ(Eigen::Vector4f eigen, pcl::PointXYZ& p);
+pcl::PointXYZ EigenToPointXYZ(Eigen::Vector4f eigen);
 
-void MatToPointCloud(cv::Mat&, pcl::PointCloud<pcl::PointXYZ>&);
+void MatToPointCloud(cv::Mat& depth, pcl::PointCloud<pcl::PointXYZ>&);
 
-void MatToPointCloud(cv::Mat, cv::Mat, pcl::PointCloud<pcl::PointXYZ>&);
+void MatToPointCloud(cv::Mat& depth, cv::Mat& mask, pcl::PointCloud<pcl::PointXYZ>&);
+
+void MatToColoredPointCloud(cv::Mat& depth, cv::Mat& color, pcl::PointCloud<pcl::PointXYZRGB>& cloud);
 
 void PointCloudToMat(pcl::PointCloud<pcl::PointXYZ>&, cv::Mat&);
 

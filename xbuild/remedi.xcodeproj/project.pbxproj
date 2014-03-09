@@ -34,11 +34,11 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		1042E77F18C9FD3100D11CB2 /* MotionSegmentator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1042E77D18C9FD3100D11CB2 /* MotionSegmentator.cpp */; };
 		10721EA918C4B52000371667 /* BackgroundSubtractor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721E8918C4B52000371667 /* BackgroundSubtractor.cpp */; };
 		10721EAA18C4B52000371667 /* CloudjectDetector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721E8C18C4B52000371667 /* CloudjectDetector.cpp */; };
 		10721EAC18C4B52000371667 /* ColorFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721E9118C4B52000371667 /* ColorFrame.cpp */; };
 		10721EAD18C4B52000371667 /* conversion.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721E9318C4B52000371667 /* conversion.cpp */; };
-		10721EAE18C4B52000371667 /* debug.m in Sources */ = {isa = PBXBuildFile; fileRef = 10721E9518C4B52000371667 /* debug.m */; };
 		10721EAF18C4B52000371667 /* DepthFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721E9618C4B52000371667 /* DepthFrame.cpp */; };
 		10721EB018C4B52000371667 /* Frame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721E9918C4B52000371667 /* Frame.cpp */; };
 		10721EB118C4B52000371667 /* InteractiveRegisterer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721E9B18C4B52000371667 /* InteractiveRegisterer.cpp */; };
@@ -74,6 +74,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		1042E77D18C9FD3100D11CB2 /* MotionSegmentator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MotionSegmentator.cpp; sourceTree = "<group>"; };
+		1042E77E18C9FD3100D11CB2 /* MotionSegmentator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MotionSegmentator.h; sourceTree = "<group>"; };
 		10721E8918C4B52000371667 /* BackgroundSubtractor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BackgroundSubtractor.cpp; sourceTree = "<group>"; };
 		10721E8A18C4B52000371667 /* BackgroundSubtractor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BackgroundSubtractor.h; sourceTree = "<group>"; };
 		10721E8B18C4B52000371667 /* Cloudject.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Cloudject.hpp; sourceTree = "<group>"; };
@@ -84,7 +86,6 @@
 		10721E9218C4B52000371667 /* ColorFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ColorFrame.h; sourceTree = "<group>"; };
 		10721E9318C4B52000371667 /* conversion.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = conversion.cpp; sourceTree = "<group>"; };
 		10721E9418C4B52000371667 /* conversion.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = conversion.h; sourceTree = "<group>"; };
-		10721E9518C4B52000371667 /* debug.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = debug.m; sourceTree = "<group>"; };
 		10721E9618C4B52000371667 /* DepthFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DepthFrame.cpp; sourceTree = "<group>"; };
 		10721E9718C4B52000371667 /* DepthFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DepthFrame.h; sourceTree = "<group>"; };
 		10721E9818C4B52000371667 /* Descriptor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Descriptor.hpp; sourceTree = "<group>"; };
@@ -123,6 +124,8 @@
 		16A9AE1BE9534B2CA7208E25 /* Source Files */ = {
 			isa = PBXGroup;
 			children = (
+				1042E77D18C9FD3100D11CB2 /* MotionSegmentator.cpp */,
+				1042E77E18C9FD3100D11CB2 /* MotionSegmentator.h */,
 				10721E8918C4B52000371667 /* BackgroundSubtractor.cpp */,
 				10721E8A18C4B52000371667 /* BackgroundSubtractor.h */,
 				10721E8B18C4B52000371667 /* Cloudject.hpp */,
@@ -133,7 +136,6 @@
 				10721E9218C4B52000371667 /* ColorFrame.h */,
 				10721E9318C4B52000371667 /* conversion.cpp */,
 				10721E9418C4B52000371667 /* conversion.h */,
-				10721E9518C4B52000371667 /* debug.m */,
 				10721E9618C4B52000371667 /* DepthFrame.cpp */,
 				10721E9718C4B52000371667 /* DepthFrame.h */,
 				10721E9818C4B52000371667 /* Descriptor.hpp */,
@@ -301,7 +303,6 @@
 				10721EA918C4B52000371667 /* BackgroundSubtractor.cpp in Sources */,
 				10721EAC18C4B52000371667 /* ColorFrame.cpp in Sources */,
 				10721EB018C4B52000371667 /* Frame.cpp in Sources */,
-				10721EAE18C4B52000371667 /* debug.m in Sources */,
 				10721EB518C4B52000371667 /* TableModeler.cpp in Sources */,
 				10721EAD18C4B52000371667 /* conversion.cpp in Sources */,
 				10721EB118C4B52000371667 /* InteractiveRegisterer.cpp in Sources */,
@@ -309,6 +310,7 @@
 				10721EB218C4B52000371667 /* Monitorizer.cpp in Sources */,
 				10721EB418C4B52000371667 /* Remedi.cpp in Sources */,
 				F6AD5CEC8FEB4A848342E2CA /* main.cpp in Sources */,
+				1042E77F18C9FD3100D11CB2 /* MotionSegmentator.cpp in Sources */,
 				10721EB318C4B52000371667 /* Reader.cpp in Sources */,
 				10721EAF18C4B52000371667 /* DepthFrame.cpp in Sources */,
 			);

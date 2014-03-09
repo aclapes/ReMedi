@@ -61,20 +61,18 @@ public:
     
     void setDefaultCamera(pcl::visualization::PCLVisualizer::Ptr, int);
     
+    void setManualCorrespondences(ColorFrame, ColorFrame, DepthFrame, DepthFrame);
+    
     void stop(pcl::visualization::PCLVisualizer&);
 
-    void find_transformation (const pcl::PointCloud<pcl::PointXYZ>::Ptr, const pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f&);
-    void align (const pcl::PointCloud<pcl::PointXYZ>::Ptr, const pcl::PointCloud<pcl::PointXYZ>::Ptr, 
-		pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr, 
-		pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr);
+//    void align(DepthFrame&, DepthFrame&);
 
-    void computeTransformation(DepthFrame&, DepthFrame&);
-
-	bool loadTransformation(const char*);
-	void saveTransformation(const char*);
+    void computeTransformation();
+    
+	bool loadTransformation(std::string filePath);
+	void saveTransformation(std::string filePath);
     
 	void getRegisteredClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>&, pcl::PointCloud<pcl::PointXYZ>&);
-
 	void getRegisteredClouds(DepthFrame, DepthFrame, 
 		pcl::PointCloud<pcl::PointXYZ>&, pcl::PointCloud<pcl::PointXYZ>&,
 		bool backgroundPoints = true, bool userPoints = true);
@@ -84,9 +82,17 @@ public:
 		pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr);
 	void visualizeRegistration(DepthFrame, DepthFrame);
     
-    void interact();
+    pcl::PointXYZ getLeftRefPoint();
+    pcl::PointXYZ getRightRefPoint();
     
 private:
+    void find_transformation (const pcl::PointCloud<pcl::PointXYZ>::Ptr, const pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f&);
+//    void align (const pcl::PointCloud<pcl::PointXYZ>::Ptr, const pcl::PointCloud<pcl::PointXYZ>::Ptr,
+//                pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr,
+//                pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr);
+    
+    // Members
+    
     boost::shared_ptr<pcl::visualization::PCLVisualizer> cloud_viewer_;
     int viewport_left_, viewport_right_;
         

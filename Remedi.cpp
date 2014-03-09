@@ -5,6 +5,13 @@
 #include "DepthFrame.h"
 #include "TableModeler.h"
 #include "Table.hpp"
+#include <pcl/visualization/pcl_visualizer.h>
+
+#ifdef _WIN32
+std::string g_parentDir = "../";
+#elif __APPLE__
+std::string g_parentDir = "../../";
+#endif
 
 Remedi::Remedi()
 {
@@ -18,15 +25,13 @@ void Remedi::Run()
 	 */
 
 	// Create a reader pointing the data streams
-#ifdef _WIN32
-    std::string parentDir = "../";
-#elif __APPLE__
-    std::string parentDir = "../../";
-#endif
-    std::string dataDir = "Data/28_p14_2/Kinects/";
-    Reader reader( parentDir + dataDir + std::string("Depth1/") ,
-                   parentDir + dataDir + std::string("Depth2/") );
 
+    std::string dataDir = g_parentDir + "Data/";
+    std::string backgroundDir = dataDir + "00_bs/";
+    
+    Reader reader( g_parentDir, "Color1/", "Color2/", "Depth1/", "Depth2/" );
+
+    
 	/*
 	 * REGISTRATION (paired frames)
 	 */
@@ -100,6 +105,7 @@ void Remedi::waitForBackgroundSubtraction(Reader& reader, BackgroundSubtractor& 
 
 void Remedi::interactWithRegisterer(InteractiveRegisterer& registerer, Reader& reader)
 {
+    ColorFrame cFrameA, cFrameB;
 	DepthFrame dFrameA, dFrameB;
 
 	// Ask wheter re-select a set of points
@@ -109,10 +115,11 @@ void Remedi::interactWithRegisterer(InteractiveRegisterer& registerer, Reader& r
 	cin >> c;
 	if (c != 'n' && c != 'N') // re-use transformation
 	{
-		registerer.loadTransformation("transformation.yml");
-
-		reader.getDepthPairedFrames(2, dFrameA, dFrameB);
-		registerer.visualizeRegistration(dFrameA, dFrameB);
+		bool success = registerer.loadTransformation(g_parentDir + "transformation.yml");
+        if (!success) std::cerr << "Could not read transformation" << std::endl;
+        // DEBUG
+		//reader.getDepthPairedFrames(2, dFrameA, dFrameB);
+		//registerer.visualizeRegistration(dFrameA, dFrameB);
 	}
 	else // re-select points
 	{
@@ -121,18 +128,19 @@ void Remedi::interactWithRegisterer(InteractiveRegisterer& registerer, Reader& r
 		std::cout << "-> Select a frame ID: ";
 		cin >> fID;
 
+        reader.getColorPairedFrames(fID, cFrameA, cFrameB);
 		reader.getDepthPairedFrames(fID, dFrameA, dFrameB);
-		
+        
 		// Select the number of points to compute a rigid transformation
 		int nPoints;
 		std::cout << "-> Select the number of points: ";
 		cin >> nPoints;
 
 		registerer.setNumPoints(nPoints);
-		registerer.interact();
-		registerer.computeTransformation(dFrameA, dFrameB); // find the transformation
-
-		registerer.saveTransformation("transformation.yml");
+		registerer.setManualCorrespondences(cFrameA, cFrameB, dFrameA, dFrameB);
+		
+        registerer.computeTransformation(); // find the transformation
+        registerer.saveTransformation(g_parentDir + "transformation.yml");
 	}
 }
 
@@ -155,7 +163,7 @@ void Remedi::modelTables(TableModeler& tableModeler, InteractiveRegisterer& regi
 	tableModeler.setSACIters(200);
 	tableModeler.setSACDistThresh(0.03);
 	tableModeler.setYOffset(0.4);
-
+    
 	tableModeler.model(*tableA, *tableB);
 }
 

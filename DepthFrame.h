@@ -12,6 +12,8 @@
 // OpenCV <-> PCL
 #include "conversion.h"
 
+#include "ColorFrame.h"
+
 class DepthFrame : public Frame
 {
 public:
@@ -33,11 +35,15 @@ public:
 	cv::Mat getDepthMap();
 	cv::Mat getUserFreeDepthMap(cv::Mat&);
 	void getPointCloud(pcl::PointCloud<pcl::PointXYZ>&);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr getPointCloud();
+    void getColoredPointCloud(ColorFrame cframe, pcl::PointCloud<pcl::PointXYZRGB>& cloud);
 	void getForegroundPointCloud(pcl::PointCloud<pcl::PointXYZ>&);
     void getForegroundPointCloud(cv::Mat mask, pcl::PointCloud<pcl::PointXYZ>&, bool combined = true);
 	void getUserFreePointCloud(pcl::PointCloud<pcl::PointXYZ>&);
 	void getForegroundUserFreePointCloud(pcl::PointCloud<pcl::PointXYZ>&);
 
+    void show(std::string wndName);
+    
 private:
 	// m_Mat from parent is raw (uint16 from which last 3 pixels contain player idx value)
 	cv::Mat m_Mask;

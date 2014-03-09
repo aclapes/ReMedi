@@ -37,17 +37,20 @@ public:
 
 	void segmentTableTop(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>&);
 	void segmentTableTop(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>&, pcl::PointCloud<pcl::PointXYZ>&);
-
+    
 private:
 
-	void estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>&,
-		pcl::PointXYZ& min, pcl::PointXYZ& max, Eigen::Affine3f& transformation);
+	void estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr,
+                  pcl::PointCloud<pcl::PointXYZ>&, pcl::PointXYZ& min, pcl::PointXYZ& max, Eigen::Affine3f& transformation);
 	bool isTowardsLookingDirectionPlane(pcl::PointCloud<pcl::PointXYZ>::Ptr pPlane);
+//    bool isPlaneIncludingPoint(pcl::PointCloud<pcl::PointXYZ>::Ptr pPlane, pcl::PointXYZ point);
+
 
 	void segment(pcl::PointCloud<pcl::PointXYZ>::Ptr, 
 		pcl::PointXYZ, pcl::PointXYZ, float offset, Eigen::Affine3f, pcl::PointCloud<pcl::PointXYZ>&);
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr m_pCloudA, m_pCloudB;
+//    pcl::PointXYZ m_originA, m_originB;
 	pcl::visualization::PCLVisualizer::Ptr m_pViz;
 	float m_LeafSize;
 	float m_NormalRadius;

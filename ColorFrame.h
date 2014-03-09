@@ -20,5 +20,7 @@ public:
 
 	// Methods
 	bool isValid();
+    
+    void show(std::string wndName);
 };
 

@@ -104,6 +104,19 @@ void DepthFrame::getPointCloud(pcl::PointCloud<pcl::PointXYZ>& cloud)
 	MatToPointCloud(m_projDepthMat, cloud);
 }
 
+pcl::PointCloud<pcl::PointXYZ>::Ptr DepthFrame::getPointCloud()
+{
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud (new pcl::PointCloud<pcl::PointXYZ>());
+    MatToPointCloud(m_projDepthMat, *pCloud);
+	return pCloud;
+}
+
+void DepthFrame::getColoredPointCloud(ColorFrame cframe, pcl::PointCloud<pcl::PointXYZRGB>& cloud)
+{
+    cv::Mat colorMat = cframe.getMat();
+	MatToColoredPointCloud(m_projDepthMat, colorMat, cloud);
+}
+
 
 void DepthFrame::getForegroundPointCloud(pcl::PointCloud<pcl::PointXYZ>& cloud)
 {
@@ -153,4 +166,11 @@ void DepthFrame::getForegroundUserFreePointCloud(pcl::PointCloud<pcl::PointXYZ>&
 	userFreeProjDepthMat.copyTo(fgUserFreeProjDepthMat, m_Mask);
 
 	MatToPointCloud(fgUserFreeProjDepthMat, cloud);
+}
+
+void DepthFrame::show(std::string wndName)
+{
+    cv::namedWindow(wndName);
+    cv::imshow(wndName, m_projDepthMat);
+    cv::waitKey();
 }
