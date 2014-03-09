@@ -170,7 +170,7 @@ bool Reader::getColorPairedFrames(int fID, ColorFrame& frameA, ColorFrame& frame
 bool Reader::getDepthPairedFrames(int fID, DepthFrame& frameA, DepthFrame& frameB)
 {
 	getDepthFrame(m_depthDir1, fID, frameA);
-	getDepthFrame(m_colorDir2, fID, frameB);
+	getDepthFrame(m_depthDir2, fID, frameB);
 
 	if (frameA.isValid() && frameB.isValid()) 
 		return true;
