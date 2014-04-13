@@ -4,18 +4,33 @@ Reader::Reader(std::string dataPath,
                std::string colorDir1, std::string colorDir2,
                std::string depthDir1, std::string depthDir2)
 : m_DataPath(dataPath), m_colorDir1(colorDir1), m_colorDir2(colorDir2),
-m_depthDir1(depthDir1), m_depthDir2(depthDir2), m_cCounter(0), m_dCounter(0)
+m_depthDir1(depthDir1), m_depthDir2(depthDir2), m_cCounter(1), m_dCounter(1)
 {
 }
 
+Reader::Reader(const Reader& other)
+{
+   
+    m_DataPath = other.m_DataPath;
+    m_SequenceDir = other.m_SequenceDir;
+    m_colorDir1 = other.m_colorDir1;
+    m_colorDir2 = other.m_colorDir2;
+    m_depthDir1 = other.m_depthDir1;
+    m_depthDir2 = other.m_depthDir2;
+    
+	m_cCounter = other.m_cCounter;
+    m_dCounter = other.m_dCounter;
+}
 
 Reader::~Reader(void)
 {
 }
 
-void Reader::setSequence(std::string dir)
+void Reader::setInputStream(std::string dir)
 {
-     m_SequenceDir = dir;
+    m_SequenceDir = dir;
+    m_cCounter = 1;
+    m_dCounter = 1;
 }
 
 void Reader::readNextColorFrame(std::string dataPath, std::string colorDir, ColorFrame& cframe)

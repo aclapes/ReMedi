@@ -30,8 +30,8 @@ class Monitorizer
 	typedef LFCloudject<PointT, pcl::FPFHSignature33> Cloudject;
 
 public:
-	Monitorizer(InteractiveRegisterer*, TableModeler*);
-	Monitorizer(InteractiveRegisterer*, TableModeler*, MonitorizerParams);
+	Monitorizer(InteractiveRegisterer ir, TableModeler tm);
+	Monitorizer(InteractiveRegisterer ir, TableModeler tm, MonitorizerParams);
 	~Monitorizer(void);
 
 	void setParams(MonitorizerParams);
@@ -83,8 +83,8 @@ private:
 	// Members
 	MonitorizerParams m_Params;
 
-	InteractiveRegisterer* m_pIR;
-	TableModeler* m_pTableModeler;
+	InteractiveRegisterer m_ir;
+	TableModeler m_tm;
 
 	pcl::visualization::PCLVisualizer::Ptr m_pViz;
 	int m_SceneVp;
@@ -96,7 +96,7 @@ private:
 	PointCloudPtr m_CloudA;
 	PointCloudPtr m_CloudB;
 
-	CloudjectDetector m_cjDetector;
+	CloudjectDetector m_CloudjectDetector;
 	MotionSegmentator m_motionSegmentator;
 
 	std::vector<Cloudject> m_cloudjects; // yet present

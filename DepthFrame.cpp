@@ -133,8 +133,9 @@ void DepthFrame::getForegroundPointCloud(cv::Mat mask, pcl::PointCloud<pcl::Poin
     
     if (combined)
     {
-        cv::Mat combinedMask;
-        cv::bitwise_and(m_Mask, mask, combinedMask);
+        cv::Mat tmp, combinedMask;
+        mask.convertTo(tmp, CV_8UC1);
+        cv::bitwise_and(m_Mask, tmp, combinedMask);
         m_projDepthMat.copyTo(fgProjDepthMat, combinedMask);
     }
     else

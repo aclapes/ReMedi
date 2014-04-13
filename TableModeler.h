@@ -18,10 +18,13 @@
 
 #include <pcl/visualization/pcl_visualizer.h>
 
+#include <opencv2/opencv.hpp>
+
 class TableModeler
 {
 public:
 	TableModeler();
+    TableModeler(const TableModeler& other);
 	~TableModeler();
 
 	void setInputClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB);
@@ -31,23 +34,34 @@ public:
 	void setSACIters(int);
 	void setSACDistThresh(float);
 	void setYOffset(float);
+    void setInteractionBorder(float);
+    
+	void model();
 
-	void model(pcl::PointCloud<pcl::PointXYZ>&);
-	void model(pcl::PointCloud<pcl::PointXYZ>&, pcl::PointCloud<pcl::PointXYZ>&);
-
+    void setInverseSegmentation();
+    
 	void segmentTableTop(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>&);
 	void segmentTableTop(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>&, pcl::PointCloud<pcl::PointXYZ>&);
     
+    void segmentInteractionRegion(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>&);
+	void segmentInteractionRegion(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>&, pcl::PointCloud<pcl::PointXYZ>&);
+    
+    
 private:
 
-	void estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr,
-                  pcl::PointCloud<pcl::PointXYZ>&, pcl::PointXYZ& min, pcl::PointXYZ& max, Eigen::Affine3f& transformation);
-	bool isTowardsLookingDirectionPlane(pcl::PointCloud<pcl::PointXYZ>::Ptr pPlane);
-//    bool isPlaneIncludingPoint(pcl::PointCloud<pcl::PointXYZ>::Ptr pPlane, pcl::PointXYZ point);
+	void estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointXYZ& min, pcl::PointXYZ& max, Eigen::Affine3f& transformation);
+    bool isPlaneIncludingOrigin(pcl::PointCloud<pcl::PointXYZ>::Ptr pPlane);
 
+    void getPointsDimensionCI(pcl::PointCloud<pcl::PointXYZ>& plane, int dim, float alpha, float& minZ, float& maxZ);
 
-	void segment(pcl::PointCloud<pcl::PointXYZ>::Ptr, 
-		pcl::PointXYZ, pcl::PointXYZ, float offset, Eigen::Affine3f, pcl::PointCloud<pcl::PointXYZ>&);
+	void segmentTableTop(pcl::PointCloud<pcl::PointXYZ>::Ptr,
+                         pcl::PointXYZ, pcl::PointXYZ, float offset,
+                         Eigen::Affine3f, Eigen::Affine3f,
+                         pcl::PointCloud<pcl::PointXYZ>&);
+    void segmentInteractionRegion(pcl::PointCloud<pcl::PointXYZ>::Ptr,
+                                  pcl::PointXYZ, pcl::PointXYZ, float offset,
+                                  Eigen::Affine3f, Eigen::Affine3f,
+                                  pcl::PointCloud<pcl::PointXYZ>&);
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr m_pCloudA, m_pCloudB;
 //    pcl::PointXYZ m_originA, m_originB;
@@ -60,4 +74,8 @@ private:
 	pcl::PointXYZ m_MinA, m_MaxA, m_MinB, m_MaxB;
 	float m_OffsetA, m_OffsetB; // sum to the axis corresponding to plane's normal (probably the y dimension)
 	Eigen::Affine3f m_ytonA, m_ytonB; // y axis to n plane normal vector transformtion
+    Eigen::Affine3f m_ytonAInv, m_ytonBInv; // y axis to n plane normal vector transformtion
+
+    float m_InteractionBorder;
+    bool m_bLimitsNegative;
 };

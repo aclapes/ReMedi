@@ -6,7 +6,7 @@
 
 InteractiveRegisterer::InteractiveRegisterer()
 :
-	corresps_ (new pcl::Correspondences), lefties_ (new pcl::PointCloud<pcl::PointXYZ> ()), righties_ (new pcl::PointCloud<pcl::PointXYZ> ())
+	corresps_ (new pcl::Correspondences), cloud_left_ (new pcl::PointCloud<pcl::PointXYZ>), cloud_right_ (new pcl::PointCloud<pcl::PointXYZ>), lefties_ (new pcl::PointCloud<pcl::PointXYZ>), righties_ (new pcl::PointCloud<pcl::PointXYZ>), aligned_cloud_left_ (new pcl::PointCloud<pcl::PointXYZ>), aligned_cloud_right_ (new pcl::PointCloud<pcl::PointXYZ>)
 {
     lefties_->height = 1;
     lefties_->width = 0; // we will increment in width
@@ -20,8 +20,41 @@ InteractiveRegisterer::InteractiveRegisterer()
     must_align_ = false;
 }
 
+InteractiveRegisterer::InteractiveRegisterer(const InteractiveRegisterer& other)
+{
+    cloud_left_     = other.cloud_left_;
+    cloud_right_    = other.cloud_right_;
+    
+    lefties_        = other.lefties_;
+    righties_       = other.righties_;
+    lefties_idx_    = other.lefties_idx_;
+    righties_idx_   = other.righties_idx_;
+    
+    reallocate_points_  = other.reallocate_points_;
+    num_points_         = other.num_points_;
+    
+    must_translate_ = other.must_translate_;
+    must_align_     = other.must_align_;
+    
+    corresps_ = other.corresps_;
+    
+	m_tLeft             = other.m_tLeft;
+    m_tRight            = other.m_tRight;
+	m_Transformation    = other.m_Transformation;
+    
+    aligned_cloud_left_     = other.aligned_cloud_left_;
+    aligned_cloud_right_    = other.aligned_cloud_right_;
+}
 
-void InteractiveRegisterer::setManualCorrespondences(ColorFrame cFrameA, ColorFrame cFrameB, DepthFrame dFrameA, DepthFrame dFrameB)
+void InteractiveRegisterer::setInputFrames(ColorFrame cFrameA, ColorFrame cFrameB, DepthFrame dFrameA, DepthFrame dFrameB)
+{
+    m_ColorFrameA = cFrameA;
+    m_ColorFrameB = cFrameB;
+    m_DepthFrameA = dFrameA;
+    m_DepthFrameB = dFrameB;
+}
+
+void InteractiveRegisterer::interact()
 {
     cloud_viewer_ = pcl::visualization::PCLVisualizer::Ptr(new pcl::visualization::PCLVisualizer ("PCL OpenNI cloud"));
     cloud_viewer_->registerMouseCallback (&InteractiveRegisterer::mouseCallback, *this);
@@ -31,22 +64,25 @@ void InteractiveRegisterer::setManualCorrespondences(ColorFrame cFrameA, ColorFr
     cloud_viewer_->createViewPort(0, 0, 0.5f, 1.0f, viewport_left_);
     cloud_viewer_->createViewPort(0.5f, 0, 1.f, 1.0f, viewport_right_);
     
-    cloud_viewer_->addCoordinateSystem(0.1, 0, 0, 0, "cs1", viewport_left_);
-    cloud_viewer_->addCoordinateSystem(0.1, 0, 0, 0, "cs2", viewport_right_);
+    //cloud_viewer_->addCoordinateSystem(0.1, 0, 0, 0, "cs1", viewport_left_);
+    //cloud_viewer_->addCoordinateSystem(0.1, 0, 0, 0, "cs2", viewport_right_);
     
     cloud_viewer_->setSize(1280, 480);
     
     setDefaultCamera(cloud_viewer_, viewport_left_);
     setDefaultCamera(cloud_viewer_, viewport_right_);
     
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_left_	(new pcl::PointCloud<pcl::PointXYZRGB>);
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_right_ (new pcl::PointCloud<pcl::PointXYZRGB>);
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_left	(new pcl::PointCloud<pcl::PointXYZRGB>);
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_right (new pcl::PointCloud<pcl::PointXYZRGB>);
 
-	dFrameA.getColoredPointCloud(cFrameA, *cloud_left_);
-	dFrameB.getColoredPointCloud(cFrameB, *cloud_right_);
+	m_DepthFrameA.getColoredPointCloud(m_ColorFrameA, *cloud_left);
+	m_DepthFrameB.getColoredPointCloud(m_ColorFrameB, *cloud_right);
+    
+    pcl::copyPointCloud(*cloud_left, *cloud_left_);
+    pcl::copyPointCloud(*cloud_right, *cloud_right_);
 
-    cloud_viewer_->addPointCloud (cloud_left_, "Left cloud", viewport_left_);
-    cloud_viewer_->addPointCloud (cloud_right_, "Right cloud", viewport_right_);
+    cloud_viewer_->addPointCloud (cloud_left, "Left cloud", viewport_left_);
+    cloud_viewer_->addPointCloud (cloud_right, "Right cloud", viewport_right_);
 
     while (!must_translate_)
     {
@@ -61,6 +97,8 @@ void InteractiveRegisterer::setManualCorrespondences(ColorFrame cFrameA, ColorFr
 void InteractiveRegisterer::computeTransformation()
 {
     find_transformation(lefties_, righties_, m_Transformation);
+    registration(cloud_left_, cloud_right_,
+                 *aligned_cloud_left_, *aligned_cloud_right_);
 }
 
 
@@ -69,6 +107,11 @@ void InteractiveRegisterer::setNumPoints(int num_points)
 	num_points_ = num_points;
 }
 
+pair<pcl::PointCloud<pcl::PointXYZ>::Ptr,pcl::PointCloud<pcl::PointXYZ>::Ptr> InteractiveRegisterer::getRegisteredClouds()
+{
+    return pair<pcl::PointCloud<pcl::PointXYZ>::Ptr
+    , pcl::PointCloud<pcl::PointXYZ>::Ptr>(aligned_cloud_left_, aligned_cloud_right_);
+}
 
 void InteractiveRegisterer::translate(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointXYZ t, 
 	pcl::PointCloud<pcl::PointXYZ>& cloud_ctr)
@@ -373,19 +416,23 @@ void InteractiveRegisterer::saveTransformation(std::string filePath)
 	cv::eigen2cv(m_tRight, tRightMat);
 	cv::eigen2cv(m_Transformation, transfMat);
 
-	cv::FileStorage fs (filePath, cv::FileStorage::WRITE);
+	cv::FileStorage fs (filePath + "transformation.yml", cv::FileStorage::WRITE);
 	fs << "tLeftMat" << tLeftMat;
 	fs << "tRightMat" << tRightMat;
 	fs << "transfMat" << transfMat;
 
 	fs.release();
+    
+    pcl::PCDWriter pcdwriter;
+    pcdwriter.write(filePath + "registeredA.pcd", *aligned_cloud_left_);
+    pcdwriter.write(filePath + "registeredB.pcd", *aligned_cloud_right_);
 }
 
 
 bool InteractiveRegisterer::loadTransformation(std::string filePath)
 {
 	cv::Mat tLeftMat, tRightMat, transfMat;
-	cv::FileStorage fs (filePath, cv::FileStorage::READ);
+	cv::FileStorage fs (filePath + "transformation.yml", cv::FileStorage::READ);
     
     if (!fs.isOpened())
         return false;
@@ -401,6 +448,11 @@ bool InteractiveRegisterer::loadTransformation(std::string filePath)
 		cv::cv2eigen(transfMat, m_Transformation);
 		cv::cv2eigen(tLeftMat, m_tLeft);
 		cv::cv2eigen(tRightMat, m_tRight);
+        
+        pcl::PCDReader pcdreader;
+        pcdreader.read(filePath + "registeredA.pcd", *aligned_cloud_left_);
+        pcdreader.read(filePath + "registeredB.pcd", *aligned_cloud_right_);
+        
 		return true;
 	}
 	else
@@ -409,7 +461,7 @@ bool InteractiveRegisterer::loadTransformation(std::string filePath)
 	}
 }
 
-void InteractiveRegisterer::getRegisteredClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB, pcl::PointCloud<pcl::PointXYZ>& regCloudA, pcl::PointCloud<pcl::PointXYZ>& regCloudB)
+void InteractiveRegisterer::registration(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB, pcl::PointCloud<pcl::PointXYZ>& regCloudA, pcl::PointCloud<pcl::PointXYZ>& regCloudB)
 {
     pcl::PointCloud<pcl::PointXYZ>::Ptr pCtrCloudA (new pcl::PointCloud<pcl::PointXYZ>);
     translate(pCloudA, m_tLeft, *pCtrCloudA);
@@ -418,7 +470,7 @@ void InteractiveRegisterer::getRegisteredClouds(pcl::PointCloud<pcl::PointXYZ>::
     pcl::transformPointCloud(*pCtrCloudA, regCloudA, m_Transformation);
 }
 
-void InteractiveRegisterer::getRegisteredClouds(DepthFrame frameA, DepthFrame frameB,
+void InteractiveRegisterer::registration(DepthFrame frameA, DepthFrame frameB,
 	pcl::PointCloud<pcl::PointXYZ>& regCloudA, pcl::PointCloud<pcl::PointXYZ>& regCloudB, 
 	bool bBackgroundPoints, bool bUserPoints)
 {    
@@ -470,6 +522,7 @@ void InteractiveRegisterer::visualizeRegistration(pcl::PointCloud<pcl::PointXYZ>
     {
         pViz->spinOnce(200);
     }
+    pViz->close();
 }
 
 
@@ -491,7 +544,7 @@ void InteractiveRegisterer::visualizeRegistration(DepthFrame dFrameA, DepthFrame
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA (new pcl::PointCloud<pcl::PointXYZ>);
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB (new pcl::PointCloud<pcl::PointXYZ>);
 
-	getRegisteredClouds(dFrameA, dFrameB, *pCloudA, *pCloudB);
+	registration(dFrameA, dFrameB, *pCloudA, *pCloudB);
 
 	pcl::visualization::PCLVisualizer::Ptr pViz (new pcl::visualization::PCLVisualizer);
     pViz->setWindowName("Fusion viewer");
@@ -502,10 +555,11 @@ void InteractiveRegisterer::visualizeRegistration(DepthFrame dFrameA, DepthFrame
     pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "cloud left");
     pViz->addPointCloud (pCloudB, "cloud right");
     pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "cloud right");
-        
-    while (!pViz->wasStopped())
+    
+    int secs = 0;
+    while (secs++ < 5)
     {
-        pViz->spinOnce(200);
+        pViz->spinOnce(1000);
     }
 }
 

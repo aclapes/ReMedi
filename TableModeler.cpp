@@ -6,11 +6,39 @@
 #include <pcl/filters/statistical_outlier_removal.h>
 
 
-TableModeler::TableModeler() : m_pViz(new pcl::visualization::PCLVisualizer())
+TableModeler::TableModeler()
+: m_pViz(new pcl::visualization::PCLVisualizer()), m_bLimitsNegative(false)
 {
 	m_pViz->addCoordinateSystem();
 }
 
+TableModeler::TableModeler(const TableModeler& other)
+{
+    m_pCloudA = other.m_pCloudA;
+    m_pCloudB = other.m_pCloudB;
+    
+	m_LeafSize = other.m_LeafSize;
+	m_NormalRadius = other.m_NormalRadius;
+	m_SACIters = other.m_SACIters;
+	m_SACDistThresh = other.m_SACDistThresh;
+    
+	m_MinA = other.m_MinA;
+    m_MaxA = other.m_MaxA;
+    m_MinB = other.m_MinB;
+    m_MaxB = other.m_MaxB;
+    
+	m_OffsetA = other.m_OffsetA;
+    m_OffsetB = other.m_OffsetB;
+    
+    m_ytonA = other.m_ytonA;
+    m_ytonB = other.m_ytonB;
+    
+    m_ytonAInv = other.m_ytonAInv;
+    m_ytonBInv = other.m_ytonBInv;
+    
+    m_bLimitsNegative = other.m_bLimitsNegative;
+    m_InteractionBorder = other.m_InteractionBorder;
+}
 
 TableModeler::~TableModeler()
 {
@@ -56,20 +84,21 @@ void TableModeler::setYOffset(float yOffset)
 	m_OffsetB = yOffset;
 }
 
-
-void TableModeler::model(pcl::PointCloud<pcl::PointXYZ>& plane)
+void TableModeler::setInteractionBorder(float border)
 {
-	estimate(m_pCloudA, plane, m_MinA, m_MaxA, m_ytonA);
+	m_InteractionBorder = border;
 }
 
 
-void TableModeler::model(pcl::PointCloud<pcl::PointXYZ>& planeA, pcl::PointCloud<pcl::PointXYZ>& planeB)
+void TableModeler::model()
 {
-    std::cout << "Esitmating plane in B ..." << std::endl;
-	estimate(m_pCloudB, planeB, m_MinB, m_MaxB, m_ytonB);
+    std::cout << "Estimating plane in A ..." << std::endl;
+	estimate(m_pCloudA, m_MinA, m_MaxA, m_ytonA);
+    m_ytonAInv = m_ytonA.inverse();
     
-	std::cout << "Estimating plane in A ..." << std::endl;
-	estimate(m_pCloudA, planeA, m_MinA, m_MaxA, m_ytonA);
+    std::cout << "Esitmating plane in B ..." << std::endl;
+	estimate(m_pCloudB, m_MinB, m_MaxB, m_ytonB);
+    m_ytonBInv = m_ytonB.inverse();
 
 //    m_pViz->addPointCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr(&planeA), "planeA");
 //    m_pViz->addPointCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr(&planeB), "planeB");
@@ -81,8 +110,36 @@ void TableModeler::model(pcl::PointCloud<pcl::PointXYZ>& planeA, pcl::PointCloud
 //    m_pViz->removeAllPointClouds();
 }
 
+void TableModeler::getPointsDimensionCI(pcl::PointCloud<pcl::PointXYZ>& plane, int dim, float alpha, float& min, float& max)
+{
+    cv::Mat values (plane.size(), 1, cv::DataType<float>::type);
+    for (int i = 0; i < plane.size(); i++)
+    {
+        if (dim == 1)
+            values.at<float>(i,0) = plane.points[i].x;
+        else if (dim == 2)
+            values.at<float>(i,0) = plane.points[i].y;
+        else
+            values.at<float>(i,0) = plane.points[i].z;
+    }
+    
+    cv::Scalar mean, stddev;
+    cv::meanStdDev(values, mean, stddev);
+    
+    float pval;
+    if (alpha = 0.80) pval = 1.28;
+    else if (alpha = 0.85) pval = 1.44;
+    else if (alpha == 0.90) pval = 1.65;
+    else if (alpha == 0.95) pval = 1.96;
+    else if (alpha == 0.99) pval = 2.57;
+    else pval = 1.96;
+    
+    float confidence = pval * (stddev.val[0] / sqrt(values.rows));
+    min = mean.val[0] - confidence;
+    max = mean.val[0] + confidence;
+}
 
-void TableModeler::estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, pcl::PointCloud<pcl::PointXYZ>& plane,
+void TableModeler::estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud,
 		pcl::PointXYZ& min, pcl::PointXYZ& max, Eigen::Affine3f& yton)
 {
 	// downsampling
@@ -176,7 +233,7 @@ void TableModeler::estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, pcl::Poi
 		// Check
         pcl::PointCloud<pcl::PointXYZ>::Ptr pBiggestCluster (new pcl::PointCloud<pcl::PointXYZ>);
 
-		if ( (found = isTowardsLookingDirectionPlane(pPlane)) )
+		if ( (found = isPlaneIncludingOrigin(pPlane)) )
 		{
 			// Compute a transformation in which a bounding box in a convenient base
 
@@ -208,10 +265,11 @@ void TableModeler::estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, pcl::Poi
 			biggestEuclideanCluster(pPlaneTF, 2.5 * m_LeafSize, *pBiggestClusterT);
 
 			pcl::getMinMax3D(*pBiggestClusterT, min, max);
+            getPointsDimensionCI(*pBiggestClusterT, 2, 0.8, min.y, max.y);
 
 			pcl::transformPointCloud(*pBiggestClusterT, *pBiggestCluster, yton.inverse());
 
-            pcl::copyPointCloud(*pPlane, plane);
+            //pcl::copyPointCloud(*pPlane, plane);
             
             // Visualization
             
@@ -219,10 +277,12 @@ void TableModeler::estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, pcl::Poi
             pViz.addCoordinateSystem();
             pViz.addPointCloud(pCloudF, "filtered");
             pViz.addPointCloud(pBiggestCluster, "biggestCluster");
-            pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.41, 0.1, 1.0, "biggestCluster");
+            pViz.addPointCloud(pBiggestClusterT, "biggestClusterT");
+            pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.61, 0.1, 1.0, "biggestCluster");
+            pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.21, 0.1, 1.0, "biggestClusterT");
             
             int c = 0;
-            while(c++ < 2)
+            while(c++ < 10)
             {
                 pViz.spinOnce(1000);
             }
@@ -234,7 +294,7 @@ void TableModeler::estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, pcl::Poi
 }
 
 
-bool TableModeler::isTowardsLookingDirectionPlane(pcl::PointCloud<pcl::PointXYZ>::Ptr pPlane)
+bool TableModeler::isPlaneIncludingOrigin(pcl::PointCloud<pcl::PointXYZ>::Ptr pPlane)
 {
 	for (int i = 0; i < pPlane->points.size(); i++)
 	{
@@ -247,87 +307,133 @@ bool TableModeler::isTowardsLookingDirectionPlane(pcl::PointCloud<pcl::PointXYZ>
 			return true;
 		}
 	}
-
+    
 	return false;
 }
 
 
-//bool TableModeler::isPlaneIncludingPoint(pcl::PointCloud<pcl::PointXYZ>::Ptr pPlane, pcl::PointXYZ point)
-//{
-//	for (int i = 0; i < pPlane->points.size(); i++)
-//	{
-//		// Is there any point in the camera viewpoint direction (or close to)?
-//		// That is having x and y close to 0
-//		const pcl::PointXYZ & p =  pPlane->points[i];
-//		if (abs(p.x - point.x) < 10*m_LeafSize && abs(p.y - point.y) < 10*m_LeafSize && abs(p.z - point.z) < 10*m_LeafSize)
-//		{
-//			return true;
-//		}
-//	}
-//	return false;
-//}
-
-
-void TableModeler::segmentTableTop(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, 
-	pcl::PointCloud<pcl::PointXYZ>& cloudObjs)
+void TableModeler::segmentTableTop(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud,
+                                   pcl::PointCloud<pcl::PointXYZ>& cloudObjs)
 {
-	segment(pCloud, m_MinA, m_MaxA, m_OffsetA, m_ytonA, cloudObjs);
+	segmentTableTop(pCloud, m_MinA, m_MaxA, m_OffsetA, m_ytonA, m_ytonAInv, cloudObjs);
 }
 
 
-void TableModeler::segmentTableTop(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB, 
-	pcl::PointCloud<pcl::PointXYZ>& cloudObjsA, pcl::PointCloud<pcl::PointXYZ>& cloudObjsB)
+void TableModeler::segmentTableTop(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB,
+                                   pcl::PointCloud<pcl::PointXYZ>& cloudObjsA, pcl::PointCloud<pcl::PointXYZ>& cloudObjsB)
 {
-	segment(pCloudA, m_MinA, m_MaxA, m_OffsetA, m_ytonA, cloudObjsA);
-	segment(pCloudB, m_MinB, m_MaxB, m_OffsetB, m_ytonB, cloudObjsB);
+	segmentTableTop(pCloudA, m_MinA, m_MaxA, m_OffsetA, m_ytonA, m_ytonAInv, cloudObjsA);
+	segmentTableTop(pCloudB, m_MinB, m_MaxB, m_OffsetB, m_ytonB, m_ytonBInv, cloudObjsB);
 }
 
 
-void TableModeler::segment(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, pcl::PointXYZ min, pcl::PointXYZ max, 
-	float offset, Eigen::Affine3f yton, pcl::PointCloud<pcl::PointXYZ>& cloudObjs)
+void TableModeler::segmentTableTop(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, pcl::PointXYZ min, pcl::PointXYZ max,
+                                   float offset, Eigen::Affine3f yton, Eigen::Affine3f ytonInv, pcl::PointCloud<pcl::PointXYZ>& cloudObjs)
 {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudAux (new pcl::PointCloud<pcl::PointXYZ>());
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudAuxF (new pcl::PointCloud<pcl::PointXYZ>());
-
+    
 	// Transformation
 	pcl::transformPointCloud(*pCloud, *pCloudAux, yton);
 	
 	//pcl::visualization::PCLVisualizer viz ("hola");
 	//viz.addCoordinateSystem();
-
+    
 	//viz.addPointCloud (pCloudAux, "cloud left");
- //   viz.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.5, 0, 0, "cloud left");
- //   viz.addPointCloud (pCloudAuxF, "cloud right");
- //   viz.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 0.5, 0, "cloud right");
-
+    //   viz.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.5, 0, 0, "cloud left");
+    //   viz.addPointCloud (pCloudAuxF, "cloud right");
+    //   viz.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 0.5, 0, "cloud right");
+    
 	//viz.spin();
-
-
+    
+    
 	// Passthrough
-
+    
 	pcl::PassThrough<pcl::PointXYZ> pt;
-
+    
 	pt.setInputCloud(pCloudAux);
 	pt.setFilterFieldName("x");
 	pt.setFilterLimits(min.x, max.x);
+    pt.setFilterLimitsNegative(m_bLimitsNegative);
 	pt.filter(*pCloudAuxF);
-
+    
 	pCloudAuxF.swap(pCloudAux);
-
+    
 	pt.setInputCloud(pCloudAux);
 	pt.setFilterFieldName("y");
 	pt.setFilterLimits(max.y, max.y + offset);
+    pt.setFilterLimitsNegative(m_bLimitsNegative);
 	pt.filter(*pCloudAuxF);
-
+    
 	pCloudAuxF.swap(pCloudAux);
-
+    
 	pt.setInputCloud(pCloudAux);
 	pt.setFilterFieldName("z");
 	pt.setFilterLimits(min.z, max.z);
+    pt.setFilterLimitsNegative(m_bLimitsNegative);
 	pt.filter(*pCloudAuxF);
-
+    
 	// De-transformation
+    
+	pcl::transformPointCloud(*pCloudAuxF, cloudObjs, ytonInv);
+}
 
-	pcl::transformPointCloud(*pCloudAuxF, cloudObjs, yton.inverse());
+void TableModeler::segmentInteractionRegion(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud,
+                                            pcl::PointCloud<pcl::PointXYZ>& cloudObjs)
+{
+	segmentInteractionRegion(pCloud, m_MinA, m_MaxA, m_OffsetA, m_ytonA, m_ytonAInv, cloudObjs);
+}
+
+
+void TableModeler::segmentInteractionRegion(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA,
+                                            pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB,
+                                            pcl::PointCloud<pcl::PointXYZ>& cloudObjsA,
+                                            pcl::PointCloud<pcl::PointXYZ>& cloudObjsB)
+{
+	segmentInteractionRegion(pCloudA, m_MinA, m_MaxA, m_OffsetA, m_ytonA, m_ytonAInv, cloudObjsA);
+	segmentInteractionRegion(pCloudB, m_MinB, m_MaxB, m_OffsetB, m_ytonB, m_ytonBInv, cloudObjsB);
+}
+
+
+void TableModeler::segmentInteractionRegion(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud,
+                                            pcl::PointXYZ min, pcl::PointXYZ max,
+                                            float offset, Eigen::Affine3f yton, Eigen::Affine3f ytonInv,
+                                            pcl::PointCloud<pcl::PointXYZ>& cloudObjs)
+{
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudAux (new pcl::PointCloud<pcl::PointXYZ>());
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudAuxF (new pcl::PointCloud<pcl::PointXYZ>());
+    
+	// Transformation
+	pcl::transformPointCloud(*pCloud, *pCloudAux, yton);
+    
+	// Passthrough
+    
+	pcl::PassThrough<pcl::PointXYZ> pt;
+    
+	pt.setInputCloud(pCloudAux);
+	pt.setFilterFieldName("x");
+	pt.setFilterLimits(min.x - m_InteractionBorder, max.x + m_InteractionBorder);
+    pt.setFilterLimitsNegative(m_bLimitsNegative);
+	pt.filter(*pCloudAuxF);
+    
+	pCloudAuxF.swap(pCloudAux);
+    
+	pt.setInputCloud(pCloudAux);
+	pt.setFilterFieldName("y");
+	pt.setFilterLimits(max.y, max.y + offset);
+    pt.setFilterLimitsNegative(m_bLimitsNegative);
+	pt.filter(*pCloudAuxF);
+    
+	pCloudAuxF.swap(pCloudAux);
+    
+	pt.setInputCloud(pCloudAux);
+	pt.setFilterFieldName("z");
+	pt.setFilterLimits(min.z - m_InteractionBorder, max.z + m_InteractionBorder);
+    pt.setFilterLimitsNegative(m_bLimitsNegative);
+	pt.filter(*pCloudAuxF);
+    
+	// De-transformation
+    
+	pcl::transformPointCloud(*pCloudAuxF, cloudObjs, ytonInv);
 }
 

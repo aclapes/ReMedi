@@ -2,6 +2,7 @@
 
 #include "InteractiveRegisterer.h"
 #include "DepthFrame.h"
+#include "ColorFrame.h"
 
 #define MEASURE_FUNCTION_TIME
 #include <pcl/common/time.h> //fps calculations
@@ -23,6 +24,8 @@
 #include <pcl/visualization/common/common.h>
 
 #include <opencv2/opencv.hpp>
+
+using namespace std;
 
 static const float colors[][3] = {
     {1, 0, 0},
@@ -49,6 +52,8 @@ class InteractiveRegisterer
 {
 public:    
 	InteractiveRegisterer();
+    
+    InteractiveRegisterer(const InteractiveRegisterer& other);
 
 	void setNumPoints(int);
 
@@ -61,7 +66,9 @@ public:
     
     void setDefaultCamera(pcl::visualization::PCLVisualizer::Ptr, int);
     
-    void setManualCorrespondences(ColorFrame, ColorFrame, DepthFrame, DepthFrame);
+    void setInputFrames(ColorFrame, ColorFrame, DepthFrame, DepthFrame);
+    
+    void interact();
     
     void stop(pcl::visualization::PCLVisualizer&);
 
@@ -69,14 +76,16 @@ public:
 
     void computeTransformation();
     
-	bool loadTransformation(std::string filePath);
-	void saveTransformation(std::string filePath);
+	bool loadTransformation(string filePath);
+	void saveTransformation(string filePath);
     
-	void getRegisteredClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>&, pcl::PointCloud<pcl::PointXYZ>&);
-	void getRegisteredClouds(DepthFrame, DepthFrame, 
+	void registration(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>&, pcl::PointCloud<pcl::PointXYZ>&);
+	void registration(DepthFrame, DepthFrame,
 		pcl::PointCloud<pcl::PointXYZ>&, pcl::PointCloud<pcl::PointXYZ>&,
 		bool backgroundPoints = true, bool userPoints = true);
 
+    pair<pcl::PointCloud<pcl::PointXYZ>::Ptr,pcl::PointCloud<pcl::PointXYZ>::Ptr> getRegisteredClouds();
+    
 	void visualizeRegistration(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr);
 	void visualizeRegistration(pcl::visualization::PCLVisualizer::Ptr, 
 		pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr);
@@ -95,11 +104,15 @@ private:
     
     boost::shared_ptr<pcl::visualization::PCLVisualizer> cloud_viewer_;
     int viewport_left_, viewport_right_;
-        
+    
+    ColorFrame m_ColorFrameA, m_ColorFrameB;
+    DepthFrame m_DepthFrameA, m_DepthFrameB;
+    
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_left_, cloud_right_;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr aligned_cloud_left_, aligned_cloud_right_;
     
     pcl::PointCloud<pcl::PointXYZ>::Ptr lefties_, righties_;
-    std::vector<int> lefties_idx_, righties_idx_;
+    vector<int> lefties_idx_, righties_idx_;
 
     bool reallocate_points_;
     int num_points_;

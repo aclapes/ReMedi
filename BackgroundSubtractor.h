@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DepthFrame.h"
+#include "Reader.h"
 
 #include <opencv2/opencv.hpp>
 
@@ -9,7 +10,7 @@ class BackgroundSubtractor
 public:
 	BackgroundSubtractor(int, int);
 	~BackgroundSubtractor(void);
-	
+    
 	void operator()(DepthFrame, float alpha = 0);
 	void operator()(DepthFrame, DepthFrame, float alpha = 0);
 

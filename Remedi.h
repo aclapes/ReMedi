@@ -5,6 +5,7 @@
 #include "BackgroundSubtractor.h"
 #include "TableModeler.h"
 
+using namespace std;
 
 class Remedi
 {
@@ -18,7 +19,9 @@ public:
 	void Run();
 
 private:
-	void waitForBackgroundSubtraction(Reader& reader, BackgroundSubtractor& bs);
-	void interactWithRegisterer(InteractiveRegisterer& registerer, Reader& reader); // ugly: to pass the reader
-	void modelTables(TableModeler& tableModeler, InteractiveRegisterer& registerer, Reader& reader);
+	void modelBackground(Reader reader, BackgroundSubtractor& bs);
+	void interactWithRegisterer(Reader reader, InteractiveRegisterer& registerer);
+	void modelTablePlanes(pcl::PointCloud<pcl::PointXYZ>::Ptr pRegisteredCloudA,
+                          pcl::PointCloud<pcl::PointXYZ>::Ptr pRegisteredCloudB,
+                          TableModeler& tableModeler);
 };

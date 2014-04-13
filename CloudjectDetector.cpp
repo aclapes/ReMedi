@@ -12,10 +12,15 @@ CloudjectDetector::~CloudjectDetector(void)
 }
 
 
-void CloudjectDetector::setInputClouds( pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB )
+void CloudjectDetector::setInputClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA,
+                                       pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB,
+                                       pcl::PointCloud<pcl::PointXYZ>::Ptr pTableTopCloudA,
+                                       pcl::PointCloud<pcl::PointXYZ>::Ptr pTableTopCloudB)
 {
 	m_pCloudA = pCloudA;
-	m_pCloudB = pCloudB;
+    m_pCloudB = pCloudB;
+    m_pTableTopCloudA = pTableTopCloudA;
+	m_pTableTopCloudB = pTableTopCloudB;
 }
 
 
@@ -37,16 +42,18 @@ void CloudjectDetector::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::
 	pcl::PointCloud<PointT>::Ptr pCloudR (new pcl::PointCloud<PointT>());
 	pcl::PointCloud<PointT>::Ptr pCloudF (new pcl::PointCloud<PointT>());
 
-	pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
-	sor.setInputCloud (pCloud);
-	sor.setMeanK (10);
-	sor.setStddevMulThresh (1.0);
-	sor.filter (*pCloudR);
-
-	pcl::ApproximateVoxelGrid<PointT> avg;
-	avg.setInputCloud(pCloudR);
+    pcl::ApproximateVoxelGrid<PointT> avg;
+	avg.setInputCloud(pCloud);
 	avg.setLeafSize(m_LeafSize, m_LeafSize, m_LeafSize);
 	avg.filter(*pCloudF);
+    
+//	pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+//	sor.setInputCloud (pCloudR);
+//	sor.setMeanK (10);
+//	sor.setStddevMulThresh (1.0);
+//	sor.filter (*pCloudF);
+
+
 
 	// Creating the KdTree object for the search method of the extraction
 	pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
@@ -55,8 +62,8 @@ void CloudjectDetector::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::
 	std::vector<pcl::PointIndices> clusterIndices;
 	pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
 	ec.setClusterTolerance (8 * m_LeafSize); // cm
-	ec.setMinClusterSize (200);
-	ec.setMaxClusterSize (700);
+	ec.setMinClusterSize (50);
+	ec.setMaxClusterSize (7000);
 	ec.setSearchMethod (tree);
 	ec.setInputCloud (pCloudF);
 	ec.extract (clusterIndices);
@@ -429,18 +436,69 @@ void CloudjectDetector::findCorrespondences2(
 }
 
 
+float CloudjectDetector::matchClusters(pcl::PointCloud<pcl::PointXYZ>::Ptr pSrcCloud, pcl::PointCloud<pcl::PointXYZ>::Ptr pTgtCloud)
+{
+    float minDist = numeric_limits<float>::max();
+    for (int i = 0; i < pSrcCloud->size(); i++)
+    {
+        for (int j = 0; j < pTgtCloud->size(); j++)
+        {
+            pcl::PointXYZ& p = pSrcCloud->points[i];
+            pcl::PointXYZ& q = pTgtCloud->points[j];
+
+            float dist = sqrt(pow(p.x - q.x, 2) + pow(p.y - q.y, 2) + pow(p.z - q.z, 2));
+
+            if (dist < minDist)
+            {
+                minDist = dist;
+            }
+        }
+
+    }
+    return minDist;
+}
+
+
+void CloudjectDetector::matchClustersFromView(vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> src, vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> tgt, vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& matches)
+{
+    for (int i = 0; i < src.size(); i++)
+        for (int j = 0; j < tgt.size(); j++)
+        {
+            float ratio = ((float) src[i]->size()) / tgt[j]->size();
+            if (ratio > 0.5) // an object with more than a half of its points outside the table surface should fall, and hence it is the subject
+            {
+                float dist = matchClusters(src[i], tgt[j]);
+                std::cout << i << "(" << src[i]->size() << "), " << j << "(" << tgt[j]->size() << "): " <<  dist << std::endl;
+            
+                if (dist < 2 * m_LeafSize)
+                {
+                    matches.push_back(src[i]);
+                    break;
+                }
+            }
+        }
+}
+
 void CloudjectDetector::detect( std::vector<Cloudject>& cloudjects )
 {
 	// Extract clusters from each view separately
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersA, clustersB;
+	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersA, clustersB,
+                                                     auxTableTopClustersA, auxTableTopClustersB,
+                                                     tableTopClustersA, tableTopClustersB;
 
-	extractClustersFromView(m_pCloudA, clustersA);
+    extractClustersFromView(m_pCloudA, clustersA);
 	extractClustersFromView(m_pCloudB, clustersB);
+    
+	extractClustersFromView(m_pTableTopCloudA, auxTableTopClustersA);
+	extractClustersFromView(m_pTableTopCloudB, auxTableTopClustersB);
+    
+    matchClustersFromView(auxTableTopClustersA, clustersA, tableTopClustersA);
+    matchClustersFromView(auxTableTopClustersB, clustersB, tableTopClustersB);
 
 	// Merge clusters extracted separately
 	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> correspsA, correspsB, leftoversA, leftoversB; // clouds just seen in one image
 
-	findCorrespondences2(clustersA, clustersB, correspsA, correspsB, leftoversA, leftoversB);
+	findCorrespondences2(tableTopClustersA, tableTopClustersB, correspsA, correspsB, leftoversA, leftoversB);
 
 	// Create cloudejcts from detected clusters in views' pointclouds
 

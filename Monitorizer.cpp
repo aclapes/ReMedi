@@ -1,15 +1,18 @@
 #include "Monitorizer.h"
 
 
-Monitorizer::Monitorizer(InteractiveRegisterer* pIR, TableModeler* pTM) 
-	: m_pIR(pIR), m_pTableModeler(pTM), m_pViz(new pcl::visualization::PCLVisualizer("Monitorizer"))
+Monitorizer::Monitorizer(InteractiveRegisterer ir, TableModeler tm)
+	: m_ir(ir), m_tm(tm), m_pViz(new pcl::visualization::PCLVisualizer("Monitorizer"))
 {
+    m_CloudjectDetector.setLeafSize(0.01); // default
 }
 
 
-Monitorizer::Monitorizer(InteractiveRegisterer* pIR, TableModeler* pTM, MonitorizerParams params)
-	: m_pIR(pIR), m_Params(params), m_pTableModeler(pTM), m_pViz(new pcl::visualization::PCLVisualizer("Monitorizer"))
+Monitorizer::Monitorizer(InteractiveRegisterer ir, TableModeler tm, MonitorizerParams params)
+	: m_ir(ir), m_Params(params), m_tm(tm), m_pViz(new pcl::visualization::PCLVisualizer("Monitorizer"))
 {
+    m_CloudjectDetector.setLeafSize(params.leafSize);
+    
 	m_pViz->createViewPort(0, 0, 0.5, 1, m_SceneVp);
 	m_pViz->createViewPort(0.5, 0, 1, 0.5, m_ObjectsAVp);
 	m_pViz->createViewPort(0.5, 0.5, 1, 1, m_ObjectsBVp);
@@ -35,42 +38,52 @@ void Monitorizer::monitor(DepthFrame dFrameA, DepthFrame dFrameB)
 {
 	// frames (dense depth images) -> registered point clouds
     
-	PointCloudPtr pFgRCloudA (new PointCloud); // foreground (background subtracted)
-	PointCloudPtr pFgRCloudB (new PointCloud);
+	PointCloudPtr pRCloudA (new PointCloud); // foreground (background subtracted)
+	PointCloudPtr pRCloudB (new PointCloud);
     
-	m_pIR->getRegisteredClouds(dFrameA, dFrameB, *pFgRCloudA, *pFgRCloudB, false, false);
+	m_ir.registration(dFrameA, dFrameB, *pRCloudA, *pRCloudB, false, false);
 
 	// Segment table top
 
-	PointCloudPtr pTableTopRCloudA (new PointCloud);
-	PointCloudPtr pTableTopRCloudB (new PointCloud);
+	PointCloudPtr pTableTopCloudA (new PointCloud);
+	PointCloudPtr pTableTopCloudB (new PointCloud);
+    PointCloudPtr pInteractionCloudA (new PointCloud);
+	PointCloudPtr pInteractionCloudB (new PointCloud);
 
-	m_pTableModeler->segmentTableTop(pFgRCloudA, pFgRCloudB, *pTableTopRCloudA, *pTableTopRCloudB);
-
-    // Clusterize the blobs and create cloudjects
-
-	vector<Cloudject> cloudjects;
-
-	m_cjDetector.setInputClouds(pTableTopRCloudA, pTableTopRCloudB);
-	m_cjDetector.detect(cloudjects);
+	m_tm.segmentTableTop(pRCloudA, pRCloudB,
+                         *pTableTopCloudA, *pTableTopCloudB);
+    
+    m_tm.segmentInteractionRegion(pRCloudA, pRCloudB,
+                                  *pInteractionCloudA, *pInteractionCloudB);
 
 	// Detect motion
     
-    PointCloudPtr pMotionCloudA (new PointCloud);
-	PointCloudPtr pMotionCloudB (new PointCloud);
+//    PointCloudPtr pMotionCloudA (new PointCloud);
+//	PointCloudPtr pMotionCloudB (new PointCloud);
+//    
+//    m_motionSegmentator.setInputFrames(dFrameA, dFrameB);
+//    m_motionSegmentator.setMotionThreshold(m_Params.motionThresh);
+//    //m_motionSegmentator.setNegativeMotion(false);
+//    m_motionSegmentator.segment(*pMotionCloudA, *pMotionCloudB);
+//    
+//    PointCloudPtr pMotionRCloudA (new PointCloud);
+//	PointCloudPtr pMotionRCloudB (new PointCloud);
+//    
+//	m_ir.registration(pMotionCloudA, pMotionCloudB, *pMotionRCloudA, *pMotionRCloudB);
     
-    m_motionSegmentator.setInputFrames(dFrameA, dFrameB);
-    m_motionSegmentator.segment(*pMotionCloudA, *pMotionCloudB);
-    
-    PointCloudPtr pMotionRCloudA (new PointCloud);
-	PointCloudPtr pMotionRCloudB (new PointCloud);
+    // Clusterize the blobs and create cloudjects
 
-	m_pIR->getRegisteredClouds(pMotionCloudA, pMotionCloudB, *pMotionRCloudA, *pMotionRCloudB);
+//	vector<Cloudject> cloudjects;
+//
+//	m_CloudjectDetector.setInputClouds(pInteractionCloudA, pInteractionCloudB, pTableTopCloudA, pTableTopCloudB);
+//	m_CloudjectDetector.detect(cloudjects);
+
+
 
 	//pcl::PointCloud<pcl::PointXYZ>::Ptr ontoMotionCloudA (new pcl::PointCloud<pcl::PointXYZ>);
 	//pcl::PointCloud<pcl::PointXYZ>::Ptr ontoMotionCloudB (new pcl::PointCloud<pcl::PointXYZ>);
 
-	//m_pTableModeler->segmentObjectsOnTop(motionCloudA, motionCloudB, *ontoMotionCloudA, *ontoMotionCloudB);
+	//m_tm.segmentObjectsOnTop(motionCloudA, motionCloudB, *ontoMotionCloudA, *ontoMotionCloudB);
 
 	// Detect interaction
 
@@ -80,20 +93,36 @@ void Monitorizer::monitor(DepthFrame dFrameA, DepthFrame dFrameB)
 
 	m_pViz->removeAllPointClouds();
 
-	m_pViz->addPointCloud (pFgRCloudA, "cloud left", m_SceneVp);
-    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.4, 0, 0, "cloud left");
-    m_pViz->addPointCloud (pFgRCloudB, "cloud right", m_SceneVp);
-    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 0.4, 0, "cloud right");
+	m_pViz->addPointCloud (pRCloudA, "cloud left", m_SceneVp);
+    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "cloud left");
+    m_pViz->addPointCloud (pRCloudB, "cloud right", m_SceneVp);
+    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "cloud right");
+    
+    m_pViz->addPointCloud (pInteractionCloudA, "interaction left", m_ObjectsAVp);
+    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.5, 0, 0, "interaction left");
+    m_pViz->addPointCloud (pInteractionCloudB, "interaction right", m_ObjectsBVp);
+    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 0.5, 0, "interaction right");
+    
+    m_pViz->addPointCloud (pTableTopCloudA, "tabletop left", m_ObjectsAVp);
+    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "tabletop left");
+    m_pViz->addPointCloud (pTableTopCloudB, "tabletop right", m_ObjectsBVp);
+    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "tabletop right");
+    
+//    m_pViz->addPointCloud (pMotionRCloudA, "motion left", m_ObjectsAVp);
+//    m_pViz->addPointCloud (pMotionRCloudB, "motion right", m_ObjectsBVp);
 
-	/*m_pViz->addPointCloud (staticsCloudA, "objects left", m_ObjectsAVp);
-    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.4, 0, 0, "objects left");*/
-	m_pViz->addPointCloud (pMotionCloudA, "motion left", m_ObjectsAVp);
-    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0.3, 0.3, "motion left");
-
-   /* m_pViz->addPointCloud (staticsCloudB, "objects right", m_ObjectsBVp);
-    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 0.4, 0, "objects right");*/
-    m_pViz->addPointCloud (pMotionCloudB, "motion right", m_ObjectsBVp);
-    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.3, 1, 0.3, "motion right");
+//    for (int i = 0; i < cloudjects.size(); i++)
+//    {
+//        std::stringstream ssA;
+//        ssA << "cloudject_viewA_" << i;
+//        m_pViz->addPointCloud (cloudjects[i].getViewA(), ssA.str(), m_ObjectsAVp);
+//        m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0.3, 0.3, ssA.str());
+//        
+//        std::stringstream ssB;
+//        ssB << "cloudject_viewB_" << i;
+//        m_pViz->addPointCloud (cloudjects[i].getViewB(), ssB.str(), m_ObjectsBVp);
+//        m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.3, 1, 0.3, ssB.str());
+//    }
 
 	m_pViz->spinOnce(10);
 }
@@ -211,7 +240,7 @@ void Monitorizer::handleCloudjectDrops()
 {
 //	// Detect present objects
 //	vector<Cloudject> detectedCjs;
-//	m_cjDetector.detect(m_CloudA, m_CloudB, m_LeafSize, detectedCjs);
+//	m_CloudjectDetector.detect(m_CloudA, m_CloudB, m_LeafSize, detectedCjs);
 //	cout << "detected: " << detectedCjs.size() << endl;
 //	// Check for new appearitions
 //	vector<Cloudject> newCjs;

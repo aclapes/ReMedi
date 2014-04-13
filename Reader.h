@@ -10,10 +10,11 @@ public:
 	Reader(std::string parent,
            std::string colorDir1, std::string colorDir2,
            std::string depthDir1, std::string depthDir2);
+    Reader(const Reader& other);
 	~Reader(void);
 
 	// Public methods
-    void setSequence(std::string dir);
+    void setInputStream(std::string dir);
     
 	void loadColorStreams(std::string dataPath, std::string colorDir1, std::string colorDir2);
 	void loadDepthStreams(std::string dataPath, std::string depthDir1, std::string depthDir2);
@@ -40,7 +41,7 @@ private:
 
 	// Private members
     std::string		m_DataPath;
-    std::string     m_BackgroundDir, m_SequenceDir;
+    std::string     m_SequenceDir;
     std::string     m_colorDir1, m_colorDir2, m_depthDir1, m_depthDir2;
 
 	int				m_cCounter, m_dCounter;
