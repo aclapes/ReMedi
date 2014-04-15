@@ -64,13 +64,12 @@ private:
 //	void segmentStaticsInView( std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>, std::vector<std::vector<Eigen::Vector4f> >&, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&, float );
 
 	void detectCloudjects(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr,
-		 std::vector<Cloudject>&, float leafSize = 0.0);
+		 std::vector<Cloudject>&, float leafSize = 0.f);
 
 	void extractClusters(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr,
-		 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&, float leafSize);
+		 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&, float leafSize = 0.f);
 
-	void extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud,
-		float leafSize, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clusters);
+	void extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clusters, float leafSize = 0.f);
 
 	void appeared(std::vector<Cloudject> detecteds, std::vector<Cloudject>& appeareds);
 	bool compareEquals(Cloudject, Cloudject);
@@ -80,6 +79,14 @@ private:
     
     void updateCentroids(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters, std::vector<Eigen::Vector4f>& centroids);
 
+    void detectInteractions(vector<PointCloudPtr> interactiveClustersA,
+                            vector<PointCloudPtr> interactiveClustersB,
+                            vector<PointCloudPtr>& tabletopClustersA,
+                            vector<PointCloudPtr>& tabletopClustersB);
+    
+    void detectInteractionsInView(vector<PointCloudPtr> interactiveClusters,
+                                  vector<PointCloudPtr>& tabletopClusters);
+    
 	// Members
 	MonitorizerParams m_Params;
 

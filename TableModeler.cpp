@@ -127,8 +127,8 @@ void TableModeler::getPointsDimensionCI(pcl::PointCloud<pcl::PointXYZ>& plane, i
     cv::meanStdDev(values, mean, stddev);
     
     float pval;
-    if (alpha = 0.80) pval = 1.28;
-    else if (alpha = 0.85) pval = 1.44;
+    if (alpha == 0.80) pval = 1.28;
+    else if (alpha == 0.85) pval = 1.44;
     else if (alpha == 0.90) pval = 1.65;
     else if (alpha == 0.95) pval = 1.96;
     else if (alpha == 0.99) pval = 2.57;

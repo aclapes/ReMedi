@@ -45,17 +45,36 @@ void Monitorizer::monitor(DepthFrame dFrameA, DepthFrame dFrameB)
 
 	// Segment table top
 
+    PointCloudPtr pRDownCloudA (new PointCloud);
+	PointCloudPtr pRDownCloudB (new PointCloud);
+    
+    pcl::VoxelGrid<PointT> vox;
+    vox.setLeafSize(m_LeafSize, m_LeafSize, m_LeafSize);
+    vox.setInputCloud(pRCloudA);
+    vox.filter(*pRDownCloudA);
+    vox.setInputCloud(pRCloudB);
+    vox.filter(*pRDownCloudB);
+    
 	PointCloudPtr pTableTopCloudA (new PointCloud);
 	PointCloudPtr pTableTopCloudB (new PointCloud);
     PointCloudPtr pInteractionCloudA (new PointCloud);
 	PointCloudPtr pInteractionCloudB (new PointCloud);
 
-	m_tm.segmentTableTop(pRCloudA, pRCloudB,
+	m_tm.segmentTableTop(pRDownCloudA, pRDownCloudB,
                          *pTableTopCloudA, *pTableTopCloudB);
     
-    m_tm.segmentInteractionRegion(pRCloudA, pRCloudB,
+    m_tm.segmentInteractionRegion(pRDownCloudA, pRDownCloudB,
                                   *pInteractionCloudA, *pInteractionCloudB);
-
+    
+    vector<PointCloudPtr> tabletopClustersA, tabletopClustersB; // tabletop inliers
+    vector<PointCloudPtr> interactiveClustersA, interactiveClustersB; // outliers
+    
+    extractClusters(pTableTopCloudA, pTableTopCloudB, tabletopClustersA, tabletopClustersB);
+    extractClusters(pInteractionCloudA, pInteractionCloudB, interactiveClustersA, interactiveClustersB);
+    
+    detectInteractions(interactiveClustersA, interactiveClustersB,
+                       tabletopClustersA, tabletopClustersB);
+    
 	// Detect motion
     
 //    PointCloudPtr pMotionCloudA (new PointCloud);
@@ -323,20 +342,19 @@ void Monitorizer::detectCloudjects(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, 
 {
 	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersA, clustersB;
 
-	extractClustersFromView(pCloudA, leafSize, clustersA);
-	extractClustersFromView(pCloudB, leafSize, clustersB);
+	extractClustersFromView(pCloudA, clustersA, leafSize);
+	extractClustersFromView(pCloudB, clustersB, leafSize);
 }
 
 
 void Monitorizer::extractClusters(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB, vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clustersA, vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clustersB, float leafSize)
 {
-	extractClustersFromView(pCloudA, leafSize, clustersA);
-	extractClustersFromView(pCloudB, leafSize, clustersB);
+	extractClustersFromView(pCloudA, clustersA, leafSize);
+	extractClustersFromView(pCloudB, clustersB, leafSize);
 }
 
 
-void Monitorizer::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud,
-	float leafSize, vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clusters )
+void Monitorizer::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clusters, float leafSize)
 {
 	pcl::PointCloud<PointT>::Ptr pCloudR (new pcl::PointCloud<PointT>());
 	pcl::PointCloud<PointT>::Ptr pCloudF (new pcl::PointCloud<PointT>());
@@ -347,10 +365,17 @@ void Monitorizer::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::Ptr pC
 	sor.setStddevMulThresh (1.0);
 	sor.filter (*pCloudR);
 
-	pcl::ApproximateVoxelGrid<PointT> avg;
-	avg.setInputCloud(pCloudR);
-	avg.setLeafSize(leafSize, leafSize, leafSize);
-	avg.filter(*pCloudF);
+    if (leafSize > 0.f)
+    {
+        pcl::ApproximateVoxelGrid<PointT> avg;
+        avg.setInputCloud(pCloudR);
+        avg.setLeafSize(leafSize, leafSize, leafSize);
+        avg.filter(*pCloudF);
+    }
+    else
+    {
+        pcl::copyPointCloud(*pCloudR, *pCloudF);
+    }
 
 	// Creating the KdTree object for the search method of the extraction
 	pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
@@ -384,4 +409,45 @@ void Monitorizer::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::Ptr pC
 
 		j++;
 	}
+}
+
+void Monitorizer::detectInteractions(vector<PointCloudPtr> interactiveClustersA,
+                                     vector<PointCloudPtr> interactiveClustersB,
+                                     vector<PointCloudPtr>& tabletopClustersA,
+                                     vector<PointCloudPtr>& tabletopClustersB)
+{
+    detectInteractionsInView(interactiveClustersA, tabletopClustersA);
+    detectInteractionsInView(interactiveClustersB, tabletopClustersB);
+}
+
+void Monitorizer::detectInteractionsInView(vector<PointCloudPtr> interactiveClusters,
+                                           vector<PointCloudPtr>& tabletopClusters)
+{
+    vector<PointCloudPtr> aux;
+    
+    for (int i = 0; i < tabletopClusters.size(); i++)
+    {
+        bool interaction = false;
+        
+        for (int k_i = 0; k_i < tabletopClusters[i]->points.size() && !interaction; k_i++)
+        {
+            PointT p = tabletopClusters[i]->points[k_i];
+            
+            for (int j = 0; j < interactiveClusters.size() && !interaction; j++)
+            {
+                for (int k_j = 0; k_j < interactiveClusters[j]->points.size() && !interaction; k_j++)
+                {
+                    PointT q = interactiveClusters[j]->points[k_j];
+                    
+                    float pqDist = sqrt(pow(p.x - q.x, 2) + pow(p.y - q.y, 2) + pow(p.z - q.z, 2));
+                    interaction = (pqDist <= 2 * m_LeafSize);
+                }
+            }
+        }
+        
+        if (!interaction)
+            aux.push_back(tabletopClusters[i]);
+    }
+    
+    tabletopClusters = aux;
 }
