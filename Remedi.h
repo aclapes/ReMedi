@@ -4,6 +4,7 @@
 #include "InteractiveRegisterer.h"
 #include "BackgroundSubtractor.h"
 #include "TableModeler.h"
+#include "CloudjectModel.hpp"
 
 using namespace std;
 
@@ -24,4 +25,7 @@ private:
 	void modelTablePlanes(pcl::PointCloud<pcl::PointXYZ>::Ptr pRegisteredCloudA,
                           pcl::PointCloud<pcl::PointXYZ>::Ptr pRegisteredCloudB,
                           TableModeler& tableModeler);
+    void loadCloudjectModels(string dir, int nObjects, int nObjectViews,
+                             float normalRadius, float fpfhRadius,
+                             vector< LFCloudjectModel<pcl::PointXYZ,pcl::FPFHSignature33> >& cloudjectModels);
 };

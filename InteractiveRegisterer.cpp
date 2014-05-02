@@ -557,7 +557,7 @@ void InteractiveRegisterer::visualizeRegistration(DepthFrame dFrameA, DepthFrame
     pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "cloud right");
     
     int secs = 0;
-    while (secs++ < 5)
+    while (secs++ < 2.5)
     {
         pViz->spinOnce(1000);
     }

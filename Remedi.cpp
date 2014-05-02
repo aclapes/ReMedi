@@ -5,6 +5,7 @@
 #include "DepthFrame.h"
 #include "TableModeler.h"
 #include "Table.hpp"
+#include "CloudjectModel.hpp"
 #include <pcl/visualization/pcl_visualizer.h>
 
 #ifdef _WIN32
@@ -26,8 +27,8 @@ void Remedi::Run()
 
 	// Create a reader pointing the data streams
 
-    string dataPath = g_parentDir + "Data/";
-    Reader reader( dataPath, "Color1/", "Color2/", "Depth1/", "Depth2/" );
+    string sequencesPath = g_parentDir + "Data/Sequences/";
+    Reader reader( sequencesPath, "Color1/", "Color2/", "Depth1/", "Depth2/" );
     reader.setInputStream("00_bs/"); // background frames
 
 	/*
@@ -51,22 +52,38 @@ void Remedi::Run()
 	 * BACKGROUND SUBTRACTION
 	 */
 
-	int nFrames, nMixtures; // BS parameters
-	cout << "[BS] <<<< Number of frames: ";
-	cin >> nFrames;
-	cout << "[BS] <<<< Number of mixtures: ";
-	cin >> nMixtures;
+	int nFrames = 300;
+    int nMixtures = 5; // BS parameters
+//	cout << "[BS] <<<< Number of frames: ";
+//	cin >> nFrames;
+//	cout << "[BS] <<<< Number of mixtures: ";
+//	cin >> nMixtures;
 	
 	BackgroundSubtractor bgSubtractor(nFrames, nMixtures);
     modelBackground(reader, bgSubtractor);
-	
-	MonitorizerParams monitorParams;
+   
+    
+    CloudjectDetector cloudjectDetector;
+    
+    cloudjectDetector.setNormalRadius(0.025);
+    cloudjectDetector.setFpfhRadius(0.05);
+    cloudjectDetector.setScoreThreshold(0.5);
+    
+    cloudjectDetector.loadCloudjectModels(g_parentDir + "Data/CloudjectModels/", 5, 4);
+    
+    
+    MonitorizerParams monitorParams;
 	monitorParams.tmpCoherence = 2;
 	monitorParams.motionThresh = 5;
-	monitorParams.leafSize = 0.01;
-	monitorParams.posCorrespThresh = 0.07; // 7 cm
+    //	monitorParams.leafSize = 0.005;
+	monitorParams.posCorrespThresh = 0.1; // 7 cm
     
-	Monitorizer monitorizer (registerer, tableModeler, monitorParams);
+	Monitorizer monitorizer (registerer, tableModeler, cloudjectDetector);
+    float leafSize = 0.025;
+    monitorizer.setLeafSize(leafSize);
+    monitorizer.setClusteringToleranceFactor(3);
+    monitorizer.setMinimumClusterSize(1/leafSize); // TODO: scale with leafSize
+    monitorizer.setMaximumClusterSize(10000/leafSize);
 
 	/*
 	 * Loop
@@ -75,7 +92,7 @@ void Remedi::Run()
     reader.setInputStream("28_p14_2/"); // a sequence's frames
     
 	DepthFrame dFrameA, dFrameB;
-	bool bSuccess = reader.getNextDepthPairedFrames(dFrameA, dFrameB); // able to read, not finished
+	bool bSuccess = reader.getDepthPairedFrames(46, dFrameA, dFrameB); // able to read, not finished
 	while (bSuccess)
 	{
 		DepthFrame fgDFrameA, fgDFrameB;
@@ -100,20 +117,9 @@ void Remedi::modelBackground(Reader reader, BackgroundSubtractor& bs)
 	while (!bs.isReady())
 	{
 		bs(dFrameA, dFrameB, 0.02);
-        
-        DepthFrame fgDFrameA;
-        bs.subtract(dFrameA, fgDFrameA);
-        
-        cv::Mat masked;
-        cv::namedWindow("bs in A");
-        fgDFrameA.getMat().copyTo(masked, fgDFrameA.getMask());
-        cv::imshow("bs in A", fgDFrameA.getMask());
-        cv::waitKey(100);
 
 		reader.getNextDepthPairedFrames(dFrameA, dFrameB);
 	}
-    
-    
 }
 
 
@@ -121,9 +127,11 @@ void Remedi::interactWithRegisterer(Reader reader, InteractiveRegisterer& regist
 {
 	// Ask wheter re-select a set of points
 	// or use a previously computed transformation
-	char c;
-	cout << "[IR] <<<< Re-use alineation [Y/n]?" << endl;
-	cin >> c;
+//	char c;
+//	cout << "[IR] <<<< Re-use alineation [Y/n]?" << endl;
+//	cin >> c;
+    char c = 'y'; // debug
+    
 	if (c != 'n' && c != 'N') // re-use transformation
 	{
 		registerer.loadTransformation(g_parentDir);

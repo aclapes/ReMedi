@@ -4,6 +4,7 @@
 #include <pcl/common/transforms.h>
 #include <pcl/filters/approximate_voxel_grid.h>
 #include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/filters/conditional_removal.h>
 
 
 TableModeler::TableModeler()
@@ -268,21 +269,28 @@ void TableModeler::estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud,
             getPointsDimensionCI(*pBiggestClusterT, 2, 0.8, min.y, max.y);
 
 			pcl::transformPointCloud(*pBiggestClusterT, *pBiggestCluster, yton.inverse());
-
+            pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudT (new pcl::PointCloud<pcl::PointXYZ>);
+            pcl::transformPointCloud(*pCloud, *pCloudT, yton);
             //pcl::copyPointCloud(*pPlane, plane);
             
+            // DEBUG
             // Visualization
             
             pcl::visualization::PCLVisualizer pViz(pCloud->header.frame_id);
             pViz.addCoordinateSystem();
-            pViz.addPointCloud(pCloudF, "filtered");
+            //pViz.addPointCloud(pCloudF, "filtered");
             pViz.addPointCloud(pBiggestCluster, "biggestCluster");
             pViz.addPointCloud(pBiggestClusterT, "biggestClusterT");
+            pViz.addPointCloud(pCloudT, "pCloudT");
             pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.61, 0.1, 1.0, "biggestCluster");
             pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.21, 0.1, 1.0, "biggestClusterT");
+            pViz.addCube(min.x, max.x, min.y, max.y + m_OffsetA, min.z, max.z, 1, 0, 0, "cube");
+            pViz.addCube(min.x - m_InteractionBorder, max.x + m_InteractionBorder,
+                         min.y, max.y + 2.0,
+                         min.z - m_InteractionBorder, max.z + m_InteractionBorder, 1, 1, 1, "cube2");
             
             int c = 0;
-            while(c++ < 10)
+            while(c++ < 2.5)
             {
                 pViz.spinOnce(1000);
             }
@@ -336,42 +344,23 @@ void TableModeler::segmentTableTop(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, p
 	// Transformation
 	pcl::transformPointCloud(*pCloud, *pCloudAux, yton);
 	
-	//pcl::visualization::PCLVisualizer viz ("hola");
-	//viz.addCoordinateSystem();
+    // build the condition
+    pcl::ConditionAnd<pcl::PointXYZ>::Ptr inTableTopRegionCondition (new pcl::ConditionAnd<pcl::PointXYZ> ());
+    inTableTopRegionCondition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("x", pcl::ComparisonOps::GT, min.x)));
+    inTableTopRegionCondition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("x", pcl::ComparisonOps::LT, max.x)));
     
-	//viz.addPointCloud (pCloudAux, "cloud left");
-    //   viz.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.5, 0, 0, "cloud left");
-    //   viz.addPointCloud (pCloudAuxF, "cloud right");
-    //   viz.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 0.5, 0, "cloud right");
+    inTableTopRegionCondition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("y", pcl::ComparisonOps::GT, max.y)));
+    inTableTopRegionCondition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("y", pcl::ComparisonOps::LT, max.y + offset)));
     
-	//viz.spin();
+    inTableTopRegionCondition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("z", pcl::ComparisonOps::GT, min.z)));
+    inTableTopRegionCondition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("z", pcl::ComparisonOps::LT, max.z)));
     
+    // build the filter
+    pcl::ConditionalRemoval<pcl::PointXYZ> condrem (inTableTopRegionCondition);
     
-	// Passthrough
-    
-	pcl::PassThrough<pcl::PointXYZ> pt;
-    
-	pt.setInputCloud(pCloudAux);
-	pt.setFilterFieldName("x");
-	pt.setFilterLimits(min.x, max.x);
-    pt.setFilterLimitsNegative(m_bLimitsNegative);
-	pt.filter(*pCloudAuxF);
-    
-	pCloudAuxF.swap(pCloudAux);
-    
-	pt.setInputCloud(pCloudAux);
-	pt.setFilterFieldName("y");
-	pt.setFilterLimits(max.y, max.y + offset);
-    pt.setFilterLimitsNegative(m_bLimitsNegative);
-	pt.filter(*pCloudAuxF);
-    
-	pCloudAuxF.swap(pCloudAux);
-    
-	pt.setInputCloud(pCloudAux);
-	pt.setFilterFieldName("z");
-	pt.setFilterLimits(min.z, max.z);
-    pt.setFilterLimitsNegative(m_bLimitsNegative);
-	pt.filter(*pCloudAuxF);
+    condrem.setInputCloud (pCloudAux);
+    condrem.setKeepOrganized(true);
+    condrem.filter (*pCloudAuxF);
     
 	// De-transformation
     
@@ -402,37 +391,66 @@ void TableModeler::segmentInteractionRegion(pcl::PointCloud<pcl::PointXYZ>::Ptr 
 {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudAux (new pcl::PointCloud<pcl::PointXYZ>());
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudAuxF (new pcl::PointCloud<pcl::PointXYZ>());
-    
+
 	// Transformation
 	pcl::transformPointCloud(*pCloud, *pCloudAux, yton);
     
-	// Passthrough
+//    pcl::visualization::PCLVisualizer viz ("hola");
+//    viz.addCoordinateSystem();
+//    int c = 0;
+//    
+//    viz.addCube(min.x, max.x, min.y, max.y + m_OffsetA, min.z, max.z, 1, 1, 1, "cube");
+//    viz.addCube(min.x - m_InteractionBorder, max.x + m_InteractionBorder,
+//                 max.y, max.y + 1.5,
+//                 min.z - m_InteractionBorder, max.z + m_InteractionBorder, 1, 0, 0, "cube2");
     
-	pcl::PassThrough<pcl::PointXYZ> pt;
+    pcl::ConditionalRemoval<pcl::PointXYZ> condrem;
     
-	pt.setInputCloud(pCloudAux);
-	pt.setFilterFieldName("x");
-	pt.setFilterLimits(min.x - m_InteractionBorder, max.x + m_InteractionBorder);
-    pt.setFilterLimitsNegative(m_bLimitsNegative);
-	pt.filter(*pCloudAuxF);
+    // build the condition
+    pcl::ConditionAnd<pcl::PointXYZ>::Ptr inInteractionRegionRangeCondition (new pcl::ConditionAnd<pcl::PointXYZ> ());
+    inInteractionRegionRangeCondition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("x", pcl::ComparisonOps::GT, min.x - m_InteractionBorder)));
+    inInteractionRegionRangeCondition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("x", pcl::ComparisonOps::LT, max.x + m_InteractionBorder)));
     
-	pCloudAuxF.swap(pCloudAux);
+    inInteractionRegionRangeCondition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("y", pcl::ComparisonOps::GT, max.y)));
+    inInteractionRegionRangeCondition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("y", pcl::ComparisonOps::LT, max.y + offset + m_InteractionBorder)));
     
-	pt.setInputCloud(pCloudAux);
-	pt.setFilterFieldName("y");
-	pt.setFilterLimits(max.y, max.y + offset);
-    pt.setFilterLimitsNegative(m_bLimitsNegative);
-	pt.filter(*pCloudAuxF);
+    inInteractionRegionRangeCondition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("z", pcl::ComparisonOps::GT, min.z - m_InteractionBorder)));
+    inInteractionRegionRangeCondition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("z", pcl::ComparisonOps::LT, max.z + m_InteractionBorder)));
     
-	pCloudAuxF.swap(pCloudAux);
+    condrem.setCondition(inInteractionRegionRangeCondition);
     
-	pt.setInputCloud(pCloudAux);
-	pt.setFilterFieldName("z");
-	pt.setFilterLimits(min.z - m_InteractionBorder, max.z + m_InteractionBorder);
-    pt.setFilterLimitsNegative(m_bLimitsNegative);
-	pt.filter(*pCloudAuxF);
+    condrem.setInputCloud (pCloudAux);
+    condrem.setKeepOrganized(true);
+    condrem.filter (*pCloudAuxF);
+    
+    
+    pCloudAuxF.swap(pCloudAux);
+    
+    pcl::ConditionOr<pcl::PointXYZ>::Ptr outTableTopRangeCondition (new pcl::ConditionOr<pcl::PointXYZ> ());
+    outTableTopRangeCondition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("x", pcl::ComparisonOps::LT, min.x)));
+    outTableTopRangeCondition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("x", pcl::ComparisonOps::GT, max.x)));
+    
+    outTableTopRangeCondition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("y", pcl::ComparisonOps::LT, max.y)));
+    outTableTopRangeCondition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("y", pcl::ComparisonOps::GT, max.y + offset)));
+    
+    outTableTopRangeCondition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("z", pcl::ComparisonOps::LT, min.z)));
+    outTableTopRangeCondition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("z", pcl::ComparisonOps::GT, max.z)));
+    
+    condrem.setCondition(outTableTopRangeCondition);
+    condrem.setInputCloud (pCloudAux);
+    condrem.setKeepOrganized(true);
+    condrem.filter (*pCloudAuxF);
     
 	// De-transformation
+    
+//    cout << "out tabletop filtered" << endl;
+//    viz.removeAllPointClouds();
+//    viz.addPointCloud (pCloudAuxF, "cloud left");
+//    c = 0;
+//    while(c++ < 10)
+//    {
+//        viz.spinOnce(1000);
+//    }
     
 	pcl::transformPointCloud(*pCloudAuxF, cloudObjs, ytonInv);
 }

@@ -25,20 +25,19 @@ public:
 	CloudjectBase(PointCloudPtr view, int viewpoint, float leafSize = 0.0)
 	{
 		m_ID = -1;
+        
+        m_OriginalViewA = PointCloudPtr(new PointCloud());
+        m_OriginalViewB = PointCloudPtr(new PointCloud());
+        
+        m_ViewA = PointCloudPtr(new PointCloud());
+        m_ViewB = PointCloudPtr(new PointCloud());
+        
         m_LeafSize = leafSize;
         
         if (viewpoint == MASTER_VIEWPOINT)
-        {
-            m_OriginalViewA = PointCloudPtr(new PointCloud());
-            m_ViewA = PointCloudPtr(new PointCloud());
             init(view, *m_OriginalViewA, *m_ViewA, m_PosA, m_MedianDistA );
-        }
         else
-        {
-            m_OriginalViewB = PointCloudPtr(new PointCloud());
-            m_ViewB = PointCloudPtr(new PointCloud());
             init(view, *m_OriginalViewB, *m_ViewB, m_PosB, m_MedianDistB );
-        }
 	}
 
 
@@ -62,20 +61,18 @@ public:
 	{
 		m_ID = -1;
         
+        m_OriginalViewA = PointCloudPtr(new PointCloud());
+        m_OriginalViewB = PointCloudPtr(new PointCloud());
+        
+        m_ViewA = PointCloudPtr(new PointCloud());
+        m_ViewB = PointCloudPtr(new PointCloud());
+        
         m_LeafSize = leafSize;
         
         if (viewpoint == MASTER_VIEWPOINT)
-        {
-            m_OriginalViewA = PointCloudPtr(new PointCloud());
-            m_ViewA = PointCloudPtr(new PointCloud());
             init(viewPath, *m_OriginalViewA, *m_ViewA, m_PosA, m_MedianDistA );
-        }
         else
-        {
-            m_OriginalViewB = PointCloudPtr(new PointCloud());
-            m_ViewB = PointCloudPtr(new PointCloud());
             init(viewPath, *m_OriginalViewB, *m_ViewB, m_PosB, m_MedianDistB );
-        }
 	}
     
     
@@ -168,13 +165,13 @@ public:
 	}
 
 
-	PointT getPosA()
+	PointT getPosA() const
 	{
 		return m_PosA;
 	}
 
 
-	PointT getPosB()
+	PointT getPosB() const
 	{
 		return m_PosB;
 	}
@@ -216,13 +213,13 @@ public:
 	}
 
 
-	PointCloudPtr getViewA()
+	PointCloudPtr getViewA() const
 	{
 		return m_ViewA;
 	}
 
 
-	PointCloudPtr getViewB()
+	PointCloudPtr getViewB() const
 	{
 		return m_ViewB;
 	}
@@ -256,6 +253,69 @@ public:
 
 		return distances[(int)(distances.size() / 2)];
 	}
+    
+    
+    void distanceTo(const CloudjectBase& tgt, float* dist1, float* dist2)
+    {
+        *dist1 = -std::numeric_limits<float>::infinity();
+        *dist2 = -std::numeric_limits<float>::infinity();
+        
+        if (!getViewA()->empty() && !getViewB()->empty()) // "this" is two-view
+        {
+            if (!tgt.getViewA()->empty() && !tgt.getViewB()->empty()) // "other" is two-view
+            {
+                *dist1 = euclideanDistance(getPosA(), tgt.getPosA());
+                *dist2 = euclideanDistance(getPosB(), tgt.getPosB());
+            }
+            else
+            {
+                if (!tgt.getViewA()->empty()) // "other" is one-view (master)
+                {
+                    *dist1 = euclideanDistance(getPosA(), tgt.getPosA());
+                    *dist2 = euclideanDistance(getPosB(), tgt.getPosA());
+                }
+                else // "other" is one-view (slave)
+                {
+                    *dist1 = euclideanDistance(getPosA(), tgt.getPosB());
+                    *dist2 = euclideanDistance(getPosB(), tgt.getPosB());
+                }
+            }
+        }
+        else // "this" is one-view (master)
+        {
+            if (!getViewA()->empty()) // "this" is master's one-view
+            {
+                if (!tgt.getViewA()->empty() && !tgt.getViewB()->empty()) // "other" is two-view
+                {
+                    *dist1 = euclideanDistance(getPosA(), tgt.getPosA());
+                    *dist2 = euclideanDistance(getPosA(), tgt.getPosB());
+                }
+                else // "other" is one-viewed
+                {
+                    if (!tgt.getViewA()->empty()) // "other" is one-view (master)
+                        *dist1 = euclideanDistance(getPosA(), tgt.getPosA());
+                    else // "other" is one-view (slave)
+                        *dist2 = euclideanDistance(getPosA(), tgt.getPosB());
+                }
+            }
+            else // "this" is one-view (slave)
+            {
+                if (!tgt.getViewA()->empty() && !tgt.getViewB()->empty()) // "other" is two-view
+                {
+                    *dist1 = euclideanDistance(getPosB(), tgt.getPosA());
+                    *dist2 = euclideanDistance(getPosB(), tgt.getPosB());
+                }
+                else
+                {
+                    if (!tgt.getViewA()->empty()) // "other" is one-view (master)
+                        *dist1 = euclideanDistance(getPosB(), tgt.getPosA());
+                    else // "other" is one-view (slave)
+                        *dist2 = euclideanDistance(getPosB(), tgt.getPosB());
+                }
+            }
+        }
+    }
+    
 
 protected:
 	// Methods
@@ -319,8 +379,8 @@ public:
 	int getID() { return CloudjectBase<PointT,SignatureT>::getID(); }
 	void setID(int ID) { CloudjectBase<PointT,SignatureT>::setID(ID); }
 
-	PointT getPosA() { return CloudjectBase<PointT,SignatureT>::getPosA(); }
-	PointT getPosB() { return CloudjectBase<PointT,SignatureT>::getPosB(); }
+	PointT getPosA() const { return CloudjectBase<PointT,SignatureT>::getPosA(); }
+	PointT getPosB() const { return CloudjectBase<PointT,SignatureT>::getPosB(); }
 
 	int getNumOfPointsInOriginalViewA() { return CloudjectBase<PointT,SignatureT>::getNumOfPointsInOriginalViewA(); }
 	int getNumOfPointsInOriginalViewB() { return CloudjectBase<PointT,SignatureT>::getNumOfPointsInOriginalViewB(); }
@@ -331,13 +391,15 @@ public:
 	float medianDistToCentroidInViewA() { return CloudjectBase<PointT,SignatureT>::medianDistToCentroidInViewA(); }
 	float medianDistToCentroidInViewB() { return CloudjectBase<PointT,SignatureT>::medianDistToCentroidInViewB(); }
 
-	PointCloudPtr getViewA() { return CloudjectBase<PointT,SignatureT>::getViewA(); }
-	PointCloudPtr getViewB() { return CloudjectBase<PointT,SignatureT>::getViewB(); }
+	PointCloudPtr getViewA() const { return CloudjectBase<PointT,SignatureT>::getViewA(); }
+	PointCloudPtr getViewB() const { return CloudjectBase<PointT,SignatureT>::getViewB(); }
 
 	float euclideanDistance(PointT p1, PointT p2) { return CloudjectBase<PointT,SignatureT>::euclideanDistance(p1,p2); }
 	float medianDistanceToCentroid(PointCloud& pCloud, PointT centroid)
 	{ return CloudjectBase<PointT,SignatureT>::euclideanDistance(pCloud, centroid); }
 
+    void distanceTo(const CloudjectBase<PointT,SignatureT>& tgt, float* dist1, float* dist2)
+    { CloudjectBase<PointT,SignatureT>::distanceTo(tgt, dist1, dist2); }
 
 	void describe(DescriptorPtr descA, DescriptorPtr descB)
 	{
@@ -370,8 +432,10 @@ class LFCloudject : public LFCloudjectBase<PointT,SignatureT> { };
 template<typename PointT>
 class LFCloudject<PointT, pcl::FPFHSignature33> : public LFCloudjectBase<PointT, pcl::FPFHSignature33>
 {
-    typedef typename pcl::PointCloud<PointT> PointCloud;
+    typedef pcl::PointCloud<PointT> PointCloud;
 	typedef typename pcl::PointCloud<PointT>::Ptr PointCloudPtr;
+    typedef pcl::search::KdTree<PointT> KdTree;
+	typedef typename pcl::search::KdTree<PointT>::Ptr KdTreePtr;
 
 public:
 	LFCloudject() 
@@ -401,8 +465,8 @@ public:
 	int getID() { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getID(); }
 	void setID(int ID) { LFCloudjectBase<PointT,pcl::FPFHSignature33>::setID(ID); }
 
-	PointT getPosA() { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getPosA(); }
-	PointT getPosB() { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getPosB(); }
+	PointT getPosA() const { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getPosA(); }
+	PointT getPosB() const { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getPosB(); }
 
 	int getNumOfPointsInOriginalViewA() { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getNumOfPointsInOriginalViewA(); }
 	int getNumOfPointsInOriginalViewB() { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getNumOfPointsInOriginalViewB(); }
@@ -412,8 +476,8 @@ public:
 	float medianDistToCentroidInViewA() { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::medianDistToCentroidInViewA(); }
 	float medianDistToCentroidInViewB() { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::medianDistToCentroidInViewB(); }
 
-	PointCloudPtr getViewA() { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getViewA(); }
-	PointCloudPtr getViewB() { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getViewB(); }
+	PointCloudPtr getViewA() const { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getViewA(); }
+	PointCloudPtr getViewB() const { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getViewB(); }
 
 	float euclideanDistance(PointT p1, PointT p2) { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::euclideanDistance(p1,p2); }
 	float medianDistanceToCentroid(PointCloud& pCloud, PointT centroid)
@@ -427,16 +491,18 @@ public:
 	pcl::PointCloud<pcl::FPFHSignature33>::Ptr getDescriptionB()
 	{ return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getDescriptionB(); }
 
+    void distanceTo(const LFCloudject<PointT,pcl::FPFHSignature33>& tgt, float* dist1, float* dist2)
+    { LFCloudjectBase<PointT,pcl::FPFHSignature33>::distanceTo(tgt, dist1, dist2); }
 
 	void describe(float normalRadius, float fpfhRadius)
 	{
-        if (this->viewA->points.size() > 0)
+        if (!getViewA()->empty())
         {
             this->m_DescriptorA = pcl::PointCloud<pcl::FPFHSignature33>::Ptr (new  pcl::PointCloud<pcl::FPFHSignature33>);
             describeView(this->m_ViewA, normalRadius, fpfhRadius, *(this->m_DescriptorA));
         }
         
-		if (this->viewB->points.size() > 0)
+		if (!getViewB()->empty())
 		{
 			this->m_DescriptorB = pcl::PointCloud<pcl::FPFHSignature33>::Ptr (new  pcl::PointCloud<pcl::FPFHSignature33>);
 			describeView(this->m_ViewB, normalRadius, fpfhRadius, *(this->m_DescriptorB));
@@ -458,7 +524,7 @@ public:
 
 		// Create an empty kdtree representation, and pass it to the normal estimation object.
 		// Its content will be filled inside the object, based on the given input dataset (as no other search surface is given).
-		typename pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT> ());
+		KdTreePtr tree (new KdTree());
 		ne.setSearchMethod (tree);
 
 		// Output datasets
@@ -481,7 +547,7 @@ public:
 
 		// Create an empty kdtree representation, and pass it to the FPFH estimation object.
 		// Its content will be filled inside the object, based on the given input dataset (as no other search surface is given).
-		tree = pcl::search::KdTree<PointT>::Ptr(new pcl::search::KdTree<PointT>);
+		tree = KdTreePtr(new KdTree());
 		fpfh.setSearchMethod (tree);
 
 		// Output datasets
@@ -506,6 +572,8 @@ class LFCloudject<PointT, pcl::PFHRGBSignature250> : public LFCloudjectBase<Poin
 {
     typedef typename pcl::PointCloud<PointT> PointCloud;
 	typedef typename pcl::PointCloud<PointT>::Ptr PointCloudPtr;
+    typedef pcl::search::KdTree<PointT> KdTree;
+	typedef typename pcl::search::KdTree<PointT>::Ptr KdTreePtr;
 
 public:
 	LFCloudject() 
@@ -535,8 +603,8 @@ public:
 	int getID() { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::getID(); }
 	void setID(int ID) { LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::setID(ID); }
 
-	PointT getPosA() { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::getPosA(); }
-	PointT getPosB() { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::getPosB(); }
+	PointT getPosA() const { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::getPosA(); }
+	PointT getPosB() const { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::getPosB(); }
 
 	int getNumOfPointsInOriginalViewA() { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::getNumOfPointsInOriginalViewA(); }
 	int getNumOfPointsInOriginalViewB() { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::getNumOfPointsInOriginalViewB(); }
@@ -546,8 +614,8 @@ public:
 	float medianDistToCentroidInViewA() { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::medianDistToCentroidInViewA(); }
 	float medianDistToCentroidInViewB() { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::medianDistToCentroidInViewB(); }
 
-	PointCloudPtr getViewA() { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::getViewA(); }
-	PointCloudPtr getViewB() { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::getViewB(); }
+	PointCloudPtr getViewA() const { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::getViewA(); }
+	PointCloudPtr getViewB() const { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::getViewB(); }
 
 	float euclideanDistance(PointT p1, PointT p2) { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::euclideanDistance(p1,p2); }
 	float medianDistanceToCentroid(PointCloud& pCloud, PointT centroid)
@@ -561,6 +629,8 @@ public:
 	pcl::PointCloud<pcl::PFHRGBSignature250>::Ptr getDescriptionB()
 	{ return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::getDescriptionB(); }
 
+    void distanceTo(const LFCloudject<PointT,pcl::PFHRGBSignature250>& tgt, float* dist1, float* dist2)
+    { LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::distanceTo(tgt, dist1, dist2); }
 
 	void describe(float normalRadius, float pfhrgbRadius)
 	{
@@ -592,7 +662,7 @@ public:
 
 		// Create an empty kdtree representation, and pass it to the normal estimation object.
 		// Its content will be filled inside the object, based on the given input dataset (as no other search surface is given).
-		typename pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT> ());
+		KdTreePtr tree (new KdTree());
 		ne.setSearchMethod (tree);
 
 		// Output datasets

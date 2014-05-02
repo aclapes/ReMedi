@@ -3,14 +3,70 @@
 
 
 CloudjectDetector::CloudjectDetector(void)
+: m_NumOfDetections(0), m_NormalRadius(0.025), m_FpfhRadius(0.05),
+  m_ScoreThreshold(0.5)
 {
 }
 
+CloudjectDetector::CloudjectDetector(const CloudjectDetector& rhs)
+{
+    *this = rhs;
+}
 
 CloudjectDetector::~CloudjectDetector(void)
 {
 }
 
+CloudjectDetector& CloudjectDetector::operator=(const CloudjectDetector& rhs)
+{
+    if (this != &rhs)
+    {
+        m_pCloudA = rhs.m_pCloudA;
+        m_pCloudB = rhs.m_pCloudB;
+        
+        m_pTableTopCloudA = rhs.m_pTableTopCloudA;
+        m_pTableTopCloudB = rhs.m_pTableTopCloudB;
+        
+        m_ClustersA = rhs.m_ClustersA;
+        m_ClustersB = rhs.m_ClustersB;
+        
+        m_LeafSize = rhs.m_LeafSize;
+        m_MaxCorrespondenceDistance = rhs.m_MaxCorrespondenceDistance;
+        m_TmpWnd = rhs.m_TmpWnd;
+        m_NormalRadius = rhs.m_NormalRadius;
+        m_FpfhRadius = rhs.m_FpfhRadius;
+        
+        m_NumOfDetections = rhs.m_NumOfDetections;
+        
+        m_Cloudjects = rhs.m_Cloudjects;
+        m_CloudjectModels = rhs.m_CloudjectModels;
+    }
+    
+    return *this;
+}
+
+void CloudjectDetector::loadCloudjectModels(string dir, int nModels, int nModelViews)
+{
+    pcl::PCDReader reader;
+    for (int i = 0; i < nModels; i++)
+    {
+        LFCloudjectModel<pcl::PointXYZ, pcl::FPFHSignature33> cloudjectModel(i+1, nModelViews);
+        
+        for (int j = 0; j < nModelViews; j++)
+        {
+            std::stringstream ss;
+            ss << dir << (i * nModelViews + j) << ".pcd";
+            
+            pcl::PointCloud<pcl::PointXYZ>::Ptr object (new pcl::PointCloud<pcl::PointXYZ>);
+            reader.read(ss.str().c_str(), *object);
+            
+            cloudjectModel.addView(object);
+        }
+        
+        cloudjectModel.describe(m_NormalRadius, m_FpfhRadius);
+        m_CloudjectModels.push_back(cloudjectModel);
+    }
+}
 
 void CloudjectDetector::setInputClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA,
                                        pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB,
@@ -23,6 +79,21 @@ void CloudjectDetector::setInputClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr pClou
 	m_pTableTopCloudB = pTableTopCloudB;
 }
 
+void CloudjectDetector::setInputClusters(vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersA, vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersB)
+{
+	m_ClustersA = clustersA;
+	m_ClustersB = clustersB;
+}
+
+void CloudjectDetector::setCloudjectModels(vector< LFCloudjectModel<PointT,pcl::FPFHSignature33> > models)
+{
+    m_CloudjectModels = models;
+}
+
+int CloudjectDetector::getNumCloudjectModels()
+{
+    return m_CloudjectModels.size();
+}
 
 void CloudjectDetector::setLeafSize(float leafSize)
 {
@@ -35,9 +106,28 @@ void CloudjectDetector::setMaxCorrespondenceDistance(float maxCorrespDist)
 	m_MaxCorrespondenceDistance = maxCorrespDist;
 }
 
+void CloudjectDetector::setTemporalWindow(int tmpWnd)
+{
+    m_TmpWnd = tmpWnd;
+}
 
-void CloudjectDetector::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, 
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clusters )
+void CloudjectDetector::setNormalRadius(float radius)
+{
+    m_NormalRadius = radius;
+}
+
+void CloudjectDetector::setFpfhRadius(float radius)
+{
+    m_FpfhRadius = radius;
+}
+
+void CloudjectDetector::setScoreThreshold(float threshold)
+{
+    m_ScoreThreshold = threshold;
+}
+
+void CloudjectDetector::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud,
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clusters )
 {
 	pcl::PointCloud<PointT>::Ptr pCloudR (new pcl::PointCloud<PointT>());
 	pcl::PointCloud<PointT>::Ptr pCloudF (new pcl::PointCloud<PointT>());
@@ -59,25 +149,25 @@ void CloudjectDetector::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::
 	pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
 	tree->setInputCloud (pCloudF);
 
-	std::vector<pcl::PointIndices> clusterIndices;
+	vector<pcl::PointIndices> clusterIndices;
 	pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-	ec.setClusterTolerance (8 * m_LeafSize); // cm
-	ec.setMinClusterSize (50);
-	ec.setMaxClusterSize (7000);
+	ec.setClusterTolerance  ( 8 * m_LeafSize ); // cm
+	ec.setMinClusterSize ( 0.25 / m_LeafSize );
+	ec.setMaxClusterSize ( 1000 / m_LeafSize );
 	ec.setSearchMethod (tree);
 	ec.setInputCloud (pCloudF);
 	ec.extract (clusterIndices);
 
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersF; // clusters filtered
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersF; // clusters filtered
 
 	pcl::PassThrough<PointT> pt;
 	PointT min, max;
 
 	int j = 0;
-	for (std::vector<pcl::PointIndices>::const_iterator it = clusterIndices.begin (); it != clusterIndices.end (); ++it)
+	for (vector<pcl::PointIndices>::const_iterator it = clusterIndices.begin (); it != clusterIndices.end (); ++it)
 	{
 		pcl::PointCloud<pcl::PointXYZ>::Ptr pClusterF (new pcl::PointCloud<pcl::PointXYZ>);
-		for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
+		for (vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
 			pClusterF->points.push_back (pCloudF->points[*pit]); //*
 		pClusterF->width = pClusterF->points.size();
 		pClusterF->height = 1;
@@ -160,8 +250,8 @@ float CloudjectDetector::centroidsDistance(Eigen::Vector4f centroid1, Eigen::Vec
 }
 
 
-void CloudjectDetector::computeCentroids(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters, 
-	std::vector<Eigen::Vector4f>& centroids)
+void CloudjectDetector::computeCentroids(vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters, 
+	vector<Eigen::Vector4f>& centroids)
 {
 	for (int i = 0; i < clusters.size(); i++)
 	{
@@ -173,9 +263,9 @@ void CloudjectDetector::computeCentroids(std::vector<pcl::PointCloud<pcl::PointX
 
 
 float CloudjectDetector::correspondenceDistance(
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clustersA,
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clustersB, 
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& rejecteds)
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clustersA,
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clustersB, 
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& rejecteds)
 {
 	if (clustersA.size() != clustersB.size())
 		return std::numeric_limits<float>::infinity(); // gross error check
@@ -200,21 +290,21 @@ float CloudjectDetector::correspondenceDistance(
 
 
 void CloudjectDetector::variate(
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& P, 
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& P, 
 	int n, 
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& C,
-	std::vector<
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& C,
+	vector<
 		std::pair<
-			std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>,
-			std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>
+			vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>,
+			vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>
 		>
 	>& V )
 {
 	if (n == 0)
 	{
 		std::pair<
-			std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>,
-			std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> > p;
+			vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>,
+			vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> > p;
 		p.first = C;
 		p.second = P;
 		V.push_back(p); // store choices
@@ -223,8 +313,8 @@ void CloudjectDetector::variate(
 	{
 		for (int i = 0; i < P.size(); i++)
 		{
-			std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> tmpP = P;
-			std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> tmpC = C;
+			vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> tmpP = P;
+			vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> tmpC = C;
 
 			tmpC.push_back(tmpP[i]); // add to choices
 			tmpP.erase(tmpP.begin()+i); // remove from possible future choices
@@ -236,17 +326,17 @@ void CloudjectDetector::variate(
 
 
 void CloudjectDetector::variations(
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& P, 
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& P, 
 	int n, 
-	std::vector<
+	vector<
 		std::pair<
-			std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>,
-			std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>
+			vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>,
+			vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>
 		>
 	>& V
 )
 {
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> C;
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> C;
 	C.resize(0);
 
 	variate(P, n, C, V);
@@ -254,19 +344,19 @@ void CloudjectDetector::variations(
 
 
 void CloudjectDetector::findCorrespondences(
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersA, 
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersB, 
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& correspsA,
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& correspsB,
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& leftoversA,
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& leftoversB)
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersA, 
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersB, 
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& correspsA,
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& correspsB,
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& leftoversA,
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& leftoversB)
 {
 	int sA = clustersA.size();
 	int sB = clustersB.size();
 
 	// Each cluster in the smaller list could have a correspondence in the larger one. non-sense in the other way
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters; // pending to match (smaller list)
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> candidates; // to match with (larger list)
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters; // pending to match (smaller list)
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> candidates; // to match with (larger list)
 
 	if (sA <= sB)
 	{
@@ -279,7 +369,7 @@ void CloudjectDetector::findCorrespondences(
 		candidates = clustersA;
 	}
 
-	std::vector<std::pair<std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>,std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> > > V;
+	vector<std::pair<vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>,vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> > > V;
 	variations(candidates, clusters.size(), V);
 
 	float dist, minDist = std::numeric_limits<float>::infinity();
@@ -287,7 +377,7 @@ void CloudjectDetector::findCorrespondences(
 
 	for (int i = 0; i < V.size(); i++)
 	{
-		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> rejecteds_i;
+		vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> rejecteds_i;
 		dist = correspondenceDistance(clusters, V[i].first, rejecteds_i);
 		if (dist < minDist)
 		{
@@ -313,20 +403,20 @@ void CloudjectDetector::findCorrespondences(
 }
 
 
-void CloudjectDetector::findCorrespondences2(
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersA, 
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersB, 
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& correspsA,
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& correspsB,
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& leftoversA,
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& leftoversB)
+void CloudjectDetector::makeInterviewCorrespondences (
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersA,
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersB,
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& correspsA,
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& correspsB,
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& leftoversA,
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& leftoversB )
 {
 
 	// Variables initialization
 
 	// Each cluster in the smaller list could have a correspondence in the larger one. non-sense in the other way
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters; // pending to match (smaller list)
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> candidates; // to match with (larger list)
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters; // pending to match (smaller list)
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> candidates; // to match with (larger list)
 
 	if (clustersA.size() <= clustersB.size())
 	{
@@ -340,14 +430,14 @@ void CloudjectDetector::findCorrespondences2(
 	}
 
 
-	std::vector<Eigen::Vector4f> centroids, centroidsCandidates;
+	vector<Eigen::Vector4f> centroids, centroidsCandidates;
 
 	computeCentroids(clusters, centroids);
 	computeCentroids(candidates, centroidsCandidates);
 
-	std::vector<int> correspondences, correspondencesCandidates;
-	std::vector<float> minimumDistances;
-
+	vector<int> correspondences (centroids.size(), -1);
+    vector<int> correspondencesCandidates (centroidsCandidates.size(), -1);
+	vector<float> minimumDistances (centroids.size(), std::numeric_limits<float>::infinity());
 //	std::fill_n(correspondences, centroids.size(), -1);
 //	std::fill_n(correspondencesCandidates, centroidsCandidates.size(), -1);
 //	std::fill_n(minimumDistances, centroids.size(), std::numeric_limits<float>::infinity());
@@ -399,7 +489,7 @@ void CloudjectDetector::findCorrespondences2(
 
 	// Index the clusters
 
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> corresps, correspsCandidates, leftovers, leftoversCandidates;
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> corresps, correspsCandidates, leftovers, leftoversCandidates;
 
 	for (int i = 0; i < clusters.size(); i++)
 	{
@@ -465,7 +555,7 @@ void CloudjectDetector::matchClustersFromView(vector<pcl::PointCloud<pcl::PointX
         for (int j = 0; j < tgt.size(); j++)
         {
             float ratio = ((float) src[i]->size()) / tgt[j]->size();
-            if (ratio > 0.5) // an object with more than a half of its points outside the table surface should fall, and hence it is the subject
+            if (ratio > 0.5) // an object with more than a half of its points outside the table surface should fall, and hence it is the subject *** RE-COMMENT ***
             {
                 float dist = matchClusters(src[i], tgt[j]);
                 std::cout << i << "(" << src[i]->size() << "), " << j << "(" << tgt[j]->size() << "): " <<  dist << std::endl;
@@ -479,36 +569,277 @@ void CloudjectDetector::matchClustersFromView(vector<pcl::PointCloud<pcl::PointX
         }
 }
 
-void CloudjectDetector::detect( std::vector<Cloudject>& cloudjects )
+void CloudjectDetector::detect( vector<Cloudject>& cloudjects )
 {
-	// Extract clusters from each view separately
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersA, clustersB,
-                                                     auxTableTopClustersA, auxTableTopClustersB,
-                                                     tableTopClustersA, tableTopClustersB;
-
-    extractClustersFromView(m_pCloudA, clustersA);
-	extractClustersFromView(m_pCloudB, clustersB);
-    
-	extractClustersFromView(m_pTableTopCloudA, auxTableTopClustersA);
-	extractClustersFromView(m_pTableTopCloudB, auxTableTopClustersB);
-    
-    matchClustersFromView(auxTableTopClustersA, clustersA, tableTopClustersA);
-    matchClustersFromView(auxTableTopClustersB, clustersB, tableTopClustersB);
+//	// Extract clusters from each view separately
+//	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersA, clustersB,
+//                                                     auxTableTopClustersA, auxTableTopClustersB,
+//                                                     tableTopClustersA, tableTopClustersB;
+//
+//    extractClustersFromView(m_pCloudA, clustersA);
+//	extractClustersFromView(m_pCloudB, clustersB);
+//    
+//	extractClustersFromView(m_pTableTopCloudA, auxTableTopClustersA);
+//	extractClustersFromView(m_pTableTopCloudB, auxTableTopClustersB);
+//    
+//    matchClustersFromView(auxTableTopClustersA, clustersA, tableTopClustersA);
+//    matchClustersFromView(auxTableTopClustersB, clustersB, tableTopClustersB);
 
 	// Merge clusters extracted separately
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> correspsA, correspsB, leftoversA, leftoversB; // clouds just seen in one image
+	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> correspsA, correspsB, leftoversA, leftoversB; // clouds just seen in one image
 
-	findCorrespondences2(tableTopClustersA, tableTopClustersB, correspsA, correspsB, leftoversA, leftoversB);
+    // rename to: findViewsCorrespondences(...)
+	makeInterviewCorrespondences(m_ClustersA, m_ClustersB, correspsA, correspsB, leftoversA, leftoversB);
 
-	// Create cloudejcts from detected clusters in views' pointclouds
-
-	for (int i = 0; i < correspsA.size(); i++) // correspsA.size() == correspsB.size() !!
-		m_Cloudjects.push_back(Cloudject(correspsA[i], correspsB[i]));
+    assert (correspsA.size() == correspsB.size());
+    
+	// Create cloudjects from detected clusters in views' pointclouds
+    
+	for (int i = 0; i < correspsA.size(); i++)
+		cloudjects.push_back(Cloudject(correspsA[i], correspsB[i]));
 
 	for (int i = 0; i < leftoversA.size(); i++)
-		m_Cloudjects.push_back( Cloudject(leftoversA[i], MASTER_VIEWPOINT) );
+		cloudjects.push_back( Cloudject(leftoversA[i], MASTER_VIEWPOINT) );
 
 	for (int i = 0; i < leftoversB.size(); i++)
-		m_Cloudjects.push_back( Cloudject(leftoversB[i], SLAVE_VIEWPOINT) );
+		cloudjects.push_back( Cloudject(leftoversB[i], SLAVE_VIEWPOINT) );
 
+    makeSpatiotemporalCorrespondences(cloudjects, m_Cloudjects);
+    
+//    recognize(m_Cloudjects);
+    
+    cloudjects.clear();
+    for (int i = 0; i < m_Cloudjects.size(); i++)
+        cloudjects.push_back(m_Cloudjects[i][0]);
+}
+
+void CloudjectDetector::makeSpatiotemporalCorrespondences(vector<Cloudject>& cloudjects,
+                                                          vector< vector<Cloudject> >& cloudjectsHistory)
+{
+    // Check if, based in a certain criterion, the detected cloudject represents
+    // an object that was already there.
+    
+    // If the cloudject represents an object that has been there during the last
+    // K frames, K cloudject instances should be found in an arbitrary row of
+    // cloudjectsHistory. Insert it at the beginning of the row and append the
+    // row to the updated history.
+    
+    // If not, start a new row with this solely instance and append this
+    // one-element row to the updated history.
+    
+    // Note the rows in cloudjectsHistory corresponding to a disappeared object
+    // won't be appended in the updated history, since no cloudject exists to
+    // trigger any of the two previous conditions.
+    
+    vector< vector<Cloudject> > cloudjectsHistoryTmp; // updated history (empty)
+    
+    for (int i = 0; i < cloudjects.size(); i++) // detected cloudjects in frame
+    {
+        int minIdx; // most similar
+        float minDist = std::numeric_limits<float>::max(); // distance to most similar
+        
+        // Was already there the object represented by the cloudject?
+        for (int j = 0; j < cloudjectsHistory.size(); j++)
+        {
+            float dist1, dist2;
+            cloudjects[i].distanceTo(cloudjectsHistory[j][0], &dist1, &dist2);
+            
+            if (dist1 >= 0 && dist1 < minDist)
+            {
+                minDist = dist1;
+                minIdx = j;
+            }
+            if (dist2 >= 0 && dist2 < minDist)
+            {
+                minDist = dist2;
+                minIdx = j;
+            }
+        }
+        
+        vector<Cloudject> cloudjectHistory; // history of a cloudject
+        if (minDist <= m_MaxCorrespondenceDistance) // apply "being there" crit
+        {
+            cloudjectHistory = cloudjectsHistory[minIdx];
+            cloudjectHistory.insert(cloudjectHistory.begin(), cloudjects[i]);
+            if (cloudjectHistory.size() > m_TmpWnd) cloudjectHistory.pop_back();
+        }
+        else
+        {
+            cloudjectHistory.push_back(cloudjects[i]);
+        }
+        
+        cloudjectsHistoryTmp.push_back(cloudjectHistory);
+    }
+    
+    cloudjectsHistory = cloudjectsHistoryTmp;
+}
+
+
+bool lt_cmp(const std::pair<int,double>& left, const std::pair<int,double>& right)
+{
+    return left.second < right.second;
+}
+
+bool gt_cmp(const std::pair<int,double>& left, const std::pair<int,double>& right)
+{
+    return left.second > right.second;
+}
+
+/**
+ * A combinatorial optimization function given a matrix of scores.
+ *
+ * Given the scores' vectors for every element, assign the index of the
+ * maximum score possible. If during the assignations it is found the
+ * index was previously assigned, check the two scores and keep the one
+ * with higher score and change the previously assigned (recursively).
+ * @param scores the matrix of scores (a row per element)
+ * @param assignations the final assignations maximizing the scores
+ * @param assigned_socres the final scores got in the assignations
+ */
+void CloudjectDetector::assign(vector< vector<double> > scores, vector<int>& assignations, vector<double>& assigned_scores)
+{
+    // attach an integer index to the scores.
+    // in the posterior ordering of the matrix's rows
+    // the original positions can be tracked
+    vector< vector< pair<int,double> > > indexed_scores;
+    for (int i = 0; i < scores.size(); i++)
+    {
+        assert (scores[i].size() == scores[0].size());
+        
+        vector< pair<int,double> > row_indexed_scores (scores[i].size());
+        for (int j = 0; j < scores[i].size(); j++)
+            row_indexed_scores[j] = pair<int,double>(j,scores[i][j]);
+        
+        indexed_scores.push_back(row_indexed_scores);
+    }
+    
+    // compute the ordered version (by rows) of the matrix of scores
+    vector< vector< pair<int,double> > > ordered_indexed_scores;
+    for (int i = 0; i < indexed_scores.size(); i++)
+    {
+        vector< pair<int,double> > row_ordered_indexed_scores = indexed_scores[i];
+        std::sort(row_ordered_indexed_scores.begin(),
+                  row_ordered_indexed_scores.end(),
+                  gt_cmp);
+        ordered_indexed_scores.push_back(row_ordered_indexed_scores);
+    }
+    
+    // output variables with the results
+    vector<int> assignationsTmp (indexed_scores.size(), -1);
+    vector<double> assignscores (indexed_scores.size(), 0);
+    
+    // assign recursively
+    // that is, if a new assignation has conflicts with a previous, try to
+    // reassign the previous, which at the same time could cause new
+    // conflicts
+    for (int i = 0; i < indexed_scores.size(); i++)
+    {
+        recursive_assignation(ordered_indexed_scores, i, false,
+                              assignationsTmp, assignscores);
+    }
+    
+    assignations = assignationsTmp;
+}
+
+/**
+ * Score-driven assignation of the idx-th element and recursive
+ * re-assignation.
+ *
+ * Finds the best assignation possible to the element represented by the
+ * idx-th rows of the ordered matrix. The best assignation possible is the
+ * one maximizing the score. If the assignations causes a conflict, re-
+ * assigns the previous assignation if necessary (achieved a lower score).
+ * @param ordered a matrix of scores in which vectors are column-wise
+ * sorted in descendent order
+ * @param idx indicates the row of ordered dealt with
+ * @param recursive indicates if the level of recursion is greater than 1.
+ *   If not, there is no need to check assignations made for indices > idx.
+ * @param assignations the assignations got after solving idx-th
+ *   assignation.
+ * @param assignscores the corresponding scores got in the assignations.
+ */
+void CloudjectDetector::recursive_assignation(vector< vector< pair<int,double> > > ordered,
+                                              int idx, bool recursive,
+                                              vector<int>& assignations, vector<double>& assignscores)
+{
+    for (int j = 0; j < ordered[idx].size(); j++)
+    {
+        assert (ordered[idx].size() == ordered[0].size());
+        
+        // Special case
+        bool nextly_assigned = false;
+        if (recursive) // level of recursion > 1, so a conflict is being dealt with
+        {
+            // check if the assignation was already made in greater indices (idx)
+            for (int k = idx + 1; k < assignations.size() && !nextly_assigned; k++)
+                nextly_assigned = (assignations[k] == ordered[idx][j].first);
+        }
+        
+        bool previously_assigned = false;
+        int past_assignation; // if conclict with past assignation, track it
+        for (int k = idx - 1; k >= 0 && !previously_assigned; k--)
+        {
+            // check if the assignation was already made in lower indices (idx)
+            previously_assigned = (ordered[idx][j].first == assignations[k]);
+            if (previously_assigned) past_assignation = k;
+        }
+        
+        if (!nextly_assigned)
+        {
+            if (!previously_assigned)
+            {
+                // No conflicts (straightforward case)
+                if (ordered[idx][j].second > assignscores[idx])
+                {
+                    assignations[idx] = ordered[idx][j].first;
+                    assignscores[idx] = ordered[idx][j].second;
+                }
+            }
+            else
+            {
+                // Conflictive situation
+                // If new assignation gets a greater score than already
+                // assigned, re-assign that (recursively)
+                if (ordered[idx][j].second > assignscores[idx]
+                    && ordered[idx][j].second > assignscores[past_assignation])
+                {
+                    assignations[idx] = ordered[idx][j].first;
+                    assignscores[idx] = ordered[idx][j].second;
+                    
+                    assignations[past_assignation] = -1;
+                    assignscores[past_assignation] = 0;
+                    recursive_assignation(ordered, past_assignation, true,
+                                          assignations, assignscores);
+                }
+            }
+        }
+    }
+}
+
+
+void CloudjectDetector::recognize(vector< vector<Cloudject> >& history)
+{
+    vector< vector<double> > cloudjectScores (history.size());
+    
+    for (int i = 0; i < history.size(); i++)
+    {
+        history[i][0].describe(m_NormalRadius, m_FpfhRadius);
+        for (int j = 0; j < m_CloudjectModels.size(); j++)
+        {
+            double score = m_CloudjectModels[j].match(history[i][0]);
+            cloudjectScores[i].push_back(score);
+            cout << score << "\t";
+        }
+        cout << endl;
+    }
+    cout << endl;
+    
+    vector<int> assignations;
+    vector<double> assignscores;
+    assign(cloudjectScores, assignations, assignscores);
+    
+    for (int i = 0; i < history.size(); i++)
+    {
+        history[i][0].setID(assignations[i]);
+    }
 }
