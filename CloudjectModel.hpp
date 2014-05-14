@@ -9,6 +9,8 @@
 
 #include <vector>
 
+using namespace std;
+
 template<typename PointT, typename SignatureT>
 class CloudjectModelBase
 {
@@ -19,14 +21,16 @@ class CloudjectModelBase
 public:
 	CloudjectModelBase() {}
 
-	CloudjectModelBase(int ID, int nViewpoints = 3, float leafSize = 0.0)
-		: m_ID(ID), m_NViews(nViewpoints), m_LeafSize(leafSize)
+	CloudjectModelBase(int ID, string name, float leafSize = 0.0)
+		: m_ID(ID), m_Name(name), m_LeafSize(leafSize), m_NViews(0)
 	{
 	}
 
 	~CloudjectModelBase(void) {}
 
 	int getID() { return m_ID; }
+    
+    string getName() { return m_Name; }
     
     int getNumOfViews() { return m_NViews; }
 
@@ -50,6 +54,8 @@ public:
 
 			m_ViewClouds.push_back(pViewCpy);
 		}
+        
+        m_NViews++;
 
 		Eigen::Vector4f centroid;
 		pcl::compute3DCentroid(*m_ViewClouds[m_ViewClouds.size()-1], centroid);
@@ -134,6 +140,7 @@ protected:
 private:
 	
 	int m_ID;
+    string m_Name;
 };
 
 
@@ -151,9 +158,9 @@ protected:
 	LFCloudjectModelBase(void) 
 		: CloudjectModelBase<PointT,SignatureT>() {}
 
-	LFCloudjectModelBase(int ID, int nViewpoints = 3, float leafSize = 0.0, float pointRejectionThresh = 1.0, 
+	LFCloudjectModelBase(int ID, string name, float leafSize = 0.0, float pointRejectionThresh = 1.0,
 		float ratioRejectionThresh = 1.0, int sizePenalty = 1, float sigmaPenaltyThresh = 0.1)
-		: CloudjectModelBase<PointT,SignatureT>(ID, nViewpoints, leafSize), 
+		: CloudjectModelBase<PointT,SignatureT>(ID, name, leafSize),
 		  m_PointRejectionThresh(pointRejectionThresh), m_RatioRejectionThresh(ratioRejectionThresh), 
 		  m_SizePenalty(sizePenalty), m_SigmaPenaltyThresh(sigmaPenaltyThresh) 
 	{}
@@ -161,6 +168,7 @@ protected:
 	virtual ~LFCloudjectModelBase() {}
 
 	int getID() { return CloudjectModelBase<PointT, SignatureT>::getID(); }
+    string getName() { return CloudjectModelBase<PointT, SignatureT>::getName(); }
     
     int getNumOfViews() { return CloudjectModelBase<PointT, SignatureT>::getNumOfViews(); }
 
@@ -235,7 +243,11 @@ protected:
 			}
 
 			// TODO: more sophisticated fusion
-			return ((scoreA * penaltyA) + (scoreB * penaltyB)) / 2.0;
+            float penalizedScoreA = scoreA * penaltyA;
+            float penalizedScoreB = scoreB * penaltyB;
+//            float distanceWeightA = 1.0 / c.getPosA();
+//            float distanceWeightB = c.getPosB();
+			return (penalizedScoreA + penalizedScoreB) / 2.0;
 		}
 	}
 
@@ -418,15 +430,16 @@ class LFCloudjectModel<PointT, pcl::FPFHSignature33> : public LFCloudjectModelBa
 
 public:
 
-	LFCloudjectModel(int ID, int nViewpoints = 3, float leafSize = 0.0, float pointRejectionThresh = 1.0, 
+	LFCloudjectModel(int ID, string name, float leafSize = 0.0, float pointRejectionThresh = 1.0,
 		float ratioRejectionThresh = 1.0, int sizePenalty = 1, float sigmaPenaltyThresh = 0.1)
-		: LFCloudjectModelBase<PointT,pcl::FPFHSignature33>(ID, nViewpoints, leafSize,
+		: LFCloudjectModelBase<PointT,pcl::FPFHSignature33>(ID, name, leafSize,
 		  pointRejectionThresh, ratioRejectionThresh, sizePenalty, sigmaPenaltyThresh)
 	{}
 
 	virtual ~LFCloudjectModel() {}
 
 	int getID() { return LFCloudjectModelBase<PointT,pcl::FPFHSignature33>::getID(); }
+    string getName() { return LFCloudjectModelBase<PointT,pcl::FPFHSignature33>::getName(); }
 	
     int getNumOfViews() { return CloudjectModelBase<PointT,pcl::FPFHSignature33>::getNumOfViews(); }
 	void addView(PointCloudPtr pCloud) { LFCloudjectModelBase<PointT,pcl::FPFHSignature33>::addView(pCloud); }
@@ -572,6 +585,7 @@ private:
 //	virtual ~LFCloudjectModel() {}
 //
 //	int getID() { return LFCloudjectModelBase<PointT,pcl::PFHRGBSignature250>::getID(); }
+//    string getName() { return LFCloudjectModelBase<PointT, pcl::PFHRGBSignature250>::getName(); }
 //    int getNumOfViews() { return CloudjectModelBase<PointT,pcl::PFHRGBSignature250>::getNumOfViews(); }
 //	
 //	void addView(PointCloudPtr pCloud) { LFCloudjectModelBase<PointT,pcl::PFHRGBSignature250>::addView(pCloud); }

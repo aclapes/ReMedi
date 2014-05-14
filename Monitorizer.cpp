@@ -1,7 +1,9 @@
 #include "Monitorizer.h"
 
 Monitorizer::Monitorizer(InteractiveRegisterer ir, TableModeler tm, CloudjectDetector cd)
-	: m_ir(ir), m_tm(tm), m_CloudjectDetector(cd), m_pViz(new pcl::visualization::PCLVisualizer("Monitorizer"))
+: m_ir(ir), m_tm(tm), m_CloudjectDetector(cd),
+m_pInteractionCloudA(new PointCloud), m_pInteractionCloudB(new PointCloud),
+m_pViz(new pcl::visualization::PCLVisualizer("Monitorizer"))
 {
     m_CloudjectDetector.setLeafSize(0.005);
     m_CloudjectDetector.setTemporalWindow(3);
@@ -27,14 +29,54 @@ Monitorizer::Monitorizer(InteractiveRegisterer ir, TableModeler tm, CloudjectDet
     
     m_pViz->setCameraPosition(0, 0, 3, 0, 0, 0);
     
-    m_TextSize = 0.1;
+    m_TextSize = 0.05;
 }
 
+Monitorizer::Monitorizer(const Monitorizer& rhs)
+{
+    *this = rhs;
+}
 
 Monitorizer::~Monitorizer(void)
 {
 }
 
+Monitorizer& Monitorizer::operator=(const Monitorizer& rhs)
+{
+    if (this != &rhs)
+    {
+        m_Params = rhs.m_Params;
+        
+        m_ir = rhs.m_ir;
+        m_tm = rhs.m_tm;
+        
+        m_pViz = rhs.m_pViz;
+        m_SceneVp = rhs.m_SceneVp;
+        m_ObjectsVpA = rhs.m_ObjectsVpA;
+        m_ObjectsVpB = rhs.m_ObjectsVpB;
+        
+        m_dFrameA = rhs.m_dFrameA;
+        m_dFrameB = rhs.m_dFrameB;
+        
+        m_CloudA = rhs.m_CloudA;
+        m_CloudB = rhs.m_CloudB;
+        
+        m_CloudjectDetector = rhs.m_CloudjectDetector;
+        m_MotionSegmentator = rhs.m_MotionSegmentator;
+        
+        m_cloudjects = rhs.m_cloudjects; // yet present
+        
+        m_LeafSize = rhs.m_LeafSize;
+        m_ClusterTolFactor = rhs.m_ClusterTolFactor;
+        m_PosCorrespThresh = rhs.m_PosCorrespThresh;
+        
+        m_TextSize = rhs.m_TextSize;
+        m_TextsVpA = rhs.m_TextsVpA;
+        m_TextsVpB = rhs.m_TextsVpB;
+    }
+    
+    return *this;
+}
 
 void Monitorizer::setParams(MonitorizerParams params)
 {
@@ -45,8 +87,7 @@ void Monitorizer::setParams(MonitorizerParams params)
 void Monitorizer::monitor(DepthFrame dFrameA, DepthFrame dFrameB)
 {
 	// frames (dense depth images) -> registered point clouds
-    
-	PointCloudPtr pRCloudA (new PointCloud); // foreground (background subtracted)
+    PointCloudPtr pRCloudA (new PointCloud); // foreground (background subtracted)
 	PointCloudPtr pRCloudB (new PointCloud);
     
 	m_ir.registration(dFrameA, dFrameB, *pRCloudA, *pRCloudB, false, false);
@@ -65,99 +106,89 @@ void Monitorizer::monitor(DepthFrame dFrameA, DepthFrame dFrameB)
     
 	PointCloudPtr pTableTopCloudA (new PointCloud);
 	PointCloudPtr pTableTopCloudB (new PointCloud);
-    PointCloudPtr pInteractionCloudA (new PointCloud);
-	PointCloudPtr pInteractionCloudB (new PointCloud);
-
 	m_tm.segmentTableTop(pRDownCloudA, pRDownCloudB,
                          *pTableTopCloudA, *pTableTopCloudB);
     
+    m_pInteractionCloudA->clear();
+    m_pInteractionCloudB->clear();
     m_tm.segmentInteractionRegion(pRDownCloudA, pRDownCloudB,
-                                  *pInteractionCloudA, *pInteractionCloudB);
+                                  *m_pInteractionCloudA, *m_pInteractionCloudB);
     
     vector<PointCloudPtr> tabletopClustersA, tabletopClustersB; // tabletop inliers
     vector<PointCloudPtr> interactionClustersA, interactionClustersB; // tabletop outliers
     
     extractClustersFromView(pTableTopCloudA, tabletopClustersA, m_LeafSize);
     extractClustersFromView(pTableTopCloudB, tabletopClustersB, m_LeafSize);
-    extractClustersFromView(pInteractionCloudA, interactionClustersA, m_LeafSize);
-    extractClustersFromView(pInteractionCloudB, interactionClustersB, m_LeafSize);
+    extractClustersFromView(m_pInteractionCloudA, interactionClustersA, m_LeafSize);
+    extractClustersFromView(m_pInteractionCloudB, interactionClustersB, m_LeafSize);
     
     vector<PointCloudPtr> actorClustersA, actorClustersB; // tabletop inliers
-    vector<PointCloudPtr> interactorClustersA, interactorClustersB; // tabletop outliers
+    classifyTabletop(tabletopClustersA, interactionClustersA,
+                     actorClustersA, m_InteractorClustersA,
+                     1.5 * m_LeafSize);
+    classifyTabletop(tabletopClustersB, interactionClustersB,
+                     actorClustersB, m_InteractorClustersB,
+                     1.5 * m_LeafSize);
     
-    classifyActorsAndInteractors(tabletopClustersA, interactionClustersA,
-                                 actorClustersA, interactorClustersA,
-                                 1.5 * m_LeafSize);
-    classifyActorsAndInteractors(tabletopClustersB, interactionClustersB,
-                                 actorClustersB, interactorClustersB,
-                                 1.5 * m_LeafSize);
+    //
+    // Cloudjects part
+    // ---------------
+    //
+    // Lot of stuff in here:
+    // - creating cloudjects from clusters in two views
+    // - spatiotemporal coherence
+    // - recognition
+    // - detect apparitions and disapparitions
+    //
     
-    vector<Cloudject> cloudjects;
     m_CloudjectDetector.setInputClusters(actorClustersA, actorClustersB);
-    m_CloudjectDetector.detect(cloudjects);
+    m_CloudjectDetector.detect();
+
+    m_CloudjectDetector.getPresentCloudjects(m_PresentCloudjects);
+    m_CloudjectDetector.getAppearedCloudjects(m_AppearedCloudjects);
+    m_CloudjectDetector.getDisappearedCloudjects(m_DisappearedCloudjects);
     
-	// Detect motion
+    for (int i = 0; i < m_DisappearedCloudjects.size(); i++)
+    {
+        bool grabInA = isInteractive(m_DisappearedCloudjects[i]->getViewA(), m_InteractorClustersA, 1.5 * m_LeafSize);
+        bool grabInB = isInteractive(m_DisappearedCloudjects[i]->getViewB(), m_InteractorClustersB, 1.5 * m_LeafSize);
+        
+        if (grabInA || grabInB)
+            cout << m_DisappearedCloudjects[i]->getName() << endl;
+    }
+}
+
+void Monitorizer::display()
+{
+    // Visualization
     
-//    PointCloudPtr pMotionCloudA (new PointCloud);
-//	PointCloudPtr pMotionCloudB (new PointCloud);
-//    
-//    m_motionSegmentator.setInputFrames(dFrameA, dFrameB);
-//    m_motionSegmentator.setMotionThreshold(m_Params.motionThresh);
-//    //m_motionSegmentator.setNegativeMotion(false);
-//    m_motionSegmentator.segment(*pMotionCloudA, *pMotionCloudB);
-//    
-//    PointCloudPtr pMotionRCloudA (new PointCloud);
-//	PointCloudPtr pMotionRCloudB (new PointCloud);
-//    
-//	m_ir.registration(pMotionCloudA, pMotionCloudB, *pMotionRCloudA, *pMotionRCloudB);
-    
-    // Clusterize the blobs and create cloudjects
-
-//	vector<Cloudject> cloudjects;
-//
-//	m_CloudjectDetector.setInputClouds(pInteractionCloudA, pInteractionCloudB, pTableTopCloudA, pTableTopCloudB);
-//	m_CloudjectDetector.detect(cloudjects);
-
-
-
-	//pcl::PointCloud<pcl::PointXYZ>::Ptr ontoMotionCloudA (new pcl::PointCloud<pcl::PointXYZ>);
-	//pcl::PointCloud<pcl::PointXYZ>::Ptr ontoMotionCloudB (new pcl::PointCloud<pcl::PointXYZ>);
-
-	//m_tm.segmentObjectsOnTop(motionCloudA, motionCloudB, *ontoMotionCloudA, *ontoMotionCloudB);
-
-	// Detect interaction
-
-	// ...
-	 
-	// Visualization
-
 	m_pViz->removeAllPointClouds();
     m_pViz->removeAllShapes();
-
-//	m_pViz->addPointCloud (pRCloudA, "cloud left", m_SceneVp);
-//    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 1, 0, "cloud left");
-//    m_pViz->addPointCloud (pRCloudB, "cloud right", m_SceneVp);
-//    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 1, "cloud right");
+    
+    //	m_pViz->addPointCloud (pRCloudA, "cloud left", m_SceneVp);
+    //    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 1, 0, "cloud left");
+    //    m_pViz->addPointCloud (pRCloudB, "cloud right", m_SceneVp);
+    //    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 1, "cloud right");
     
     stringstream ss;
-    m_pViz->addPointCloud (pInteractionCloudA, "interaction left", m_ObjectsVpA);
+    m_pViz->addPointCloud (m_pInteractionCloudA, "interaction left", m_ObjectsVpA);
     m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 1, 1, "interaction left");
-    for (int i = 0; i < interactorClustersA.size(); i++)
+    for (int i = 0; i < m_InteractorClustersA.size(); i++)
     {
         ss.str("");
         ss << "interactors left " << i;
-        m_pViz->addPointCloud (interactorClustersA[i], ss.str(), m_ObjectsVpA);
+        m_pViz->addPointCloud (m_InteractorClustersA[i], ss.str(), m_ObjectsVpA);
         m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0.35, 1, ss.str());
     }
     
     
-    m_pViz->addPointCloud (pInteractionCloudB, "interaction right", m_ObjectsVpB);
+    m_pViz->addPointCloud (m_pInteractionCloudB, "interaction right", m_ObjectsVpB);
     m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 1, 1, "interaction left");
-    for (int i = 0; i < interactorClustersB.size(); i++)
+    for (int i = 0; i < m_InteractorClustersB.size(); i++)
     {
         ss.str("");
         ss << "interactors righties " << i;
-        m_pViz->addPointCloud (interactorClustersB[i], ss.str(), m_ObjectsVpB);
+        m_pViz->addPointCloud (m_InteractorClustersB[i], ss.str(), m_ObjectsVpB);
         m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0.35, 1, ss.str());
     }
     
@@ -168,38 +199,37 @@ void Monitorizer::monitor(DepthFrame dFrameA, DepthFrame dFrameB)
         m_pViz->removeText3D("b" + m_TextsVpB[i], m_ObjectsVpB + 1);
     
     
-    for (int i = 0; i < cloudjects.size(); i++)
+    for (int i = 0; i < m_PresentCloudjects.size(); i++)
     {
-        size_t pid = (size_t) &(cloudjects[i]);// pointer-based id
+        size_t pid = ((size_t) &(*m_PresentCloudjects[i]));// pointer-based id
         
-        if (!cloudjects[i].getViewA()->empty())
+        if (!m_PresentCloudjects[i]->getViewA()->empty())
         {
-            m_pViz->addPointCloud (cloudjects[i].getViewA(), "a" + to_string(pid), m_ObjectsVpA);
+            m_pViz->addPointCloud (m_PresentCloudjects[i]->getViewA(), "a" + to_string(pid), m_ObjectsVpA);
             m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.8, 0.1, 0.1, "a" + to_string(pid));
             
-//            if (cloudjects[i].getID() >= 0)
-//            {
-                m_pViz->addText3D(to_string(cloudjects[i].getID()), cloudjects[i].getPosA(), m_TextSize, 1.0, 1.0, 1.0, "a" + to_string(pid), m_ObjectsVpA + 1);
-                m_TextsVpA.push_back( to_string(pid) );
-//            }
+            //            if (cloudjects[i].getID() >= 0)
+            //            {
+            m_pViz->addText3D(m_PresentCloudjects[i]->getName(), m_PresentCloudjects[i]->getPosA(), m_TextSize, 1.0, 1.0, 1.0, "a" + to_string(pid), m_ObjectsVpA + 1);
+            m_TextsVpA.push_back( to_string(pid) );
+            //            }
         }
         
-        if (!cloudjects[i].getViewB()->empty())
+        if (!m_PresentCloudjects[i]->getViewB()->empty())
         {
-            m_pViz->addPointCloud (cloudjects[i].getViewB(), "b" + to_string(pid), m_ObjectsVpB);
+            m_pViz->addPointCloud (m_PresentCloudjects[i]->getViewB(), "b" + to_string(pid), m_ObjectsVpB);
             m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.8, 0.1, 0.1, "b" + to_string(pid));
             
-//            if (cloudjects[i].getID() >= 0)
-//            {
-                m_pViz->addText3D(to_string(cloudjects[i].getID()), cloudjects[i].getPosB(), m_TextSize, 1.0, 1.0, 1.0, "b" + to_string(pid), m_ObjectsVpB + 1);
-                m_TextsVpB.push_back( "b" + to_string(pid) );
-//            }
+            //            if (cloudjects[i].getID() >= 0)
+            //            {
+            m_pViz->addText3D(m_PresentCloudjects[i]->getName(), m_PresentCloudjects[i]->getPosB(), m_TextSize, 1.0, 1.0, 1.0, "b" + to_string(pid), m_ObjectsVpB + 1);
+            m_TextsVpB.push_back( "b" + to_string(pid) );
+            //            }
         }
     }
-
+    
 	m_pViz->spinOnce(10);
 }
-
 
 //void Monitorizer::segmentMotion(float thresh, cv::Mat& motionA, cv::Mat& motionB)
 //{
@@ -252,24 +282,6 @@ void Monitorizer::monitor(DepthFrame dFrameA, DepthFrame dFrameB)
 //}
 
 
-void Monitorizer::updateCentroids(vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters, vector<Eigen::Vector4f>& centroids)
-{
-//	vector<Eigen::Vector4f> centroidsTmp; // Centroids in this frame
-//	for (int i = 0; i < clusters.size(); i++)
-//	{
-//		Eigen::Vector4f c;
-//		pcl::compute3DCentroid(*(clusters[i]), c);
-//		centroidsTmp.push_back(c);
-//	}
-//
-//	centroids.push_back(centroidsTmp);
-//	if (centroids.size() > m_Params.tmpCoherence + 1)
-//	{
-//		centroids.erase(centroids.begin());
-//	}
-}
-
-
 //void Monitorizer::segmentStatics(vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> candidatesA, vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> candidatesB,
 //	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& staticsA, vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& staticsB, float thresh)
 //{
@@ -307,98 +319,6 @@ void Monitorizer::updateCentroids(vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> cl
 //			statics.push_back(candidates[i]);
 //	}
 //}
-
-
-void Monitorizer::handleCloudjectDrops()
-{
-//	// Detect present objects
-//	vector<Cloudject> detectedCjs;
-//	m_CloudjectDetector.detect(m_CloudA, m_CloudB, m_LeafSize, detectedCjs);
-//	cout << "detected: " << detectedCjs.size() << endl;
-//	// Check for new appearitions
-//	vector<Cloudject> newCjs;
-//	appeared(detectedCjs, newCjs);
-//
-//	// Recognize the new appeared objects
-//	m_cjRecognizer.recognize(newCjs);
-//
-//	// 
-//	//drop(appearedCjs);
-}
-
-
-void Monitorizer::drop(vector<Cloudject> cloudjects)
-{
-	for (int i = 0; i < cloudjects.size(); i++)
-	{
-		m_cloudjects.push_back(cloudjects[i]);
-	}
-}
-
-
-//void Monitorizer::handleCloudjectPicks(vector<Cloudject>& cloudjects)
-//{
-//
-//}
-
-
-void Monitorizer::appeared(vector<Cloudject> detecteds, vector<Cloudject>& news)
-{
-	for (int i = 0; i < detecteds.size(); i++)
-	{
-		bool isNew = true;
-		for (int j = 0; j < m_cloudjects.size() && isNew; j++)
-		{
-			if ( compareEquals(detecteds[i], m_cloudjects[j]) ) 
-			{
-				isNew = false;
-			}
-		}
-
-		if (isNew)
-		{
-			news.push_back(detecteds[i]);
-		}
-	}
-}
-
-
-bool Monitorizer::compareEquals(Cloudject a, Cloudject b)
-{
-	PointT posA, posB;
-	posA = a.getPosA();
-	posB = b.getPosB();
-
-	float dist = sqrt(powf(posA.x-posB.x,2)+powf(posA.y-posB.y,2)+powf(posA.z-posB.z,2));
-
-	return dist < m_Params.posCorrespThresh;
-}
-
-
-void Monitorizer::visualizeCloudjects(pcl::visualization::PCLVisualizer::Ptr pViz)
-{
-	for (int i = 0; i < m_cloudjects.size(); i++)
-	{
-		stringstream ss;
-		ss << m_cloudjects[i].getID();
-		pViz->removePointCloud((ss.str() + "A").c_str());
-		pViz->removePointCloud((ss.str() + "B").c_str());
-
-		pViz->addPointCloud (m_cloudjects[i].getViewA(), (ss.str() + "A").c_str());
-		pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, (ss.str() + "A").c_str());
-		pViz->addPointCloud (m_cloudjects[i].getViewB(), (ss.str() + "B").c_str());
-		pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, (ss.str() + "B").c_str());
-	}
-}
-
-
-void Monitorizer::detectCloudjects(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB, vector<Cloudject>& cloudjects, float leafSize)
-{
-	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersA, clustersB;
-
-	extractClustersFromView(pCloudA, clustersA, leafSize);
-	extractClustersFromView(pCloudB, clustersB, leafSize);
-}
 
 
 void Monitorizer::extractClusters(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB, vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clustersA, vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clustersB, float leafSize)
@@ -466,43 +386,57 @@ void Monitorizer::extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::Ptr pC
 	}
 }
 
-void Monitorizer::classifyActorsAndInteractors(vector<PointCloudPtr> tabletopRegionClusters,
-                                               vector<PointCloudPtr> interactionRegionClusters,
-                                               vector<PointCloudPtr>& actorClusters,
-                                               vector<PointCloudPtr>& interactorClusters,
-                                               float leafSize)
+void Monitorizer::classifyTabletop(vector<PointCloudPtr> tabletopRegionClusters,
+                                   vector<PointCloudPtr> interactionRegionClusters,
+                                   vector<PointCloudPtr>& actorClusters,
+                                   vector<PointCloudPtr>& interactorClusters,
+                                   float leafSize)
 {
+    actorClusters.clear();
+    interactorClusters.clear();
+    
     // Check for each cluster that lies on the table
     for (int i = 0; i < tabletopRegionClusters.size(); i++)
     {
-        bool interactive = false;
-        // if some of its points
-        for (int k_i = 0; k_i < tabletopRegionClusters[i]->points.size() && !interactive; k_i++)
-        {
-            PointT p = tabletopRegionClusters[i]->points[k_i];
-            
-            // is very stick together with
-            for (int j = 0; j < interactionRegionClusters.size() && !interactive; j++)
-            {
-                // some point of the interaction region.
-                for (int k_j = 0; k_j < interactionRegionClusters[j]->points.size() && !interactive; k_j++)
-                {
-                    PointT q = interactionRegionClusters[j]->points[k_j];
-                    
-                    // If they are practically contiguous, they must had been part of the same cloud
-                    float pqDist = sqrt(pow(p.x - q.x, 2) + pow(p.y - q.y, 2) + pow(p.z - q.z, 2));
-                    interactive = (pqDist <= 2 * leafSize); // if tabletop cluster is stick to any cluster
-                                                              // in the interaction region, we say it is interactive
-                                                              // and become an interactor
-                }
-            }
-        }
-        
+        bool interactive = isInteractive(tabletopRegionClusters[i],
+                                         interactionRegionClusters,
+                                         leafSize);
         if (!interactive)
             actorClusters.push_back(tabletopRegionClusters[i]);
         else
             interactorClusters.push_back(tabletopRegionClusters[i]);
     }
+}
+
+bool Monitorizer::isInteractive(PointCloudPtr tabletopRegionCluster,
+                                vector<PointCloudPtr> interactionRegionClusters,
+                                float leafSize)
+{
+    bool interactive = false;
+    
+    // if some of its points
+    for (int k_i = 0; k_i < tabletopRegionCluster->points.size() && !interactive; k_i++)
+    {
+        PointT p = tabletopRegionCluster->points[k_i];
+        
+        // is very stick together with
+        for (int j = 0; j < interactionRegionClusters.size() && !interactive; j++)
+        {
+            // some point of the interaction region.
+            for (int k_j = 0; k_j < interactionRegionClusters[j]->points.size() && !interactive; k_j++)
+            {
+                PointT q = interactionRegionClusters[j]->points[k_j];
+                
+                // If they are practically contiguous, they must had been part of the same cloud
+                float pqDist = sqrt(pow(p.x - q.x, 2) + pow(p.y - q.y, 2) + pow(p.z - q.z, 2));
+                interactive = (pqDist <= 2 * leafSize); // if tabletop cluster is stick to any cluster
+                // in the interaction region, we say it is interactive
+                // and become an interactor
+            }
+        }
+    }
+    
+    return interactive;
 }
 
 void Monitorizer::setLeafSize(float leafSize)
@@ -513,14 +447,4 @@ void Monitorizer::setLeafSize(float leafSize)
 void Monitorizer::setClusteringToleranceFactor(int factor)
 {
     m_ClusterTolFactor = factor;
-}
-
-void Monitorizer::setMinimumClusterSize(int npoints)
-{
-    m_MinClusterSize = npoints;
-}
-
-void Monitorizer::setMaximumClusterSize(int npoints)
-{
-    m_MaxClusterSize = npoints;
 }

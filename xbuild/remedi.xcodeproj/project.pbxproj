@@ -46,6 +46,7 @@
 		10721EB318C4B52000371667 /* Reader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721EA118C4B52000371667 /* Reader.cpp */; };
 		10721EB418C4B52000371667 /* Remedi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721EA418C4B52000371667 /* Remedi.cpp */; };
 		10721EB518C4B52000371667 /* TableModeler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721EA718C4B52000371667 /* TableModeler.cpp */; };
+		107D8ABF192262E100A21859 /* SupervisedObjectPicker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 107D8ABD192262E100A21859 /* SupervisedObjectPicker.cpp */; };
 		F6AD5CEC8FEB4A848342E2CA /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 43537AED816A4A5BAD98876A /* main.cpp */; settings = {COMPILER_FLAGS = ""; }; };
 /* End PBXBuildFile section */
 
@@ -105,6 +106,8 @@
 		10721EA618C4B52000371667 /* Table.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Table.hpp; sourceTree = "<group>"; };
 		10721EA718C4B52000371667 /* TableModeler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TableModeler.cpp; sourceTree = "<group>"; };
 		10721EA818C4B52000371667 /* TableModeler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TableModeler.h; sourceTree = "<group>"; };
+		107D8ABD192262E100A21859 /* SupervisedObjectPicker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SupervisedObjectPicker.cpp; sourceTree = "<group>"; };
+		107D8ABE192262E100A21859 /* SupervisedObjectPicker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SupervisedObjectPicker.h; sourceTree = "<group>"; };
 		43537AED816A4A5BAD98876A /* main.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; path = main.cpp; sourceTree = SOURCE_ROOT; };
 		7F7A1D454D4C4C0CA5B8CDC6 /* CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
 		9C7258635DE94F6E89753E13 /* remedi */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = remedi; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -156,6 +159,8 @@
 				10721EA718C4B52000371667 /* TableModeler.cpp */,
 				10721EA818C4B52000371667 /* TableModeler.h */,
 				43537AED816A4A5BAD98876A /* main.cpp */,
+				107D8ABD192262E100A21859 /* SupervisedObjectPicker.cpp */,
+				107D8ABE192262E100A21859 /* SupervisedObjectPicker.h */,
 			);
 			name = "Source Files";
 			sourceTree = "<group>";
@@ -304,6 +309,7 @@
 				10721EAC18C4B52000371667 /* ColorFrame.cpp in Sources */,
 				10721EB018C4B52000371667 /* Frame.cpp in Sources */,
 				10721EB518C4B52000371667 /* TableModeler.cpp in Sources */,
+				107D8ABF192262E100A21859 /* SupervisedObjectPicker.cpp in Sources */,
 				10721EAD18C4B52000371667 /* conversion.cpp in Sources */,
 				10721EB118C4B52000371667 /* InteractiveRegisterer.cpp in Sources */,
 				10721EAA18C4B52000371667 /* CloudjectDetector.cpp in Sources */,
@@ -463,6 +469,8 @@
 		5884DC5BAA2641AE80509D31 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
+				CLANG_CXX_LIBRARY = "compiler-default";
 				COMBINE_HIDPI_IMAGES = YES;
 				EXECUTABLE_PREFIX = "";
 				EXECUTABLE_SUFFIX = "";
@@ -627,6 +635,8 @@
 		58858A6163644B819CF33CA3 /* MinSizeRel */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
+				CLANG_CXX_LIBRARY = "compiler-default";
 				COMBINE_HIDPI_IMAGES = YES;
 				EXECUTABLE_PREFIX = "";
 				EXECUTABLE_SUFFIX = "";
@@ -842,6 +852,8 @@
 		68A777D345354CBA992AF8EB /* RelWithDebInfo */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
+				CLANG_CXX_LIBRARY = "compiler-default";
 				COMBINE_HIDPI_IMAGES = YES;
 				EXECUTABLE_PREFIX = "";
 				EXECUTABLE_SUFFIX = "";
@@ -1077,6 +1089,8 @@
 		BE974901F41F4092B34E51A9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
+				CLANG_CXX_LIBRARY = "compiler-default";
 				COMBINE_HIDPI_IMAGES = YES;
 				EXECUTABLE_PREFIX = "";
 				EXECUTABLE_SUFFIX = "";

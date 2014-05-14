@@ -8,18 +8,12 @@
 #include "CloudjectModel.hpp"
 #include <pcl/visualization/pcl_visualizer.h>
 
-#ifdef _WIN32
-string g_parentDir = "../";
-#elif __APPLE__
-string g_parentDir = "../../";
-#endif
-
-Remedi::Remedi()
+Remedi::Remedi(string parentDir)
 {
-	
+	m_ParentDir = parentDir;
 }
 
-void Remedi::Run()
+void Remedi::Run(bool display)
 {
 	/*
 	 * Load data
@@ -27,9 +21,10 @@ void Remedi::Run()
 
 	// Create a reader pointing the data streams
 
-    string sequencesPath = g_parentDir + "Data/Sequences/";
-    Reader reader( sequencesPath, "Color1/", "Color2/", "Depth1/", "Depth2/" );
-    reader.setInputStream("00_bs/"); // background frames
+    string sequencesPath = m_ParentDir + "Data/Sequences/";
+    string labelsPath = m_ParentDir + "Data/Labels/observer_1/csv/";
+    Reader reader( sequencesPath, "Color1/", "Color2/", "Depth1/", "Depth2/", labelsPath );
+    reader.setSequence(0); // background frames
 
 	/*
 	 * REGISTRATION (paired frames)
@@ -52,7 +47,7 @@ void Remedi::Run()
 	 * BACKGROUND SUBTRACTION
 	 */
 
-	int nFrames = 300;
+	int nFrames = 400;
     int nMixtures = 5; // BS parameters
 //	cout << "[BS] <<<< Number of frames: ";
 //	cin >> nFrames;
@@ -61,48 +56,43 @@ void Remedi::Run()
 	
 	BackgroundSubtractor bgSubtractor(nFrames, nMixtures);
     modelBackground(reader, bgSubtractor);
-   
+    
     
     CloudjectDetector cloudjectDetector;
-    
-    cloudjectDetector.setNormalRadius(0.025);
-    cloudjectDetector.setFpfhRadius(0.05);
+    cloudjectDetector.setModelLeafSize(0.015);
+    cloudjectDetector.setNormalRadius(0.03);
+    cloudjectDetector.setFpfhRadius(0.125);
     cloudjectDetector.setScoreThreshold(0.5);
     
-    cloudjectDetector.loadCloudjectModels(g_parentDir + "Data/CloudjectModels/", 5, 4);
+    cloudjectDetector.loadCloudjectModels(m_ParentDir + "Data/CloudjectModels/");
     
-    
-    MonitorizerParams monitorParams;
-	monitorParams.tmpCoherence = 2;
-	monitorParams.motionThresh = 5;
-    //	monitorParams.leafSize = 0.005;
-	monitorParams.posCorrespThresh = 0.1; // 7 cm
+//    MonitorizerParams monitorParams;
+//	monitorParams.tmpCoherence = 2;
+//	monitorParams.motionThresh = 5;
+//    //	monitorParams.leafSize = 0.005;
+//	monitorParams.posCorrespThresh = 0.1; // 7 cm
     
 	Monitorizer monitorizer (registerer, tableModeler, cloudjectDetector);
-    float leafSize = 0.025;
-    monitorizer.setLeafSize(leafSize);
+    monitorizer.setLeafSize(0.0225);
     monitorizer.setClusteringToleranceFactor(3);
-    monitorizer.setMinimumClusterSize(1/leafSize); // TODO: scale with leafSize
-    monitorizer.setMaximumClusterSize(10000/leafSize);
 
 	/*
 	 * Loop
 	 */
     
-    reader.setInputStream("28_p14_2/"); // a sequence's frames
+    reader.nextSequence();
     
 	DepthFrame dFrameA, dFrameB;
-	bool bSuccess = reader.getDepthPairedFrames(46, dFrameA, dFrameB); // able to read, not finished
-	while (bSuccess)
+	while ( reader.nextDepthPairedFrames(dFrameA, dFrameB) )
 	{
 		DepthFrame fgDFrameA, fgDFrameB;
 		bgSubtractor.subtract(dFrameA, dFrameB, fgDFrameA, fgDFrameB);
 
+        // Processing
 		monitorizer.monitor(fgDFrameA, fgDFrameB);
-
-		monitorizer.handleCloudjectDrops(/*drops*/);
-
-		bSuccess = reader.getNextDepthPairedFrames(dFrameA, dFrameB);
+        // Visualization
+        if (display)
+            monitorizer.display();
 	}
 }
 
@@ -110,7 +100,7 @@ void Remedi::Run()
 void Remedi::modelBackground(Reader reader, BackgroundSubtractor& bs)
 {
     DepthFrame dFrameA, dFrameB;
-	reader.getNextDepthPairedFrames(dFrameA, dFrameB);
+	reader.nextDepthPairedFrames(dFrameA, dFrameB);
 
 	bs(dFrameA, dFrameB, 1);
 
@@ -118,7 +108,7 @@ void Remedi::modelBackground(Reader reader, BackgroundSubtractor& bs)
 	{
 		bs(dFrameA, dFrameB, 0.02);
 
-		reader.getNextDepthPairedFrames(dFrameA, dFrameB);
+		reader.nextDepthPairedFrames(dFrameA, dFrameB);
 	}
 }
 
@@ -134,7 +124,7 @@ void Remedi::interactWithRegisterer(Reader reader, InteractiveRegisterer& regist
     
 	if (c != 'n' && c != 'N') // re-use transformation
 	{
-		registerer.loadTransformation(g_parentDir);
+		registerer.loadTransformation(m_ParentDir);
         
         // DEBUG
         DepthFrame dFrameA, dFrameB;
@@ -172,7 +162,7 @@ void Remedi::interactWithRegisterer(Reader reader, InteractiveRegisterer& regist
         writer.write("registeredA.pcd", *registerer.getRegisteredClouds().first);
         writer.write("registeredB.pcd", *registerer.getRegisteredClouds().second);
         
-        registerer.saveTransformation(g_parentDir);
+        registerer.saveTransformation(m_ParentDir);
 	}
 }
 

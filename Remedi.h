@@ -13,12 +13,17 @@ class Remedi
 public:
 
 	// Constructors
-	Remedi();
+	Remedi(string parentDir);
 	~Remedi();
 
 	// Public methods
-	void Run();
+	void Run(bool display = false);
 
+    // Public enums
+    
+    enum Interaction { PILLBOX = 0, DISH = 1, BOOK = 2, GLASS = 3 };
+    enum Action { TAKINGPILL = 0, EATING = 1, READING = 2, DRINKING = 3 };
+    
 private:
 	void modelBackground(Reader reader, BackgroundSubtractor& bs);
 	void interactWithRegisterer(Reader reader, InteractiveRegisterer& registerer);
@@ -28,4 +33,7 @@ private:
     void loadCloudjectModels(string dir, int nObjects, int nObjectViews,
                              float normalRadius, float fpfhRadius,
                              vector< LFCloudjectModel<pcl::PointXYZ,pcl::FPFHSignature33> >& cloudjectModels);
+    
+    // Attributes
+    string m_ParentDir;
 };

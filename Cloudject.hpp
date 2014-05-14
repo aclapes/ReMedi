@@ -10,6 +10,8 @@
 #include <pcl/features/normal_3d.h>
 
 
+using namespace std;
+
 enum Viewpoint { MASTER_VIEWPOINT = 0, SLAVE_VIEWPOINT = 1 };
 
 
@@ -95,20 +97,28 @@ public:
 
 	CloudjectBase(const CloudjectBase& cloudject)
 	{
-		m_ID	= cloudject.m_ID;
-		m_OriginalViewA = cloudject.m_OriginalViewA;
-		m_OriginalViewB = cloudject.m_OriginalViewB;
-		m_ViewA = cloudject.m_ViewA;
-		m_ViewB = cloudject.m_ViewB;
-		m_PosA	= cloudject.m_PosA;
-		m_PosB	= cloudject.m_PosB;
-		m_MedianDistA = cloudject.m_MedianDistA;
-		m_MedianDistB = cloudject.m_MedianDistB;
+        *this = cloudject;
 	}
-
 
 	virtual ~CloudjectBase(void) {}
 
+    CloudjectBase& operator=(const CloudjectBase& cloudject)
+    {
+        if (this != &cloudject)
+        {
+            m_ID	= cloudject.m_ID;
+            m_OriginalViewA = cloudject.m_OriginalViewA;
+            m_OriginalViewB = cloudject.m_OriginalViewB;
+            m_ViewA = cloudject.m_ViewA;
+            m_ViewB = cloudject.m_ViewB;
+            m_PosA	= cloudject.m_PosA;
+            m_PosB	= cloudject.m_PosB;
+            m_MedianDistA = cloudject.m_MedianDistA;
+            m_MedianDistB = cloudject.m_MedianDistB;
+        }
+        
+        return *this;
+    }
     
     void init(PointCloudPtr view, PointCloud& originalView, PointCloud& transfView, PointT& pos, float& medianDist)
     {
@@ -157,11 +167,23 @@ public:
 	{
 		return m_ID;
 	}
-
-
+    
+    
 	void setID(int ID)
 	{
 		m_ID = ID;
+	}
+    
+    
+    string getName()
+	{
+		return m_Name;
+	}
+    
+    
+	void setName(string name)
+	{
+		m_Name = name;
 	}
 
 
@@ -331,6 +353,8 @@ protected:
 	// Members
 
 	int m_ID;
+    string m_Name;
+    
 	int m_View;
 	PointCloudPtr m_OriginalViewA, m_OriginalViewB;
     
@@ -367,17 +391,29 @@ public:
 		: CloudjectBase<PointT,SignatureT>(viewPathA, viewPathB, leafSize) {}
 
 	LFCloudjectBase(const LFCloudjectBase<PointT,SignatureT>& cloudject) 
-		: CloudjectBase<PointT,SignatureT>(cloudject) 
+		: CloudjectBase<PointT,SignatureT>(cloudject)
 	{
-		m_DescriptorA = cloudject.m_DescriptorA;
-		m_DescriptorB = cloudject.m_DescriptorB;
+        *this = cloudject;
 	}
 
 	virtual ~LFCloudjectBase() {}
-
+    
+    LFCloudjectBase& operator=(const LFCloudjectBase<PointT,SignatureT>& cloudject)
+    {
+        if (this != &cloudject)
+        {
+            m_DescriptorA = cloudject.m_DescriptorA;
+            m_DescriptorB = cloudject.m_DescriptorB;
+        }
+        
+        return *this;
+    }
 
 	int getID() { return CloudjectBase<PointT,SignatureT>::getID(); }
 	void setID(int ID) { CloudjectBase<PointT,SignatureT>::setID(ID); }
+    
+    string getName() { return CloudjectBase<PointT,SignatureT>::getName(); }
+	void setName(string name) { CloudjectBase<PointT,SignatureT>::setName(name); }
 
 	PointT getPosA() const { return CloudjectBase<PointT,SignatureT>::getPosA(); }
 	PointT getPosB() const { return CloudjectBase<PointT,SignatureT>::getPosB(); }
@@ -454,9 +490,22 @@ public:
 		: LFCloudjectBase<PointT,pcl::FPFHSignature33>(viewPathA, viewPathB, leafSize) { }
 
 	LFCloudject(const LFCloudject<PointT,pcl::FPFHSignature33>& cloudject) 
-		: LFCloudjectBase<PointT,pcl::FPFHSignature33>(cloudject) { }
+		: LFCloudjectBase<PointT,pcl::FPFHSignature33>(cloudject)
+    {
+        *this = cloudject;
+    }
 
 	virtual ~LFCloudject() {}
+    
+    LFCloudject& operator=(const LFCloudject& cloudject)
+    {
+        if (this != &cloudject)
+        {
+            
+        }
+        
+        return *this;
+    }
 
 	//
 	// Methods
@@ -464,6 +513,9 @@ public:
 	
 	int getID() { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getID(); }
 	void setID(int ID) { LFCloudjectBase<PointT,pcl::FPFHSignature33>::setID(ID); }
+    
+    string getName() { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getName(); }
+	void setName(string name) { LFCloudjectBase<PointT,pcl::FPFHSignature33>::setName(name); }
 
 	PointT getPosA() const { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getPosA(); }
 	PointT getPosB() const { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getPosB(); }
@@ -602,6 +654,9 @@ public:
 	
 	int getID() { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::getID(); }
 	void setID(int ID) { LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::setID(ID); }
+    
+    int getName() { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::getName(); }
+	void setName(string name) { LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::setName(name); }
 
 	PointT getPosA() const { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::getPosA(); }
 	PointT getPosB() const { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::getPosB(); }

@@ -50,6 +50,10 @@ static const float colors[][3] = {
 
 class InteractiveRegisterer
 {
+	typedef pcl::PointXYZ PointT;
+    typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
+    typedef pcl::PointCloud<pcl::PointXYZ>::Ptr PointCloudPtr;
+    
 public:    
 	InteractiveRegisterer();
     
@@ -57,8 +61,8 @@ public:
 
 	void setNumPoints(int);
 
-    void translate(const pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointXYZ, pcl::PointCloud<pcl::PointXYZ>&);
-    void translate(const pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Vector4f, pcl::PointCloud<pcl::PointXYZ>&);
+    void translate(const PointCloudPtr, PointT, PointCloud&);
+    void translate(const PointCloudPtr, Eigen::Vector4f, PointCloud&);
     
     void keyboardCallback(const pcl::visualization::KeyboardEvent&, void*);
     void mouseCallback(const pcl::visualization::MouseEvent&, void*);
@@ -79,26 +83,29 @@ public:
 	bool loadTransformation(string filePath);
 	void saveTransformation(string filePath);
     
-	void registration(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>&, pcl::PointCloud<pcl::PointXYZ>&);
-	void registration(DepthFrame, DepthFrame,
-		pcl::PointCloud<pcl::PointXYZ>&, pcl::PointCloud<pcl::PointXYZ>&,
-		bool backgroundPoints = true, bool userPoints = true);
-
-    pair<pcl::PointCloud<pcl::PointXYZ>::Ptr,pcl::PointCloud<pcl::PointXYZ>::Ptr> getRegisteredClouds();
+    void registration(DepthFrame, DepthFrame,
+                      PointCloud&, PointCloud&,
+                      bool backgroundPoints = true, bool userPoints = true);
     
-	void visualizeRegistration(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr);
+	void registration(PointCloudPtr, PointCloudPtr, PointCloud&, PointCloud&);
+    void deregistration(PointCloudPtr pRegCloudA, PointCloudPtr pRegCloudB, PointCloud& cloudA, PointCloud& cloudB);
+    void deregistration(vector<PointCloudPtr> pRegCloudsA, vector<PointCloudPtr> pRegCloudsB, vector<PointCloudPtr>& pCloudsA, vector<PointCloudPtr>& pCloudsB);
+
+    pair<PointCloudPtr,PointCloudPtr> getRegisteredClouds();
+    
+	void visualizeRegistration(PointCloudPtr, PointCloudPtr);
 	void visualizeRegistration(pcl::visualization::PCLVisualizer::Ptr, 
-		pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr);
+		PointCloudPtr, PointCloudPtr);
 	void visualizeRegistration(DepthFrame, DepthFrame);
     
-    pcl::PointXYZ getLeftRefPoint();
-    pcl::PointXYZ getRightRefPoint();
+    PointT getLeftRefPoint();
+    PointT getRightRefPoint();
     
 private:
-    void find_transformation (const pcl::PointCloud<pcl::PointXYZ>::Ptr, const pcl::PointCloud<pcl::PointXYZ>::Ptr, Eigen::Matrix4f&);
-//    void align (const pcl::PointCloud<pcl::PointXYZ>::Ptr, const pcl::PointCloud<pcl::PointXYZ>::Ptr,
-//                pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr,
-//                pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr);
+    void find_transformation (const PointCloudPtr, const PointCloudPtr, Eigen::Matrix4f&);
+//    void align (const PointCloudPtr, const PointCloudPtr,
+//                PointCloudPtr, PointCloudPtr,
+//                PointCloudPtr, PointCloudPtr);
     
     // Members
     
@@ -108,10 +115,10 @@ private:
     ColorFrame m_ColorFrameA, m_ColorFrameB;
     DepthFrame m_DepthFrameA, m_DepthFrameB;
     
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_left_, cloud_right_;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr aligned_cloud_left_, aligned_cloud_right_;
+    PointCloudPtr cloud_left_, cloud_right_;
+    PointCloudPtr aligned_cloud_left_, aligned_cloud_right_;
     
-    pcl::PointCloud<pcl::PointXYZ>::Ptr lefties_, righties_;
+    PointCloudPtr lefties_, righties_;
     vector<int> lefties_idx_, righties_idx_;
 
     bool reallocate_points_;
@@ -122,5 +129,5 @@ private:
     pcl::CorrespondencesPtr corresps_;
 
 	Eigen::Vector4f m_tLeft, m_tRight;
-	Eigen::Matrix4f m_Transformation;
+	Eigen::Matrix4f m_Transformation, m_InverseTransformation;
 };

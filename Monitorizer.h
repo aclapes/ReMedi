@@ -2,6 +2,7 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <boost/shared_ptr.hpp>
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -28,27 +29,27 @@ class Monitorizer
 	typedef pcl::PointCloud<PointT> PointCloud;
 	typedef PointCloud::Ptr PointCloudPtr;
 	typedef LFCloudject<PointT, pcl::FPFHSignature33> Cloudject;
+    typedef boost::shared_ptr<Cloudject> CloudjectPtr;
 
 public:
 	Monitorizer(InteractiveRegisterer ir, TableModeler tm, CloudjectDetector cd);
+	Monitorizer(const Monitorizer& rhs);
 	~Monitorizer(void);
 
+    Monitorizer& operator=(const Monitorizer& rhs);
+    
 	void setParams(MonitorizerParams);
     void setLeafSize(float leafSize);
     void setClusteringToleranceFactor(int factor);
-    void setMinimumClusterSize(int npoints);
-    void setMaximumClusterSize(int npoints);
 
 	void monitor(DepthFrame, DepthFrame);
+    void display();
 
 	void updateFrameHistory(DepthFrame, DepthFrame);
 	bool isHistoryComplete();
 
 	void bufferDepthFrame(std::vector<DepthFrame>&, DepthFrame);
 	bool isBufferFilled(std::vector<DepthFrame>);
-
-	void handleCloudjectDrops();
-	//void handleCloudjectPicks(std::vector<Cloudject>& cloudjects);
 
 	void visualizeCloudjects(pcl::visualization::PCLVisualizer::Ptr pViz);
 
@@ -66,27 +67,19 @@ private:
 //		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&, float );
 //	void segmentStaticsInView( std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>, std::vector<std::vector<Eigen::Vector4f> >&, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&, float );
 
-	void detectCloudjects(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr,
-		 std::vector<Cloudject>&, float leafSize = .005f);
-
 	void extractClusters(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr,
 		 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>&, float leafSize = .005f);
 
 	void extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clusters, float leafSize = .005f);
-
-	void appeared(std::vector<Cloudject> detecteds, std::vector<Cloudject>& appeareds);
-	bool compareEquals(Cloudject, Cloudject);
-
-	void drop(std::vector<Cloudject> cloudjects);
-	//void pick(std::vector<Cloudject> cloudjects);
     
-    void updateCentroids(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters, std::vector<Eigen::Vector4f>& centroids);
-    
-    void classifyActorsAndInteractors(vector<PointCloudPtr> tableTopRegionClusters,
-                                      vector<PointCloudPtr> interactionRegionClusters,
-                                      vector<PointCloudPtr>& actorClusters,
-                                      vector<PointCloudPtr>& interactorClusters,
-                                      float leafSize = .005f);
+    void classifyTabletop(vector<PointCloudPtr> tableTopRegionClusters,
+                          vector<PointCloudPtr> interactionRegionClusters,
+                          vector<PointCloudPtr>& actorClusters,
+                          vector<PointCloudPtr>& interactorClusters,
+                          float leafSize = .005f);
+    bool isInteractive(PointCloudPtr tabletopRegionCluster,
+                       vector<PointCloudPtr> interactionRegionClusters,
+                       float leafSize = .005f);
     
 	// Members
 	MonitorizerParams m_Params;
@@ -112,12 +105,16 @@ private:
 	float m_LeafSize;
     int m_ClusterTolFactor;
 	float m_PosCorrespThresh; // dist thres to state wheter two cloudjects are the same based on pos criterion
-    int m_MinClusterSize, m_MaxClusterSize;
     
 	std::vector<std::vector<Eigen::Vector4f> > m_centroidsA;
 	std::vector<std::vector<Eigen::Vector4f> > m_centroidsB;
     
     float m_TextSize;
     vector<string> m_TextsVpA, m_TextsVpB;
+    
+    PointCloudPtr m_pInteractionCloudA, m_pInteractionCloudB;
+    vector<PointCloudPtr> m_InteractorClustersA, m_InteractorClustersB; // tabletop outliers
+    
+    vector<CloudjectPtr> m_PresentCloudjects, m_AppearedCloudjects, m_DisappearedCloudjects;
 };
 

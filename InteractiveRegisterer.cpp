@@ -41,6 +41,7 @@ InteractiveRegisterer::InteractiveRegisterer(const InteractiveRegisterer& other)
 	m_tLeft             = other.m_tLeft;
     m_tRight            = other.m_tRight;
 	m_Transformation    = other.m_Transformation;
+    m_InverseTransformation    = other.m_InverseTransformation;
     
     aligned_cloud_left_     = other.aligned_cloud_left_;
     aligned_cloud_right_    = other.aligned_cloud_right_;
@@ -97,6 +98,8 @@ void InteractiveRegisterer::interact()
 void InteractiveRegisterer::computeTransformation()
 {
     find_transformation(lefties_, righties_, m_Transformation);
+    m_InverseTransformation = m_Transformation.inverse();
+    
     registration(cloud_left_, cloud_right_,
                  *aligned_cloud_left_, *aligned_cloud_right_);
 }
@@ -446,6 +449,7 @@ bool InteractiveRegisterer::loadTransformation(std::string filePath)
 	if (transfMat.rows > 0 && transfMat.cols > 0)
 	{
 		cv::cv2eigen(transfMat, m_Transformation);
+        m_InverseTransformation = m_Transformation.inverse();
 		cv::cv2eigen(tLeftMat, m_tLeft);
 		cv::cv2eigen(tRightMat, m_tRight);
         
@@ -468,6 +472,36 @@ void InteractiveRegisterer::registration(pcl::PointCloud<pcl::PointXYZ>::Ptr pCl
     translate(pCloudB, m_tRight, regCloudB);
     
     pcl::transformPointCloud(*pCtrCloudA, regCloudA, m_Transformation);
+}
+
+void InteractiveRegisterer::deregistration(pcl::PointCloud<pcl::PointXYZ>::Ptr pRegCloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr pRegCloudB, pcl::PointCloud<pcl::PointXYZ>& cloudA, pcl::PointCloud<pcl::PointXYZ>& cloudB)
+{
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pCtrCloudA (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::transformPointCloud(*pRegCloudA, *pCtrCloudA, m_InverseTransformation);
+    
+    translate(pCtrCloudA, -m_tLeft,  cloudA);
+    translate(pRegCloudB, -m_tRight, cloudB);
+}
+
+void InteractiveRegisterer::deregistration(vector<PointCloudPtr> pRegCloudsA, vector<PointCloudPtr> pRegCloudsB, vector<PointCloudPtr>& pCloudsA, vector<PointCloudPtr>& pCloudsB)
+{
+    for (int i = 0; i < pRegCloudsA.size(); i++)
+    {
+        PointCloudPtr pCloudA (new PointCloud);
+        PointCloudPtr pCtrCloudA (new PointCloud);
+        
+        pcl::transformPointCloud(*pRegCloudsA[i], *pCtrCloudA, m_InverseTransformation);
+        translate(pCtrCloudA, -m_tLeft, *pCloudA);
+        
+        pCloudsA.push_back(pCloudA);
+    }
+    
+    for (int i = 0; i < pRegCloudsB.size(); i++)
+    {
+        PointCloudPtr pCloudB (new PointCloud);
+        translate(pRegCloudsB[i], -m_tRight, *pCloudB);
+        pCloudsB.push_back(pCloudB);
+    }
 }
 
 void InteractiveRegisterer::registration(DepthFrame frameA, DepthFrame frameB,
@@ -498,11 +532,13 @@ void InteractiveRegisterer::registration(DepthFrame frameA, DepthFrame frameB,
 		frameB.getForegroundUserFreePointCloud(*pCloudB);
 	}
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr pCtrCloudA (new pcl::PointCloud<pcl::PointXYZ>);
-    translate(pCloudA, m_tLeft, *pCtrCloudA);
-    translate(pCloudB, m_tRight, regCloudB);
-        
-    pcl::transformPointCloud(*pCtrCloudA, regCloudA, m_Transformation);
+//    pcl::PointCloud<pcl::PointXYZ>::Ptr pCtrCloudA (new pcl::PointCloud<pcl::PointXYZ>);
+//    translate(pCloudA, m_tLeft, *pCtrCloudA);
+//    translate(pCloudB, m_tRight, regCloudB);
+//        
+//    pcl::transformPointCloud(*pCtrCloudA, regCloudA, m_Transformation);
+    
+    registration(pCloudA, pCloudB, regCloudA, regCloudB);
 }
 
 

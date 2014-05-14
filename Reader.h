@@ -4,46 +4,88 @@
 #include "ColorFrame.h"
 #include "DepthFrame.h"
 
+using namespace std;
+
 class Reader
 {
 public:
-	Reader(std::string parent,
-           std::string colorDir1, std::string colorDir2,
-           std::string depthDir1, std::string depthDir2);
-    Reader(const Reader& other);
+    Reader();
+    Reader(string sequencesPath,
+           string colorDir1, string colorDir2,
+           string depthDir1, string depthDir2);
+	Reader(string sequencesPath,
+           string colorDir1, string colorDir2,
+           string depthDir1, string depthDir2,
+           string labelsPath);
+    Reader(const Reader& rhs);
 	~Reader(void);
+    
+    void setData(string sequencesPath,
+                 string colorDir1, string colorDir2,
+                 string depthDir1, string depthDir2);
+    void setData(string sequencesPath,
+                 string colorDir1, string colorDir2,
+                 string depthDir1, string depthDir2,
+                 string labelsPath);
 
 	// Public methods
-    void setInputStream(std::string dir);
+    Reader& operator=(const Reader& rhs);
     
-	void loadColorStreams(std::string dataPath, std::string colorDir1, std::string colorDir2);
-	void loadDepthStreams(std::string dataPath, std::string depthDir1, std::string depthDir2);
+//	void loadColorStreams(string dataPath, string colorDir1, string colorDir2);
+//	void loadDepthStreams(string dataPath, string depthDir1, string depthDir2);
+    
+    bool setSequence(int i);
+    bool nextSequence();
 
-	bool getNextColorFrame(std::string colorDir, ColorFrame& cframe);
-	bool getNextDepthFrame(std::string depthDir, DepthFrame& dframe);
-	bool getColorFrame(std::string colorDir, int fID, ColorFrame& cframe);
-	bool getDepthFrame(std::string depthDir, int fID, DepthFrame& dframe);
+    int getNumOfFrames();
+    int getColorFrameCounter();
+    int getDepthFrameCounter();
+    
+	bool nextColorFrame(string colorDir, vector<string> filenames, ColorFrame& cframe);
+	bool nextDepthFrame(string depthDir, vector<string> filenames, DepthFrame& dframe);
+	bool getColorFrame(string colorDir, vector<string> filenames, int i, ColorFrame& cframe);
+	bool getDepthFrame(string depthDir, vector<string> filenames, int i, DepthFrame& dframe);
 
-	bool getNextColorPairedFrames(ColorFrame& cframeA, ColorFrame& cframeB);
-	bool getNextDepthPairedFrames(DepthFrame& dframeA, DepthFrame& dframeB);
-	bool getColorPairedFrames(int fID, ColorFrame&, ColorFrame&);
-	bool getDepthPairedFrames(int fID, DepthFrame&, DepthFrame&);
-
+	bool nextColorPairedFrames(ColorFrame& cframeA, ColorFrame& cframeB);
+	bool nextDepthPairedFrames(DepthFrame& dframeA, DepthFrame& dframeB);
+    bool previousColorPairedFrames(ColorFrame& cframeA, ColorFrame& cframeB);
+	bool previousDepthPairedFrames(DepthFrame& dframeA, DepthFrame& dframeB);
+	bool getColorPairedFrames(int i, ColorFrame&, ColorFrame&);
+	bool getDepthPairedFrames(int i, DepthFrame&, DepthFrame&);
+    
 private:
 	// Private methods
-	void readNextColorFrame(std::string dataPath, std::string colorDir, ColorFrame& cframe);
-	void readNextDepthFrame(std::string dataPath, std::string depthDir, DepthFrame& dframe);
-	void readColorFrame(std::string dataPath, std::string colorDir, int fID, ColorFrame& cframe);
-	void readDepthFrame(std::string dataPath, std::string depthDir, int fID, DepthFrame& dframe);
+    void readSequenceFrames();
+    void readSequenceLabels();
+    
+    void loadFilenames(string dir, const char* filetype, vector<string>& filenames);
+    void loadDirectories(string parent, vector<string>& directories);
+    
+//	bool readNextColorFrame(string dataPath, string colorDir, vector<string> filenames, ColorFrame& cframe);
+//	bool readNextDepthFrame(string dataPath, string depthDir, vector<string> filenames, DepthFrame& dframe);
+//    bool readPreviousColorFrame(string dataPath, string colorDir, vector<string> filenames, ColorFrame& cframe);
+//	bool readPreviousDepthFrame(string dataPath, string depthDir, vector<string> filenames, DepthFrame& dframe);
+	bool readColorFrame(string dataPath, string colorDir, vector<string> filenames, int i, ColorFrame& cframe);
+	bool readDepthFrame(string dataPath, string depthDir, vector<string> filenames, int i, DepthFrame& dframe);
+    bool readColorFrame(string dataPath, string colorDir, string filename, ColorFrame& cframe);
+	bool readDepthFrame(string dataPath, string depthDir, string filename, DepthFrame& dframe);
 
 	bool isValid(ColorFrame cframe);
 	bool isValid(DepthFrame dframe);
 
 	// Private members
-    std::string		m_DataPath;
-    std::string     m_SequenceDir;
-    std::string     m_colorDir1, m_colorDir2, m_depthDir1, m_depthDir2;
+    string m_SequencesPath;
+    string m_LabelsPath;
+    
+    vector<string> m_SequencesDirs;
 
-	int				m_cCounter, m_dCounter;
+    string  m_ColorDir1, m_ColorDir2, m_DepthDir1, m_DepthDir2;
+    vector<string> m_ColorFilenames1, m_ColorFilenames2, m_DepthFilenames1, m_DepthFilenames2;
+    
+    int m_SequenceCounter;
+    int m_ColorFrameCounter, m_DepthFrameCounter;
+    
+    vector<unsigned char> m_InteractionLabels;
+    vector<unsigned char> m_ActionLabels;
 };
 
