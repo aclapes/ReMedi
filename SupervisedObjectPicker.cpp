@@ -8,6 +8,11 @@
 
 #include "SupervisedObjectPicker.h"
 
+#include <fstream>
+#include <boost/algorithm/string.hpp>
+//#include <boost/algorithm/string/split.hpp>
+//#include <boost/algorithm/string/classification.hpp>
+
 using namespace std;
 
 int g_Colors[][3] = {
@@ -24,9 +29,14 @@ int g_Colors[][3] = {
     {.5, 1, 0}
 };
 
-SupervisedObjectPicker::SupervisedObjectPicker(string parentDir,
+string g_ModelNames[] =
+{
+    "dish", "pillbox", "book", "tetrabrick", "glass"
+};
+
+SupervisedObjectPicker::SupervisedObjectPicker(string parentDir, int sid,
                                                int numOfViews, int numOfObjects)
-: m_NumOfViews(numOfViews), m_NumOfObjects(numOfObjects), m_Object(0)
+: m_NumOfViews(numOfViews), m_sid(sid), m_NumOfObjects(numOfObjects), m_Object(0)
 {
     m_ParentDir = parentDir;
     
@@ -110,8 +120,17 @@ void SupervisedObjectPicker::mark(int x, int y)
     }
     else
     {
-        int begin = m_Presses[ptr][m_Object][idx];
-        int end = m_Reader.getColorFrameCounter();
+        int begin, end;
+        if (m_Presses[ptr][m_Object][idx] <= m_Reader.getColorFrameCounter())
+        {
+            begin = m_Presses[ptr][m_Object][idx];
+            end = m_Reader.getColorFrameCounter();
+        }
+        else
+        {
+            begin = m_Reader.getColorFrameCounter();
+            end = m_Presses[ptr][m_Object][idx];
+        }
         
         for (int f = begin; f <= end; f++)
         {
@@ -148,6 +167,18 @@ void SupervisedObjectPicker::draw(int x, int y)
     
     cv::Mat concatTmpMat = m_ConcatMat.clone();
     
+    // Draw mouse-related
+    
+    cv::Scalar color (255.0 * g_Colors[m_Object][0], 255.0 * g_Colors[m_Object][1], 255.0 * g_Colors[m_Object][2]);
+    cv::circle(concatTmpMat, cv::Point(x,y), 5, color, -1);
+    
+    string text = to_string(m_Object);
+    int fontFace = cv::FONT_HERSHEY_SCRIPT_SIMPLEX;
+    double fontScale = 0.75;
+    int thickness = 1.5;
+    cv::Point textOrg(x,y);
+    cv::putText(concatTmpMat, g_ModelNames[m_Object], cv::Point(x+fontScale,y+fontScale), fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
+    
     int ptr = i * m_NumOfViews + j;
     
     // Draw set points
@@ -171,26 +202,38 @@ void SupervisedObjectPicker::draw(int x, int y)
     }
     
     // Draw setting points
-    cv::Scalar color (255.0 * g_Colors[m_Object][0], 255.0 * g_Colors[m_Object][1], 255.0 * g_Colors[m_Object][2]);
-
+//    cv::Scalar color (255.0 * g_Colors[m_Object][0], 255.0 * g_Colors[m_Object][1], 255.0 * g_Colors[m_Object][2]);
+//
+//    for (int v = 0; v < m_NumOfViews; v++)
+//    {
+//        for (int l = 0; l < m_PositionsTmp[v][m_Object].size(); l++)
+//        {
+//            int vi = v / m_NumOfViews;
+//            int vj = v % m_NumOfViews;
+//            int coordX = vj*getResX()+m_PositionsTmp[v][m_Object][l].x;
+//            int coordY = vi*getResY()+m_PositionsTmp[v][m_Object][l].y;
+//            cv::circle(concatTmpMat, cv::Point(coordX,coordY), 5, color, 1);
+//        }
+//    }
+    
     for (int v = 0; v < m_NumOfViews; v++)
     {
-        for (int l = 0; l < m_PositionsTmp[v][m_Object].size(); l++)
+        int vi = v / m_NumOfViews;
+        int vj = v % m_NumOfViews;
+        for (int o = 0; o < m_PositionsTmp[v].size(); o++)
         {
-            int vi = v / m_NumOfViews;
-            int vj = v % m_NumOfViews;
-            int coordX = vj*getResX()+m_PositionsTmp[v][m_Object][l].x;
-            int coordY = vi*getResY()+m_PositionsTmp[v][m_Object][l].y;
-            cv::circle(concatTmpMat, cv::Point(coordX,coordY), 4, color, 2);
+            cv::Scalar color (255.0 * g_Colors[o][0], 255.0 * g_Colors[o][1], 255.0 * g_Colors[o][2]);
+            for (int p = 0; p < m_PositionsTmp[v][o].size(); p++)
+            {
+                int coordX = vj*getResX()+m_PositionsTmp[v][o][p].x;
+                int coordY = vi*getResY()+m_PositionsTmp[v][o][p].y;
+                cv::circle(concatTmpMat, cv::Point(coordX,coordY), 5, color, 1);
+                cv::putText(concatTmpMat, g_ModelNames[o], cv::Point(coordX + fontScale, coordY + fontScale), fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
+            }
         }
     }
     
-    string text = to_string(m_Object);
-    int fontFace = cv::FONT_HERSHEY_SCRIPT_SIMPLEX;
-    double fontScale = 0.5;
-    int thickness = 2;
-    cv::Point textOrg(x,y);
-    cv::putText(concatTmpMat, text, cv::Point(x+thickness,y+thickness), fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
+    // Draw number of frame
 
     text = to_string(m_Reader.getColorFrameCounter());
     fontFace = cv::FONT_HERSHEY_SCRIPT_SIMPLEX;
@@ -198,6 +241,7 @@ void SupervisedObjectPicker::draw(int x, int y)
     thickness = 3;
     cv::putText(concatTmpMat, text, cv::Point(0, this->getResY() - 1), fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
     
+    // Display all
     cv::imshow("Pick", concatTmpMat);
 }
 
@@ -248,20 +292,96 @@ void SupervisedObjectPicker::keyboardHandler(int key)
     }
 }
 
+void SupervisedObjectPicker::write()
+{
+    // Draw set points
+    for (int v = 0; v < m_NumOfViews; v++)
+    {
+        ofstream outFile;
+        string outPath(m_ParentDir + "Data/ObjectLabels/" + m_Reader.getSequenceDirName() + "_v" + to_string(v) + ".csv");
+        outFile.open(outPath, ios::out);
+        
+        // create two view files
+        for (int f = 0; f < m_Reader.getNumOfFrames(); f++)
+        {
+            for (int o = 0; o < m_NumOfObjects; o++)
+            {
+                outFile << o << ":";
+                
+                vector<cv::Point> tmp = m_Positions[v][f][o];
+                
+                for (int p = 0; p < tmp.size(); p++)
+                {
+                    outFile << tmp[p].x << "," << tmp[p].y << ";";
+                    
+                } outFile << "\t";
+            } outFile << endl;
+        }
+        outFile.close();
+    }
+    
+    cout << "Saved" << endl;
+}
+
+void SupervisedObjectPicker::read()
+{
+    // Draw set points
+    for (int v = 0; v < m_NumOfViews; v++)
+    {
+        ifstream inFile;
+        string inPath(m_ParentDir + "Data/ObjectLabels/" + m_Reader.getSequenceDirName() + "_v" + to_string(v) + ".csv");
+        inFile.open(inPath, ios::in);
+        
+        // create two view files
+        for (int f = 0; f < m_Reader.getNumOfFrames(); f++)
+        {
+            string line;
+            getline(inFile, line);
+            
+            vector<string> objects_sublines; // ex: 1:202,22;104,123;
+            boost::split(objects_sublines, line, boost::is_any_of("\t"));
+
+            for (int o = 0; o < objects_sublines.size() - 1; o++)
+            {
+                vector<string> object_struct;
+                boost::split(object_struct, objects_sublines[o], boost::is_any_of(":"));
+
+                int oid = stoi(object_struct[0]); // object id
+                if (object_struct[1].size() <= 2)
+                    continue;
+                
+                vector<string> positions;
+                boost::split(positions, object_struct[1], boost::is_any_of(";")); // object id's positions
+                
+                for (int p = 0; p < positions.size() - 1; p++)
+                {
+                    vector<string> coordinates;
+                    boost::split(coordinates, positions[p], boost::is_any_of(","));
+//
+                    m_Positions[v][f][oid].push_back(cv::Point(stoi(coordinates[0]), stoi(coordinates[1])));
+                }
+            }
+        }
+    }
+
+    cout << "Loaded" << endl;
+}
+
 void SupervisedObjectPicker::run()
 {
-    string sequencesPath = m_ParentDir + "Data/Sequences/";
-    m_Reader.setData( sequencesPath, "Color1/", "Color2/", "Depth1/", "Depth2/" );
-    
-    m_Reader.setSequence(1); // skip background subtraction sequence
-    initializeAnnotations(m_NumOfObjects, m_Reader.getNumOfFrames());
-    
     cv::namedWindow("Pick");
     cv::setMouseCallback("Pick", SupervisedObjectPicker::mouseCallback, (void*) this);
     
+    string sequencesPath = m_ParentDir + "Data/Sequences/";
+    m_Reader.setData( sequencesPath, "Color1/", "Color2/", "Depth1/", "Depth2/" );
+    
+    m_Reader.setSequence(m_sid);
+    initializeAnnotations(m_NumOfObjects, m_Reader.getNumOfFrames());
+    
     bool bSuccess = m_Reader.nextColorPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB);
-    int c = 0;
-    while (bSuccess)
+    int c = -1;
+    bool quit = false;
+    while (!quit)
     {
         switch (c)
         {
@@ -271,16 +391,32 @@ void SupervisedObjectPicker::run()
             case 'd':
                 bSuccess = m_Reader.nextColorPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB);
                 break;
+            case 'A':
+                bSuccess = m_Reader.previousColorPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB, 10);
+                break;
+            case 'D':
+                bSuccess = m_Reader.nextColorPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB, 10);
+                break;
+            case 'l':
+                read();
+                break;
+            case 'k':
+                write();
+                break;
+            case 27:
+                exit(0);
+                break;
             default:
                 keyboardHandler(c);
                 break;
         }
         
-        cv::hconcat(m_CurrentColorFrameA.getMat(), m_CurrentColorFrameB.getMat(), m_ConcatMat);
-    
-        draw(m_X, m_Y);
-        
-        c = cv::waitKey();
+            if (bSuccess)
+            {
+                cv::hconcat(m_CurrentColorFrameA.getMat(), m_CurrentColorFrameB.getMat(), m_ConcatMat);
+                draw(m_X, m_Y);
+            }
 
+            c = cv::waitKey();
     }
 }

@@ -19,13 +19,16 @@
 class SupervisedObjectPicker
 {
 public:
-    SupervisedObjectPicker(string parentDir, int numOfViews, int numOfObjects);
+    SupervisedObjectPicker(string parentDir, int sid, int numOfViews, int numOfObjects);
     
     void initializeAnnotations(int numOfObjects, int numOfFrames);
     
     // Mouse actions
     void mark(int x, int y);
     void draw(int x, int y);
+    
+    void read();
+    void write();
     
     cv::Mat getConcatMat();
     int getResX();
@@ -37,6 +40,7 @@ private:
     void keyboardHandler(int key);
     
     Reader m_Reader;
+    int m_sid;
     
     string m_ParentDir;
     ColorFrame m_CurrentColorFrameA, m_CurrentColorFrameB;

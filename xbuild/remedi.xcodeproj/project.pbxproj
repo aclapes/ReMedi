@@ -47,6 +47,7 @@
 		10721EB418C4B52000371667 /* Remedi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721EA418C4B52000371667 /* Remedi.cpp */; };
 		10721EB518C4B52000371667 /* TableModeler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 10721EA718C4B52000371667 /* TableModeler.cpp */; };
 		107D8ABF192262E100A21859 /* SupervisedObjectPicker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 107D8ABD192262E100A21859 /* SupervisedObjectPicker.cpp */; };
+		109187971923F785002B63AD /* DetectionOutput.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 109187951923F785002B63AD /* DetectionOutput.cpp */; };
 		F6AD5CEC8FEB4A848342E2CA /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 43537AED816A4A5BAD98876A /* main.cpp */; settings = {COMPILER_FLAGS = ""; }; };
 /* End PBXBuildFile section */
 
@@ -108,6 +109,8 @@
 		10721EA818C4B52000371667 /* TableModeler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TableModeler.h; sourceTree = "<group>"; };
 		107D8ABD192262E100A21859 /* SupervisedObjectPicker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SupervisedObjectPicker.cpp; sourceTree = "<group>"; };
 		107D8ABE192262E100A21859 /* SupervisedObjectPicker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SupervisedObjectPicker.h; sourceTree = "<group>"; };
+		109187951923F785002B63AD /* DetectionOutput.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DetectionOutput.cpp; sourceTree = "<group>"; };
+		109187961923F785002B63AD /* DetectionOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DetectionOutput.h; sourceTree = "<group>"; };
 		43537AED816A4A5BAD98876A /* main.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; path = main.cpp; sourceTree = SOURCE_ROOT; };
 		7F7A1D454D4C4C0CA5B8CDC6 /* CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
 		9C7258635DE94F6E89753E13 /* remedi */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = remedi; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -161,6 +164,8 @@
 				43537AED816A4A5BAD98876A /* main.cpp */,
 				107D8ABD192262E100A21859 /* SupervisedObjectPicker.cpp */,
 				107D8ABE192262E100A21859 /* SupervisedObjectPicker.h */,
+				109187951923F785002B63AD /* DetectionOutput.cpp */,
+				109187961923F785002B63AD /* DetectionOutput.h */,
 			);
 			name = "Source Files";
 			sourceTree = "<group>";
@@ -318,6 +323,7 @@
 				F6AD5CEC8FEB4A848342E2CA /* main.cpp in Sources */,
 				1042E77F18C9FD3100D11CB2 /* MotionSegmentator.cpp in Sources */,
 				10721EB318C4B52000371667 /* Reader.cpp in Sources */,
+				109187971923F785002B63AD /* DetectionOutput.cpp in Sources */,
 				10721EAF18C4B52000371667 /* DepthFrame.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

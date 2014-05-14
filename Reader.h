@@ -35,21 +35,25 @@ public:
 //	void loadDepthStreams(string dataPath, string depthDir1, string depthDir2);
     
     bool setSequence(int i);
+    string getSequencePath();
+    string getSequenceDirName();
     bool nextSequence();
 
     int getNumOfFrames();
     int getColorFrameCounter();
     int getDepthFrameCounter();
     
-	bool nextColorFrame(string colorDir, vector<string> filenames, ColorFrame& cframe);
-	bool nextDepthFrame(string depthDir, vector<string> filenames, DepthFrame& dframe);
+	bool nextColorFrame(string colorDir, vector<string> filenames, ColorFrame& cframe, int step = 1);
+	bool nextDepthFrame(string depthDir, vector<string> filenames, DepthFrame& dframe, int step = 1);
+    
 	bool getColorFrame(string colorDir, vector<string> filenames, int i, ColorFrame& cframe);
 	bool getDepthFrame(string depthDir, vector<string> filenames, int i, DepthFrame& dframe);
 
-	bool nextColorPairedFrames(ColorFrame& cframeA, ColorFrame& cframeB);
-	bool nextDepthPairedFrames(DepthFrame& dframeA, DepthFrame& dframeB);
-    bool previousColorPairedFrames(ColorFrame& cframeA, ColorFrame& cframeB);
-	bool previousDepthPairedFrames(DepthFrame& dframeA, DepthFrame& dframeB);
+	bool nextColorPairedFrames(ColorFrame& cframeA, ColorFrame& cframeB, int step = 1);
+	bool nextDepthPairedFrames(DepthFrame& dframeA, DepthFrame& dframeB, int step = 1);
+    bool previousColorPairedFrames(ColorFrame& cframeA, ColorFrame& cframeB, int step = 1);
+	bool previousDepthPairedFrames(DepthFrame& dframeA, DepthFrame& dframeB, int step = 1);
+    
 	bool getColorPairedFrames(int i, ColorFrame&, ColorFrame&);
 	bool getDepthPairedFrames(int i, DepthFrame&, DepthFrame&);
     

@@ -14,6 +14,16 @@ int main (int argc, char** argv)
     // --------------------------------------
     // -----Parse Command Line Arguments-----
     // --------------------------------------
+    
+    int sid; // sequence autoincremental id
+    if (pcl::console::parse (argc, argv, "-p", sid) >= 0)
+    {
+        SupervisedObjectPicker pp(g_parentDir, sid, 2, 5);
+        pp.run();
+        
+        return 0;
+    }
+    
     bool display = false;
     if (pcl::console::find_argument (argc, argv, "-d") >= 0)
     {
@@ -25,11 +35,8 @@ int main (int argc, char** argv)
         cout << "Display the processing of the sequences [NO]" << endl;
     }
     
-    SupervisedObjectPicker pp(g_parentDir, 2, 5);
-    pp.run();
-    
-	//Remedi app(g_parentDir);
-	//app.Run(display);
+    Remedi app(g_parentDir);
+	app.Run(display);
 
 	return 0;
 }
