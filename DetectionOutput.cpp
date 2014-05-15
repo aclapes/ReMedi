@@ -53,9 +53,12 @@ DetectionOutput& DetectionOutput::operator=(const DetectionOutput& rhs)
     if (this != &rhs)
     {
         m_Positions = rhs.m_Positions;
-        m_NumOfViews = m_Positions.size();
-        m_NumOfFrames = m_Positions[0].size();
-        m_NumOfObjects = m_Positions[0][0].size();
+        if (m_Positions.size() > 0)
+        {
+            m_NumOfViews = m_Positions.size();
+            m_NumOfFrames = m_Positions[0].size();
+            m_NumOfObjects = m_Positions[0][0].size();
+        }
     }
     
     return *this;
@@ -175,7 +178,16 @@ void DetectionOutput::write(string path, string filename, string extension)
 
 void DetectionOutput::read(string path, string filename, string extension)
 {
-    vector< vector< vector< vector< pcl::PointXYZ > > > > positions;
+    m_Positions.resize(m_NumOfViews);
+    
+    for (int i = 0; i < m_NumOfViews; i++)
+    {
+        m_Positions[i].resize(m_NumOfFrames);
+        for (int j = 0; j < m_NumOfFrames; j++)
+        {
+            m_Positions[i][j].resize(m_NumOfObjects);
+        }
+    }
     
     // Draw set points
     for (int v = 0; v < m_NumOfViews; v++)
@@ -220,7 +232,6 @@ void DetectionOutput::read(string path, string filename, string extension)
         inFile.close();
     }
     
-    setPositions(positions);
     cout << "DetectionOutput read successfully from " << path << "." << endl;
 }
 

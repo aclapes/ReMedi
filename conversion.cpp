@@ -15,8 +15,8 @@ void RealworldToProjective(pcl::PointXYZ rw, int xres, int yres, pcl::PointXYZ& 
 {
     float invfocal = (xres == 640) ? 3.501e-3f : 3.501e-3f / 2.f; // Kinect inverse focal length. If depth map
     
-    p.x = (int) ( ((rw.x * 1000.f) / (invfocal * rw.z)) + (xres / 2.f) );
-    p.y = (int) ( ((rw.y * 1000.f) / (invfocal * rw.z)) + (yres / 2.f) );
+    p.x = (int) ( ((rw.x) / (invfocal * rw.z)) + (xres / 2.f) );
+    p.y = (int) ( ((rw.y) / (invfocal * rw.z)) + (yres / 2.f) );
     p.z = rw.z * 1000.f;
 }
 
