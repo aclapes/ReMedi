@@ -21,6 +21,8 @@ DetectionOutput::DetectionOutput()
 DetectionOutput::DetectionOutput(int nviews, int nframes, int nobjects)
 : m_NumOfViews(nviews), m_NumOfFrames(nframes), m_NumOfObjects(nobjects)
 {
+    m_Positions.resize(m_NumOfViews);
+    
     for (int i = 0; i < m_NumOfViews; i++)
     {
         m_Positions[i].resize(m_NumOfFrames);

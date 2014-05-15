@@ -59,8 +59,8 @@ private:
     vector<bool> m_PushedStates;
     vector<int>  m_PushedFrames;
     
-    vector< vector< vector< vector<cv::Point> > > > m_Positions;
-    vector< vector < vector< cv::Point > > > m_ClickedPositions;
+    vector< vector< vector< vector<pcl::PointXYZ> > > > m_Positions;
+    vector< vector < vector<pcl::PointXYZ> > > m_ClickedPositions;
     vector< vector < vector< int > > > m_Presses;
     
     int m_X, m_Y;

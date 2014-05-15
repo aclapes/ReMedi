@@ -44,6 +44,10 @@ SupervisedObjectPicker::SupervisedObjectPicker(string parentDir, int sid,
 : m_sid(sid), m_NumOfViews(numOfViews), m_NumOfObjects(numOfObjects), m_Object(0)
 {
     m_ParentDir = parentDir;
+    string sequencesPath = m_ParentDir + "Data/Sequences/";
+    m_Reader.setData( sequencesPath, "Color1/", "Color2/", "Depth1/", "Depth2/" );
+    m_Reader.setSequence(m_sid);
+    m_NumOfFrames = m_Reader.getNumOfFrames();
     
     m_ResY = 480;
     m_ResX = 640;
@@ -54,9 +58,6 @@ SupervisedObjectPicker::SupervisedObjectPicker(string parentDir, int sid,
     m_Positions.resize(m_NumOfViews);
     m_ClickedPositions.resize(m_NumOfViews);
     m_Presses.resize(m_NumOfViews);
-    
-    m_Reader.setSequence(m_sid);
-    m_NumOfFrames = m_Reader.getNumOfFrames();
     
     for (int i = 0; i < m_NumOfViews; i++)
     {
@@ -70,6 +71,8 @@ SupervisedObjectPicker::SupervisedObjectPicker(string parentDir, int sid,
         m_ClickedPositions[i].resize(m_NumOfObjects);
         m_Presses[i].resize(m_NumOfObjects);
     }
+    
+    m_DOutput = DetectionOutput(m_NumOfViews, m_NumOfFrames, m_NumOfObjects);
 }
 
 cv::Mat SupervisedObjectPicker::getConcatColor()
@@ -107,14 +110,14 @@ void SupervisedObjectPicker::mark(int wx, int wy)
     bool found = false;
     for (int i = 0; i < m_ClickedPositions[ptr][m_Object].size() && !found; i++)
     {
-        found = sqrtf(powf(x - m_ClickedPositions[ptr][m_Object][i].x, 2)
-                      + pow(y - m_ClickedPositions[ptr][m_Object][i].y, 2)) < 20;
+        found = sqrtf( powf(x - m_ClickedPositions[ptr][m_Object][i].x, 2)
+                      + powf(y - m_ClickedPositions[ptr][m_Object][i].y, 2) ) < 20;
         if (found) idx = i;
     }
     
     if (!found)
     {
-        m_ClickedPositions[ptr][m_Object].push_back( cv::Point(x,y) );
+        m_ClickedPositions[ptr][m_Object].push_back( pcl::PointXYZ(x, y, m_ConcatDepth.at<unsigned short>(wx,wy)) );
         m_Presses[ptr][m_Object].push_back(m_Reader.getColorFrameCounter());
     }
     else
@@ -133,10 +136,9 @@ void SupervisedObjectPicker::mark(int wx, int wy)
         
         for (int f = begin; f <= end; f++)
         {
-            cv::Point point = m_ClickedPositions[ptr][m_Object][idx];
-            m_Positions[ptr][f][m_Object].push_back(point);
+            pcl::PointXYZ pp = m_ClickedPositions[ptr][m_Object][idx];
+            m_Positions[ptr][f][m_Object].push_back(pp);
             
-            pcl::PointXYZ pp (wx, wy, m_ConcatDepth.at<unsigned short>(wx,wy));
             pcl::PointXYZ rwp;
             ProjectiveToRealworld(pp, getResX(), getResY(), rwp);
             m_DOutput.add(ptr, f, m_Object, rwp);
@@ -171,7 +173,7 @@ void SupervisedObjectPicker::mark(DetectionOutput dout)
                 {
                     pcl::PointXYZ pp;
                     RealworldToProjective(points[p], getResX(), getResY(), pp);
-                    m_Positions[v][f][o].push_back( cv::Point(pp.x,pp.y) );
+                    m_Positions[v][f][o].push_back( pp );
                 }
             }
 }
@@ -190,18 +192,21 @@ void SupervisedObjectPicker::draw(int wx, int wy)
     // Draw mouse-related
     
     cv::Scalar color (255.0 * g_Colors[m_Object][0], 255.0 * g_Colors[m_Object][1], 255.0 * g_Colors[m_Object][2]);
-    cv::circle(concatColorTmp, cv::Point(x,y), 5, color, -1);
+    cv::circle(concatColorTmp, cv::Point(wx,wy), 5, color, -1);
     
     string text = to_string(m_Object);
     int fontFace = cv::FONT_HERSHEY_SCRIPT_SIMPLEX;
     double fontScale = 0.75;
     int thickness = 1.5;
-    cv::Point textOrg(x,y);
-    cv::putText(concatColorTmp, g_ModelNames[m_Object], cv::Point(x+fontScale,y+fontScale), fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
-    
-    int ptr = i * m_NumOfViews + j;
+    cv::Point textOrg(wx,wy);
+    cv::putText(concatColorTmp, g_ModelNames[m_Object],
+                cv::Point(wx + fontScale, wy + fontScale),
+                fontFace, fontScale,
+                cv::Scalar::all(255), thickness, 8);
     
     // Draw set points
+    int ptr = i * m_NumOfViews + j;
+    
     for (int v = 0; v < m_NumOfViews; v++)
     {
         int vi = v / m_NumOfViews;
@@ -210,7 +215,7 @@ void SupervisedObjectPicker::draw(int wx, int wy)
         for (int o = 0; o < m_NumOfObjects; o++)
         {
             cv::Scalar color (255.0 * g_Colors[o][0], 255.0 * g_Colors[o][1], 255.0 * g_Colors[o][2]);
-            vector<cv::Point> tmp = m_Positions[v][m_Reader.getColorFrameCounter()][o];
+            vector<pcl::PointXYZ> tmp = m_Positions[v][m_Reader.getColorFrameCounter()][o];
             for (int p = 0; p < tmp.size(); p++)
             {
                 int coordX = vj*getResX()+tmp[p].x;
@@ -388,9 +393,6 @@ void SupervisedObjectPicker::run()
 {
     cv::namedWindow("Pick");
     cv::setMouseCallback("Pick", SupervisedObjectPicker::mouseCallback, (void*) this);
-    
-    string sequencesPath = m_ParentDir + "Data/Sequences/";
-    m_Reader.setData( sequencesPath, "Color1/", "Color2/", "Depth1/", "Depth2/" );
     
     bool bSuccess = m_Reader.nextColorPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB);
     m_Reader.nextDepthPairedFrames(m_CurrentDepthFrameA, m_CurrentDepthFrameB);
