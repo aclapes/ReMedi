@@ -2,6 +2,24 @@
 
 #include <math.h>
 
+void ProjectiveToRealworld(pcl::PointXYZ p, int xres, int yres, pcl::PointXYZ& rw)
+{
+    float invfocal = (xres == 640) ? 3.501e-3f : 3.501e-3f / 2.f; // Kinect inverse focal length. If depth map
+    
+    rw.x = ((p.x - xres/2) * invfocal * p.z) / 1000.f,
+    rw.y = ((p.y - yres/2) * invfocal * p.z) / 1000.f,
+    rw.z = p.z / 1000.f;
+}
+
+void RealworldToProjective(pcl::PointXYZ rw, int xres, int yres, pcl::PointXYZ& p)
+{
+    float invfocal = (xres == 640) ? 3.501e-3f : 3.501e-3f / 2.f; // Kinect inverse focal length. If depth map
+    
+    p.x = (int) ( ((rw.x * 1000.f) / (invfocal * rw.z)) + (xres / 2.f) );
+    p.y = (int) ( ((rw.y * 1000.f) / (invfocal * rw.z)) + (yres / 2.f) );
+    p.z = rw.z * 1000.f;
+}
+
 void EigenToPointXYZ(Eigen::Vector4f eigen, pcl::PointXYZ& p)
 {
     p.x = eigen.x();

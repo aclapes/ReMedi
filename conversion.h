@@ -11,6 +11,9 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/filters/extract_indices.h>
 
+void ProjectiveToRealworld(pcl::PointXYZ p, int xres, int yres, pcl::PointXYZ& rw);
+void RealworldToProjective(pcl::PointXYZ rw, int xres, int yres, pcl::PointXYZ& p);
+
 void EigenToPointXYZ(Eigen::Vector4f eigen, pcl::PointXYZ& p);
 pcl::PointXYZ EigenToPointXYZ(Eigen::Vector4f eigen);
 

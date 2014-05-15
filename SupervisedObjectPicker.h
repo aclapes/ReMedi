@@ -15,54 +15,57 @@
 
 #include "Reader.h"
 #include "ColorFrame.h"
+#include "DetectionOutput.h"
 
 class SupervisedObjectPicker
 {
 public:
     SupervisedObjectPicker(string parentDir, int sid, int numOfViews, int numOfObjects);
     
-    void initializeAnnotations(int numOfObjects, int numOfFrames);
-    
-    // Mouse actions
-    void mark(int x, int y);
-    void draw(int x, int y);
-    
-    void read();
-    void write();
-    
-    cv::Mat getConcatMat();
-    int getResX();
-    int getResY();
     void run();
     
 private:
+    // Mouse actions
     static void mouseCallback(int event, int x, int y, int flags, void* userdata);
     void keyboardHandler(int key);
+    
+    void mark(int wx, int wy);
+    void mark(DetectionOutput dout);
+    void draw(int wx, int wy);
+    
+    cv::Mat getConcatColor();
+    cv::Mat getConcatDepth();
+    
+    int getResX();
+    int getResY();
     
     Reader m_Reader;
     int m_sid;
     
     string m_ParentDir;
     ColorFrame m_CurrentColorFrameA, m_CurrentColorFrameB;
+    DepthFrame m_CurrentDepthFrameA, m_CurrentDepthFrameB;
     
     int m_NumOfViews;
+    int m_NumOfFrames;
     int m_NumOfObjects;
-    cv::Mat m_ConcatMat;
+    
+    cv::Mat m_ConcatColor;
+    cv::Mat m_ConcatDepth;
     
     int m_ResX, m_ResY;
     
     int m_Object;
     vector<bool> m_PushedStates;
     vector<int>  m_PushedFrames;
-//    vector<cv::Mat> m_Annotations;
     
     vector< vector< vector< vector<cv::Point> > > > m_Positions;
-    
-    // vector view, vector object, vector point
-    vector< vector < vector<cv::Point> > > m_PositionsTmp;
-    vector< vector < vector<int> > > m_Presses;
+    vector< vector < vector< cv::Point > > > m_ClickedPositions;
+    vector< vector < vector< int > > > m_Presses;
     
     int m_X, m_Y;
+    
+    DetectionOutput m_DOutput;
 };
 
 #endif /* defined(__remedi__SupervisedObjectPicker__) */

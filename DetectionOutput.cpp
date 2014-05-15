@@ -13,13 +13,25 @@
 #include <fstream>
 #include <boost/algorithm/string.hpp>
 
-DetectionOutput::DetectionOutput(int nviews, int nframes, int nobjects)
-: m_NumOfViews(nviews), m_NumOfFrames(nframes), m_NumOfObjects(nobjects)
+DetectionOutput::DetectionOutput()
 {
     
 }
 
-DetectionOutput::DetectionOutput(vector< vector< vector< vector< pair<int,int> > > > > positions)
+DetectionOutput::DetectionOutput(int nviews, int nframes, int nobjects)
+: m_NumOfViews(nviews), m_NumOfFrames(nframes), m_NumOfObjects(nobjects)
+{
+    for (int i = 0; i < m_NumOfViews; i++)
+    {
+        m_Positions[i].resize(m_NumOfFrames);
+        for (int j = 0; j < m_NumOfFrames; j++)
+        {
+            m_Positions[i][j].resize(m_NumOfObjects);
+        }
+    }
+}
+
+DetectionOutput::DetectionOutput(vector< vector< vector< vector< pcl::PointXYZ > > > > positions)
 {
     setPositions(positions);
 }
@@ -47,8 +59,10 @@ DetectionOutput& DetectionOutput::operator=(const DetectionOutput& rhs)
     return *this;
 }
 
-void DetectionOutput::setPositions(vector<vector<vector<vector<pair<int, int> > > > > positions)
+void DetectionOutput::setPositions(vector<vector<vector<vector<pcl::PointXYZ > > > > positions)
 {
+    m_Positions = positions;
+    
     // Assertions
     for (int v = 0; v < m_Positions.size(); v++)
     {
@@ -64,32 +78,47 @@ void DetectionOutput::setPositions(vector<vector<vector<vector<pair<int, int> > 
     m_NumOfObjects = m_Positions[0][0].size();
 }
 
-void DetectionOutput::setNumOfViews(int n)
+int DetectionOutput::getNumOfViews()
 {
-    m_NumOfViews = n;
+    return m_NumOfViews;
 }
 
-void DetectionOutput::setNumOfFrames(int n)
+int DetectionOutput::getNumOfFrames()
 {
-    m_NumOfFrames = n;
+    return m_NumOfFrames;
 }
 
-void DetectionOutput::setNumOfObjects(int n)
+int DetectionOutput::getNumOfObjects()
 {
-    m_NumOfObjects = n;
+    return m_NumOfObjects;
 }
+
+//void DetectionOutput::setNumOfViews(int n)
+//{
+//    m_NumOfViews = n;
+//}
+//
+//void DetectionOutput::setNumOfFrames(int n)
+//{
+//    m_NumOfFrames = n;
+//}
+//
+//void DetectionOutput::setNumOfObjects(int n)
+//{
+//    m_NumOfObjects = n;
+//}
 
 void DetectionOutput::setTolerance(double tol)
 {
     m_Tol = tol;
 }
 
-float DetectionOutput::distance(pair<int,int> p1, pair<int,int> p2)
+float DetectionOutput::distance(pcl::PointXYZ p1, pcl::PointXYZ p2)
 {
-    return sqrtf(powf(p1.first - p2.first, 2) + powf(p1.second - p2.second, 2));
+    return sqrtf(powf(p1.x - p2.x, 2) + powf(p1.y - p2.y, 2) + powf(p1.z - p2.z, 2));
 }
 
-void DetectionOutput::add(int view, int frame, int object, pair<int,int> position)
+void DetectionOutput::add(int view, int frame, int object, pcl::PointXYZ position)
 {
     bool collision = false;
     for (int i = 0; i < m_Positions[view][frame][object].size() && !collision; i++)
@@ -99,13 +128,26 @@ void DetectionOutput::add(int view, int frame, int object, pair<int,int> positio
         m_Positions[view][frame][object].push_back(position);
 }
 
-void DetectionOutput::write(string path)
+void DetectionOutput::get(int view, int frame, int object, vector<pcl::PointXYZ>& positions)
+{
+    positions = m_Positions[view][frame][object];
+}
+
+void DetectionOutput::clear()
+{
+    m_Positions.clear();
+    m_NumOfViews = 0;
+    m_NumOfFrames = 0;
+    m_NumOfObjects = 0;
+}
+
+void DetectionOutput::write(string path, string filename, string extension)
 {
     // Draw set points
     for (int v = 0; v < m_NumOfViews; v++)
     {
         ofstream outFile;
-        outFile.open(path, ios::out);
+        outFile.open(path + filename + "_" + to_string(v) + "." + extension, ios::out);
         
         // create two view files
         for (int f = 0; f < m_NumOfFrames; f++)
@@ -114,11 +156,11 @@ void DetectionOutput::write(string path)
             {
                 outFile << o << ":";
                 
-                vector< pair<int,int> > tmp = m_Positions[v][f][o];
+                vector< pcl::PointXYZ > tmp = m_Positions[v][f][o];
                 
                 for (int p = 0; p < tmp.size(); p++)
                 {
-                    outFile << tmp[p].first << "," << tmp[p].first << ";";
+                    outFile << tmp[p].x << "," << tmp[p].y << "," << tmp[p].z << ";";
                     
                 } outFile << "\t";
             } outFile << endl;
@@ -129,15 +171,15 @@ void DetectionOutput::write(string path)
     cout << "DetectionOutput written successfully to " << path << "." << endl;
 }
 
-void DetectionOutput::read(string path)
+void DetectionOutput::read(string path, string filename, string extension)
 {
-    vector< vector< vector< vector< pair<int,int> > > > > positions;
+    vector< vector< vector< vector< pcl::PointXYZ > > > > positions;
     
     // Draw set points
     for (int v = 0; v < m_NumOfViews; v++)
     {
         ifstream inFile;
-        inFile.open(path, ios::in);
+        inFile.open(path + filename + "_" + to_string(v) + "." + extension, ios::in);
 
         string line;
         int f = 0; // number of lines, i.e. [f]rames
@@ -163,17 +205,22 @@ void DetectionOutput::read(string path)
                     vector<string> coordinates;
                     boost::split(coordinates, positions[p], boost::is_any_of(","));
                     
-                    pair<int,int> position(stoi(coordinates[0]), stoi(coordinates[1]));
-                    m_Positions[v][f][oid].push_back( position );
+                    string::size_type sz;
+                    float x = stof(coordinates[0], &sz);
+                    float y = stof(coordinates[1], &sz);
+                    float z = stof(coordinates[2], &sz);
+                    m_Positions[v][f][oid].push_back( pcl::PointXYZ(x,y,z) );
                 }
             }
             f++;
         }
+        
+        inFile.close();
     }
     
+    setPositions(positions);
     cout << "DetectionOutput read successfully from " << path << "." << endl;
 }
-
 
 
 
