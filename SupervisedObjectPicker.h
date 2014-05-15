@@ -31,6 +31,7 @@ private:
     
     void mark(int wx, int wy);
     void mark(DetectionOutput dout);
+    void remove(int wx, int wy);
     void draw(int wx, int wy);
     
     cv::Mat getConcatColor();

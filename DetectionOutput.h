@@ -38,6 +38,8 @@ public:
     void setTolerance(double tol);
     
     void add(int view, int frame, int object, pcl::PointXYZ position);
+    void remove(int view, int frame, int object, pcl::PointXYZ position);
+    void remove(int view, int frame, int object, int i);
     void get(int view, int frame, int object, vector<pcl::PointXYZ>& positions);
     
     void clear();

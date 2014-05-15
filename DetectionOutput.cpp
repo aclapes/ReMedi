@@ -133,6 +133,25 @@ void DetectionOutput::add(int view, int frame, int object, pcl::PointXYZ positio
         m_Positions[view][frame][object].push_back(position);
 }
 
+void DetectionOutput::remove(int view, int frame, int object, pcl::PointXYZ position)
+{
+    bool collision = false;
+    int idx;
+    for (int i = 0; i < m_Positions[view][frame][object].size() && !collision; i++)
+    {
+        collision = distance(m_Positions[view][frame][object][i], position) < m_Tol;
+        if (collision) idx = i;
+    }
+    
+    if (!collision)
+        m_Positions[view][frame][object].erase(m_Positions[view][frame][object].begin() + idx);
+}
+
+void DetectionOutput::remove(int view, int frame, int object, int i)
+{
+    m_Positions[view][frame][object].erase(m_Positions[view][frame][object].begin() + i);
+}
+
 void DetectionOutput::get(int view, int frame, int object, vector<pcl::PointXYZ>& positions)
 {
     positions = m_Positions[view][frame][object];

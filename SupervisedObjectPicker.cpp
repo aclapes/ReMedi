@@ -149,6 +149,36 @@ void SupervisedObjectPicker::mark(int wx, int wy)
     }
 }
 
+void SupervisedObjectPicker::remove(int wx, int wy)
+{
+    // View coordinates in window's views
+    int j = wx / getResX();
+    int i = wy / getResY();
+    // Mouse (x,y) coordinates in (i,j) view
+    int x = wx % getResX();
+    int y = wy % getResY();
+    
+    int ptr = i * m_NumOfViews + j;
+
+    for (int f = 0; f < m_Reader.getNumOfFrames(); f++)
+    {
+        bool found = false;
+        for (int i = 0; i < m_Positions[ptr][f][m_Object].size() && !found; i++)
+        {
+            found = sqrtf( powf(x - m_Positions[ptr][f][m_Object][i].x, 2)
+                          + powf(y - m_Positions[ptr][f][m_Object][i].y, 2) ) < 20;
+            if (found)
+            {
+//                    pcl::PointXYZ rwp;
+//                    ProjectiveToRealworld(m_Positions[ptr][f][m_Object][i], getResX(), getResY(), rwp);
+//                    m_DOutput.remove(ptr, f, m_Object, rwp);
+                m_DOutput.remove(ptr, f, m_Object, i);
+                m_Positions[ptr][f][m_Object].erase(m_Positions[ptr][f][m_Object].begin() + i);
+            }
+        }
+    }
+}
+
 
 void SupervisedObjectPicker::mark(DetectionOutput dout)
 {
@@ -283,7 +313,8 @@ void SupervisedObjectPicker::mouseCallback(int event, int x, int y, int flags, v
     }
     else if  ( event == cv::EVENT_RBUTTONDOWN )
     {
-        cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+        _this->remove(x,y);
+//        cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
     }
     else if  ( event == cv::EVENT_MBUTTONDOWN )
     {
