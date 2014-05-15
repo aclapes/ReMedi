@@ -17,7 +17,9 @@
 #include <pcl/point_types.h>
 
 #include "conversion.h"
+#include <boost/assign/std/vector.hpp>
 
+using namespace boost::assign;
 using namespace std;
 
 int g_Colors[][3] = {
@@ -45,10 +47,13 @@ SupervisedObjectPicker::SupervisedObjectPicker(string parentDir, int sid,
 {
     m_ParentDir = parentDir;
     string sequencesPath = m_ParentDir + "Data/Sequences/";
-    m_Reader.setData( sequencesPath, "Color1/", "Color2/", "Depth1/", "Depth2/" );
+    vector<string> colorDirs = "Color1/", "Color2/";
+    vector<string> depthDirs = "Depth1/", "Depth2/";
+    
+    Reader reader( sequencesPath, colorDirs, dephtDirs, labelsPath );
     m_Reader.setSequence(m_sid);
     m_NumOfFrames = m_Reader.getNumOfFrames();
-    
+
     m_ResY = 480;
     m_ResX = 640;
     
