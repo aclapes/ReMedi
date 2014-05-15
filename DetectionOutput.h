@@ -50,7 +50,8 @@ private:
     float distance(pcl::PointXYZ p1, pcl::PointXYZ p2);
 
     // view, frame, model, model_instances_positions, (x,y,z) "real world" position
-    vector< vector< vector< vector< pcl::PointXYZ > > > > m_Positions;
+    vector< vector< vector< vector<pcl::PointXYZ> > > > m_Positions;
+
     int m_NumOfViews;
     int m_NumOfFrames;
     int m_NumOfObjects;

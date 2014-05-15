@@ -159,14 +159,22 @@ void SupervisedObjectPicker::remove(int wx, int wy)
     int y = wy % getResY();
     
     int ptr = i * m_NumOfViews + j;
-
+    bool found = false;
+    pcl::PointXYZ point;
+    for (int i = 0; i < m_Positions[ptr][m_Reader.getColorFrameCounter()][m_Object].size() && !found; i++)
+    {
+        found = sqrtf( powf(x - m_Positions[ptr][m_Reader.getColorFrameCounter()][m_Object][i].x, 2)
+                      + powf(y - m_Positions[ptr][m_Reader.getColorFrameCounter()][m_Object][i].y, 2) ) < 20;
+        if (found)
+            point = m_Positions[ptr][m_Reader.getColorFrameCounter()][m_Object][i];
+    }
+    
     for (int f = 0; f < m_Reader.getNumOfFrames(); f++)
     {
         bool found = false;
         for (int i = 0; i < m_Positions[ptr][f][m_Object].size() && !found; i++)
         {
-            found = sqrtf( powf(x - m_Positions[ptr][f][m_Object][i].x, 2)
-                          + powf(y - m_Positions[ptr][f][m_Object][i].y, 2) ) < 20;
+            found = m_Positions[ptr][f][m_Object][i].x == point.x && m_Positions[ptr][f][m_Object][i].y == point.y;
             if (found)
             {
 //                    pcl::PointXYZ rwp;
@@ -318,7 +326,8 @@ void SupervisedObjectPicker::mouseCallback(int event, int x, int y, int flags, v
     }
     else if  ( event == cv::EVENT_MBUTTONDOWN )
     {
-        cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+        // DISABLED
+        //cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
     }
     else if ( event == cv::EVENT_MOUSEMOVE )
     {
