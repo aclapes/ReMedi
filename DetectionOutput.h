@@ -21,7 +21,7 @@ class DetectionOutput
 {
 public:
     DetectionOutput();
-    DetectionOutput(int nviews, int nframes, int nobjects);
+    DetectionOutput(int nviews, int nframes, int nobjects, float tol);
     DetectionOutput(vector< vector< vector< vector< pcl::PointXYZ > > > > positions);
     DetectionOutput(const DetectionOutput& rhs);
     ~DetectionOutput();
@@ -35,7 +35,7 @@ public:
 //    void setNumOfViews(int n);
 //    void setNumOfFrames(int n);
 //    void setNumOfObjects(int n);
-    void setTolerance(double tol);
+    void setTolerance(float tol);
     
     void add(int view, int frame, int object, pcl::PointXYZ position);
     void remove(int view, int frame, int object, pcl::PointXYZ position);

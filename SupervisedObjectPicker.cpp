@@ -72,7 +72,7 @@ SupervisedObjectPicker::SupervisedObjectPicker(string parentDir, int sid,
         m_Presses[i].resize(m_NumOfObjects);
     }
     
-    m_DOutput = DetectionOutput(m_NumOfViews, m_NumOfFrames, m_NumOfObjects);
+    m_DOutput = DetectionOutput(m_NumOfViews, m_NumOfFrames, m_NumOfObjects, m_Tol);
 }
 
 cv::Mat SupervisedObjectPicker::getConcatColor()
@@ -103,8 +103,11 @@ void SupervisedObjectPicker::mark(int wx, int wy)
     // Mouse (x,y) coordinates in (i,j) view
     int x = wx % getResX();
     int y = wy % getResY();
-    
+    // View
     int ptr = i * m_NumOfViews + j;
+    
+    if (m_ConcatDepth.at<unsigned short>(wy,wx) == 0)
+        return;
     
     int idx;
     bool found = false;
@@ -269,6 +272,7 @@ void SupervisedObjectPicker::draw(int wx, int wy)
 //        }
 //    }
     
+
     bool mouseNearToMark = false;
     
     for (int v = 0; v < m_NumOfViews; v++)
@@ -308,20 +312,23 @@ void SupervisedObjectPicker::draw(int wx, int wy)
         }
     }
     
-    // Draw mouse pointer
-    
-    cv::Scalar color (255.0 * g_Colors[m_Object][0], 255.0 * g_Colors[m_Object][1], 255.0 * g_Colors[m_Object][2]);
-    cv::circle(concatColorTmp, cv::Point(wx,wy), 5, cv::Scalar(255,255,255), -1);
-    cv::circle(concatColorTmp, cv::Point(wx,wy), 3, color, -1);
-    
-    if (!mouseNearToMark)
+    if (m_ConcatDepth.at<unsigned short>(wy,wx) > 0)
     {
-        string text = to_string(m_Object);
-        cv::Point textOrg(wx,wy);
-        cv::putText(concatColorTmp, g_ModelNames[m_Object],
-                    cv::Point(wx + fontScale, wy + fontScale),
-                    fontFace, fontScale,
-                    cv::Scalar::all(255), thickness, 8);
+        // Draw mouse pointer
+        
+        cv::Scalar color (255.0 * g_Colors[m_Object][0], 255.0 * g_Colors[m_Object][1], 255.0 * g_Colors[m_Object][2]);
+        cv::circle(concatColorTmp, cv::Point(wx,wy), 5, cv::Scalar(255,255,255), -1);
+        cv::circle(concatColorTmp, cv::Point(wx,wy), 3, color, -1);
+        
+        if (!mouseNearToMark)
+        {
+            string text = to_string(m_Object);
+            cv::Point textOrg(wx,wy);
+            cv::putText(concatColorTmp, g_ModelNames[m_Object],
+                        cv::Point(wx + fontScale, wy + fontScale),
+                        fontFace, fontScale,
+                        cv::Scalar::all(255), thickness, 8);
+        }
     }
     
     // Draw number of frame

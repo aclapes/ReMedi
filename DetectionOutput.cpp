@@ -18,8 +18,8 @@ DetectionOutput::DetectionOutput()
     
 }
 
-DetectionOutput::DetectionOutput(int nviews, int nframes, int nobjects)
-: m_NumOfViews(nviews), m_NumOfFrames(nframes), m_NumOfObjects(nobjects)
+DetectionOutput::DetectionOutput(int nviews, int nframes, int nobjects, float tol)
+: m_NumOfViews(nviews), m_NumOfFrames(nframes), m_NumOfObjects(nobjects), m_Tol(tol)
 {
     m_Positions.resize(m_NumOfViews);
     
@@ -59,6 +59,7 @@ DetectionOutput& DetectionOutput::operator=(const DetectionOutput& rhs)
             m_NumOfFrames = m_Positions[0].size();
             m_NumOfObjects = m_Positions[0][0].size();
         }
+        m_Tol = rhs.m_Tol;
     }
     
     return *this;
@@ -113,7 +114,7 @@ int DetectionOutput::getNumOfObjects()
 //    m_NumOfObjects = n;
 //}
 
-void DetectionOutput::setTolerance(double tol)
+void DetectionOutput::setTolerance(float tol)
 {
     m_Tol = tol;
 }
