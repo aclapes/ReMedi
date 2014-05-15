@@ -41,7 +41,7 @@ string g_ModelNames[] =
 
 SupervisedObjectPicker::SupervisedObjectPicker(string parentDir, int sid,
                                                int numOfViews, int numOfObjects)
-: m_sid(sid), m_NumOfViews(numOfViews), m_NumOfObjects(numOfObjects), m_Object(0)
+: m_sid(sid), m_NumOfViews(numOfViews), m_NumOfObjects(numOfObjects), m_Object(0), m_Tol(0.05)
 {
     m_ParentDir = parentDir;
     string sequencesPath = m_ParentDir + "Data/Sequences/";
@@ -227,20 +227,10 @@ void SupervisedObjectPicker::draw(int wx, int wy)
     
     cv::Mat concatColorTmp = m_ConcatColor.clone();
     
-    // Draw mouse-related
-    
-    cv::Scalar color (255.0 * g_Colors[m_Object][0], 255.0 * g_Colors[m_Object][1], 255.0 * g_Colors[m_Object][2]);
-    cv::circle(concatColorTmp, cv::Point(wx,wy), 5, color, -1);
-    
-    string text = to_string(m_Object);
     int fontFace = cv::FONT_HERSHEY_SCRIPT_SIMPLEX;
     double fontScale = 0.75;
     int thickness = 1.5;
-    cv::Point textOrg(wx,wy);
-    cv::putText(concatColorTmp, g_ModelNames[m_Object],
-                cv::Point(wx + fontScale, wy + fontScale),
-                fontFace, fontScale,
-                cv::Scalar::all(255), thickness, 8);
+    
     
     // Draw set points
     int ptr = i * m_NumOfViews + j;
@@ -279,6 +269,8 @@ void SupervisedObjectPicker::draw(int wx, int wy)
 //        }
 //    }
     
+    bool mouseNearToMark = false;
+    
     for (int v = 0; v < m_NumOfViews; v++)
     {
         int vi = v / m_NumOfViews;
@@ -290,19 +282,61 @@ void SupervisedObjectPicker::draw(int wx, int wy)
             {
                 int coordX = vj*getResX()+m_ClickedPositions[v][o][p].x;
                 int coordY = vi*getResY()+m_ClickedPositions[v][o][p].y;
-                cv::circle(concatColorTmp, cv::Point(coordX,coordY), 5, color, 1);
+                
+                pcl::PointXYZ projMouse(wx,wy, m_ConcatDepth.at<unsigned short>(wy,wx));
+                pcl::PointXYZ projMark(coordX,coordY, m_ConcatDepth.at<unsigned short>(coordY,coordX));
+                
+                pcl::PointXYZ rwMouse, rwMark;
+                ProjectiveToRealworld(projMouse, getResX(), getResY(), rwMouse);
+                ProjectiveToRealworld(projMark, getResX(), getResY(), rwMark);
+                float distance = sqrtf(  pow(rwMouse.x - rwMark.x, 2)
+                                       + pow(rwMouse.y - rwMark.y, 2)
+                                       + pow(rwMouse.z - rwMark.z, 2) );
+                
+                if ( o == m_Object && distance < m_Tol )
+                {
+                    cv::circle(concatColorTmp, cv::Point(coordX,coordY), 5, color, -1);
+                    mouseNearToMark = true;
+                }
+                else
+                {
+                    cv::circle(concatColorTmp, cv::Point(coordX,coordY), 5, color, 2);
+                }
+
                 cv::putText(concatColorTmp, g_ModelNames[o], cv::Point(coordX + fontScale, coordY + fontScale), fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
             }
         }
     }
     
+    // Draw mouse pointer
+    
+    cv::Scalar color (255.0 * g_Colors[m_Object][0], 255.0 * g_Colors[m_Object][1], 255.0 * g_Colors[m_Object][2]);
+    cv::circle(concatColorTmp, cv::Point(wx,wy), 5, cv::Scalar(255,255,255), -1);
+    cv::circle(concatColorTmp, cv::Point(wx,wy), 3, color, -1);
+    
+    if (!mouseNearToMark)
+    {
+        string text = to_string(m_Object);
+        cv::Point textOrg(wx,wy);
+        cv::putText(concatColorTmp, g_ModelNames[m_Object],
+                    cv::Point(wx + fontScale, wy + fontScale),
+                    fontFace, fontScale,
+                    cv::Scalar::all(255), thickness, 8);
+    }
+    
     // Draw number of frame
 
-    text = to_string(m_Reader.getColorFrameCounter());
+    string text = to_string(m_Reader.getColorFrameCounter());
     fontFace = cv::FONT_HERSHEY_SCRIPT_SIMPLEX;
     fontScale = 1;
     thickness = 3;
     cv::putText(concatColorTmp, text, cv::Point(0, this->getResY() - 1), fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
+    
+    // Draw top rectangle
+    int progressBarHeight = 7;
+    cv::rectangle(concatColorTmp, cv::Point(0,0), cv::Point(m_ConcatColor.cols, progressBarHeight), cv::Scalar(0,0,0));
+    float percentage = ((float) m_Reader.getColorFrameCounter()) / m_Reader.getNumOfFrames();
+    cv::rectangle(concatColorTmp, cv::Point(0,0), cv::Point(m_ConcatColor.cols * percentage, progressBarHeight), cv::Scalar(50, 255, 50), -1);
     
     // Display all
     cv::imshow("Pick", concatColorTmp);

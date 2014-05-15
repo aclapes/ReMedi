@@ -59,7 +59,9 @@ private:
     int m_Object;
     vector<bool> m_PushedStates;
     vector<int>  m_PushedFrames;
-        
+    
+    float m_Tol;
+    
     vector< vector< vector< vector<pcl::PointXYZ> > > > m_Positions;
     vector< vector < vector<pcl::PointXYZ> > > m_ClickedPositions;
     vector< vector < vector< int > > > m_Presses;

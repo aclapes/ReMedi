@@ -334,14 +334,7 @@ bool Reader::nextColorFrame(string colorDir, vector<string> filenames, ColorFram
     if (m_ColorFrameCounter + step < filenames.size() - 1)
         m_ColorFrameCounter += step;
 
-	if ( readColorFrame(m_SequencesPath, colorDir, filenames[m_ColorFrameCounter], frame) )
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return readColorFrame(m_SequencesPath, colorDir, filenames[m_ColorFrameCounter], frame);
 }
 
 
@@ -350,40 +343,21 @@ bool Reader::nextDepthFrame(string colorDir, vector<string> filenames, DepthFram
     if (m_DepthFrameCounter + step < filenames.size() - 1)
         m_DepthFrameCounter += step;
 
-	if ( readDepthFrame(m_SequencesPath, colorDir, filenames[m_DepthFrameCounter], frame) )
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return readDepthFrame(m_SequencesPath, colorDir, filenames[m_DepthFrameCounter], frame);
 }
 
 
 bool Reader::getColorFrame(string colorDir, vector<string> filenames, int i, ColorFrame& frame)
 {
-	if ( readColorFrame(m_SequencesPath, colorDir, filenames, i, frame) )
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+    // TODO: range check
+	return readColorFrame(m_SequencesPath, colorDir, filenames, i, frame);
 }
 
 
 bool Reader::getDepthFrame(string depthDir, vector<string> filenames, int i, DepthFrame& frame)
 {
-	if ( readDepthFrame(m_SequencesPath, depthDir, filenames, i, frame) )
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+    // TODO: range check
+	return readDepthFrame(m_SequencesPath, depthDir, filenames, i, frame);
 }
 
 
@@ -395,14 +369,7 @@ bool Reader::nextColorPairedFrames(ColorFrame& frameA, ColorFrame& frameB, int s
 	bool validA = readColorFrame(m_SequencesPath, m_ColorDir1, m_ColorFilenames1[m_ColorFrameCounter], frameA);
 	bool validB = readColorFrame(m_SequencesPath, m_ColorDir2, m_ColorFilenames2[m_ColorFrameCounter], frameB);
     
-	if (validA && validB)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return validA && validB;
 }
 
 
@@ -414,14 +381,7 @@ bool Reader::nextDepthPairedFrames(DepthFrame& frameA, DepthFrame& frameB, int s
 	bool validA = readDepthFrame(m_SequencesPath, m_DepthDir1, m_DepthFilenames1[m_DepthFrameCounter], frameA);
 	bool validB = readDepthFrame(m_SequencesPath, m_DepthDir2, m_DepthFilenames2[m_DepthFrameCounter], frameB);
 	
-	if (validA && validB)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return validA && validB;
 }
 
 bool Reader::previousColorPairedFrames(ColorFrame& frameA, ColorFrame& frameB, int step)
@@ -432,14 +392,7 @@ bool Reader::previousColorPairedFrames(ColorFrame& frameA, ColorFrame& frameB, i
 	bool validA = readColorFrame(m_SequencesPath, m_ColorDir1, m_ColorFilenames1[m_ColorFrameCounter], frameA);
 	bool validB = readColorFrame(m_SequencesPath, m_ColorDir2, m_ColorFilenames2[m_ColorFrameCounter], frameB);
     
-	if (validA && validB)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return validA && validB;
 }
 
 
@@ -451,14 +404,7 @@ bool Reader::previousDepthPairedFrames(DepthFrame& frameA, DepthFrame& frameB, i
 	bool validA = readDepthFrame(m_SequencesPath, m_DepthDir1, m_DepthFilenames1[m_DepthFrameCounter], frameA);
 	bool validB = readDepthFrame(m_SequencesPath, m_DepthDir2, m_DepthFilenames2[m_DepthFrameCounter], frameB);
 	
-	if (validA && validB)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return validA && validB;
 }
 
 
@@ -467,10 +413,7 @@ bool Reader::getColorPairedFrames(int i, ColorFrame& frameA, ColorFrame& frameB)
 	bool validA = getColorFrame(m_ColorDir1, m_ColorFilenames1, i, frameA);
 	bool validB = getColorFrame(m_ColorDir2, m_ColorFilenames2, i, frameB);
 
-	if (validA && validB)
-		return true;
-	else
-        return false;
+	return validA && validB;
 }
 
 
@@ -479,8 +422,5 @@ bool Reader::getDepthPairedFrames(int i, DepthFrame& frameA, DepthFrame& frameB)
 	bool validA = getDepthFrame(m_DepthDir1, m_DepthFilenames1, i, frameA);
 	bool validB = getDepthFrame(m_DepthDir2, m_DepthFilenames2, i, frameB);
 
-	if (validA && validB)
-		return true;
-	else
-        return false;
+	return validA && validB;
 }
