@@ -7,6 +7,9 @@
 #include "Table.hpp"
 #include "CloudjectModel.hpp"
 #include <pcl/visualization/pcl_visualizer.h>
+#include <boost/assign/std/vector.hpp>
+
+using namespace boost::assign;
 
 Remedi::Remedi(string parentDir)
 {
@@ -22,10 +25,12 @@ void Remedi::Run(bool display)
 	// Create a reader pointing the data streams
 
     string sequencesPath = m_ParentDir + "Data/Sequences/";
+    vector<string> colorDirs = "Color1/", "Color2/";
+    vector<string> depthDirs = "Depth1/", "Depth2/";
     string labelsPath = m_ParentDir + "Data/Labels/observer_1/csv/";
-    Reader reader( sequencesPath, "Color1/", "Color2/", "Depth1/", "Depth2/", labelsPath );
-    reader.setSequence(0); // background frames
 
+    Reader reader( sequencesPath, colorDirs, dephtDirs, labelsPath );
+    
 	/*
 	 * REGISTRATION (paired frames)
 	 */
@@ -38,7 +43,6 @@ void Remedi::Run(bool display)
 	 */
 
 	TableModeler tableModeler;
-    
 	modelTablePlanes(registerer.getRegisteredClouds().first,
                       registerer.getRegisteredClouds().second,
                       tableModeler);
@@ -56,7 +60,6 @@ void Remedi::Run(bool display)
 	
 	BackgroundSubtractor bgSubtractor(nFrames, nMixtures);
     modelBackground(reader, bgSubtractor);
-    
     
     CloudjectDetector cloudjectDetector;
     cloudjectDetector.setModelLeafSize(0.015);
@@ -82,6 +85,8 @@ void Remedi::Run(bool display)
     
     reader.nextSequence();
     
+    monitorizer.clear();
+    
 	DepthFrame dFrameA, dFrameB;
 	while ( reader.nextDepthPairedFrames(dFrameA, dFrameB) )
 	{
@@ -94,6 +99,9 @@ void Remedi::Run(bool display)
         if (display)
             monitorizer.display();
 	}
+    
+    monitorizer.getObjectDetectionOutput();
+    
 }
 
 

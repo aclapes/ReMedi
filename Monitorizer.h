@@ -20,6 +20,7 @@
 #include "MonitorizerParams.hpp"
 
 #include "conversion.h"
+#include "DetectionOutput.h"
 
 using namespace std;
 
@@ -35,8 +36,8 @@ public:
 	Monitorizer(InteractiveRegisterer ir, TableModeler tm, CloudjectDetector cd);
 	Monitorizer(const Monitorizer& rhs);
 	~Monitorizer(void);
-
     Monitorizer& operator=(const Monitorizer& rhs);
+    void clear();
     
 	void setParams(MonitorizerParams);
     void setLeafSize(float leafSize);
@@ -52,6 +53,8 @@ public:
 	bool isBufferFilled(std::vector<DepthFrame>);
 
 	void visualizeCloudjects(pcl::visualization::PCLVisualizer::Ptr pViz);
+    
+    DetectionOutput getObjectDetectionOutput();
 
 private:
 	void segmentMotion(float, cv::Mat&, cv::Mat&); // threshold and motion mask
@@ -98,7 +101,7 @@ private:
 	PointCloudPtr m_CloudB;
 
 	CloudjectDetector m_CloudjectDetector;
-	MotionSegmentator m_MotionSegmentator;
+//	MotionSegmentator m_MotionSegmentator;
 
 	std::vector<Cloudject> m_cloudjects; // yet present
 

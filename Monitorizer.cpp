@@ -78,11 +78,15 @@ Monitorizer& Monitorizer::operator=(const Monitorizer& rhs)
     return *this;
 }
 
+void Monitorizer::clear()
+{
+    m_CloudjectDetector.clear();
+}
+
 void Monitorizer::setParams(MonitorizerParams params)
 {
 	m_Params = params;
 }
-
 
 void Monitorizer::monitor(DepthFrame dFrameA, DepthFrame dFrameB)
 {
@@ -447,4 +451,9 @@ void Monitorizer::setLeafSize(float leafSize)
 void Monitorizer::setClusteringToleranceFactor(int factor)
 {
     m_ClusterTolFactor = factor;
+}
+
+void Monitorizer::getDetectionOutput()
+{
+    
 }

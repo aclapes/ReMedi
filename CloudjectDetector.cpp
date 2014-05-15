@@ -39,14 +39,23 @@ CloudjectDetector& CloudjectDetector::operator=(const CloudjectDetector& rhs)
         m_NormalRadius = rhs.m_NormalRadius;
         m_FpfhRadius = rhs.m_FpfhRadius;
         
-        m_CloudjectsHistory = rhs.m_CloudjectsHistory;
         m_CloudjectModels = rhs.m_CloudjectModels;
+        
+        m_CloudjectsHistory = rhs.m_CloudjectsHistory;
         
         m_AppearedCloudjects = rhs.m_AppearedCloudjects;
         m_DisappearedCloudjects = rhs.m_DisappearedCloudjects;
     }
     
     return *this;
+}
+
+void CloudjectDetector::clear()
+{
+    m_CloudjectHistory.clear();
+    m_AppearedCloudjects.clear();
+    m_DisappearedCloudjects.clear();
+    m_DetectionOutput.clear();
 }
 
 void CloudjectDetector::loadCloudjectModels(string dir)
@@ -645,6 +654,9 @@ void CloudjectDetector::detect()
     makeSpatiotemporalCorrespondences(cloudjects, m_AppearedCloudjects, m_DisappearedCloudjects, m_CloudjectsHistory);
     
     recognize(m_CloudjectsHistory);
+    
+    for (int i = 0; i < m_CloudjectsHistory.size(); i++)
+        cloudjects.push_back(m_CloudjectsHistory[i][0]);
 }
 
 void CloudjectDetector::makeSpatiotemporalCorrespondences(vector<CloudjectPtr> cloudjects, vector<CloudjectPtr>& appeared, vector<CloudjectPtr>& disappeared, vector< vector<CloudjectPtr> >& cloudjectsHistory)
@@ -944,4 +956,9 @@ void CloudjectDetector::getDisappearedCloudjects(vector<CloudjectPtr>& cloudject
 {
     cloudjects.clear();
     cloudjects = m_DisappearedCloudjects;
+}
+
+DetectionOutput CloudjectDetector::getDetectionOutput()
+{
+    return m_DetectionOutput;
 }

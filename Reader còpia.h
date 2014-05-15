@@ -15,64 +15,61 @@ class Reader
 public:
     Reader();
     Reader(string sequencesPath,
-           vector<string> colorDirs,
-           vector<string> depthDirs);
+           string colorDir1, string colorDir2,
+           string depthDir1, string depthDir2);
 	Reader(string sequencesPath,
-           vector<string> colorDirs,
-           vector<string> depthDirs,
+           string colorDir1, string colorDir2,
+           string depthDir1, string depthDir2,
            string labelsPath);
     Reader(const Reader& rhs);
 	~Reader(void);
     
     void setData(string sequencesPath,
-                 vector<string> colorDirs,
-                 vector<string> depthDirs);
+                 string colorDir1, string colorDir2,
+                 string depthDir1, string depthDir2);
     void setData(string sequencesPath,
-                 vector<string> colorDirs,
-                 vector<string> depthDirs,
+                 string colorDir1, string colorDir2,
+                 string depthDir1, string depthDir2,
                  string labelsPath);
 
 	// Public methods
     Reader& operator=(const Reader& rhs);
     
-    bool hasNextSequence();
-    bool hasSequence(int s);
-    
     SequencePtr getSequence(int i);
     void getSequence(int i, Sequence& sequence);
-    SequencePtr getNextSequence();
-    void getNextSequence(Sequence& sequence);
-
+    SequencePtr nextSequence();
+    void nextSequence(Sequence& sequence);
     
 //	void loadColorStreams(string dataPath, string colorDir1, string colorDir2);
 //	void loadDepthStreams(string dataPath, string depthDir1, string depthDir2);
     
-//    bool setSequence(int i);
-//    string getSequencePath();
-//    string getSequenceDirName();
-//    bool nextSequence();
-//
-//    int getNumOfFrames();
-//    int getColorFrameCounter();
-//    int getDepthFrameCounter();
-//    
-//	bool nextColorFrame(string colorDir, vector<string> filenames, ColorFrame& cframe, int step = 1);
-//	bool nextDepthFrame(string depthDir, vector<string> filenames, DepthFrame& dframe, int step = 1);
-//    
-//	bool getColorFrame(string colorDir, vector<string> filenames, int i, ColorFrame& cframe);
-//	bool getDepthFrame(string depthDir, vector<string> filenames, int i, DepthFrame& dframe);
-//
-//	bool nextColorPairedFrames(ColorFrame& cframeA, ColorFrame& cframeB, int step = 1);
-//	bool nextDepthPairedFrames(DepthFrame& dframeA, DepthFrame& dframeB, int step = 1);
-//    bool previousColorPairedFrames(ColorFrame& cframeA, ColorFrame& cframeB, int step = 1);
-//	bool previousDepthPairedFrames(DepthFrame& dframeA, DepthFrame& dframeB, int step = 1);
-//    
-//	bool getColorPairedFrames(int i, ColorFrame&, ColorFrame&);
-//	bool getDepthPairedFrames(int i, DepthFrame&, DepthFrame&);
+    bool setSequence(int i);
+    string getSequencePath();
+    string getSequenceDirName();
+    bool nextSequence();
+
+    int getNumOfFrames();
+    int getColorFrameCounter();
+    int getDepthFrameCounter();
+    
+	bool nextColorFrame(string colorDir, vector<string> filenames, ColorFrame& cframe, int step = 1);
+	bool nextDepthFrame(string depthDir, vector<string> filenames, DepthFrame& dframe, int step = 1);
+    
+	bool getColorFrame(string colorDir, vector<string> filenames, int i, ColorFrame& cframe);
+	bool getDepthFrame(string depthDir, vector<string> filenames, int i, DepthFrame& dframe);
+
+	bool nextColorPairedFrames(ColorFrame& cframeA, ColorFrame& cframeB, int step = 1);
+	bool nextDepthPairedFrames(DepthFrame& dframeA, DepthFrame& dframeB, int step = 1);
+    bool previousColorPairedFrames(ColorFrame& cframeA, ColorFrame& cframeB, int step = 1);
+	bool previousDepthPairedFrames(DepthFrame& dframeA, DepthFrame& dframeB, int step = 1);
+    
+	bool getColorPairedFrames(int i, ColorFrame&, ColorFrame&);
+	bool getDepthPairedFrames(int i, DepthFrame&, DepthFrame&);
     
 private:
 	// Private methods
-    void getSequenceLabels(int s, vector<unsigned char>& interactions, vector<unsigned char>& actions);
+    void readSequenceFrames();
+    void readSequenceLabels();
     
     void loadFilenames(string dir, const char* filetype, vector<string>& filenames);
     void loadDirectories(string parent, vector<string>& directories);
@@ -94,14 +91,14 @@ private:
     string m_LabelsPath;
     
     vector<string> m_SequencesDirs;
-    int m_SequenceCounter;
 
-    vector<string>  m_ColorDirs, m_DepthDirs;
-//    vector<string> m_ColorFilenames1, m_ColorFilenames2, m_DepthFilenames1, m_DepthFilenames2;
+    string  m_ColorDir1, m_ColorDir2, m_DepthDir1, m_DepthDir2;
+    vector<string> m_ColorFilenames1, m_ColorFilenames2, m_DepthFilenames1, m_DepthFilenames2;
     
-//    int m_ColorFrameCounter, m_DepthFrameCounter;
+    int m_SequenceCounter;
+    int m_ColorFrameCounter, m_DepthFrameCounter;
     
-//    vector<unsigned char> m_InteractionLabels;
-//    vector<unsigned char> m_ActionLabels;
+    vector<unsigned char> m_InteractionLabels;
+    vector<unsigned char> m_ActionLabels;
 };
 

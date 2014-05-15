@@ -19,6 +19,7 @@
 
 #include "Cloudject.hpp"
 #include "CloudjectModel.hpp"
+#include "DetectionOutput.h"
 
 using namespace std;
 
@@ -36,6 +37,7 @@ public:
 	CloudjectDetector(void);
     CloudjectDetector(const CloudjectDetector& rhs);
 	~CloudjectDetector(void);
+    void clear();
 	
     CloudjectDetector& operator=(const CloudjectDetector& rhs);
     
@@ -62,6 +64,8 @@ public:
     void getPresentCloudjects(vector<CloudjectPtr>& cloudjects);
     void getAppearedCloudjects(vector<CloudjectPtr>& cloudjects);
     void getDisappearedCloudjects(vector<CloudjectPtr>& cloudjects);
+    
+    DetectionOutput getDetectionOutput();
     
 private:
 	// Methods
@@ -158,6 +162,8 @@ private:
     
     vector<CloudjectPtr> m_AppearedCloudjects; // appered in frame
     //vector<CloudjectPtr> m_PresentCloudjects; // present in frame
-    vector<CloudjectPtr> m_DisappearedCloudjects; // disappeared in frmae
+    vector<CloudjectPtr> m_DisappearedCloudjects; // disappeared in frame
+    
+    DetectionOutput m_DetectionOutput;
 };
 

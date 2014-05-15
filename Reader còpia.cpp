@@ -14,28 +14,29 @@ using namespace std;
 
 class Remedi; // solving cross reference
 
-typedef boost::shared_ptr<Sequence> SequencePtr;
-
-
 Reader::Reader() {}
 
 Reader::Reader(string sequencesPath,
-               vector<string> colorDirs,
-               vector<string> depthDirs)
+               string colorDir1, string colorDir2,
+               string depthDir1, string depthDir2)
 : m_SequencesPath(sequencesPath),
-m_ColorDirs(colorDirs), m_DepthDirs(depthDirs),
-m_SequenceCounter(-1), m_LabelsPath("")
+m_ColorDir1(colorDir1), m_ColorDir2(colorDir2),
+m_DepthDir1(depthDir1), m_DepthDir2(depthDir2),
+m_SequenceCounter(-1),
+m_ColorFrameCounter(-1), m_DepthFrameCounter(-1), m_LabelsPath("")
 {
     loadDirectories(m_SequencesPath, m_SequencesDirs);
 }
 
 Reader::Reader(string sequencesPath,
-               vector<string> colorDirs,
-               vector<string> depthDirs,
+               string colorDir1, string colorDir2,
+               string depthDir1, string depthDir2,
                string labelsPath)
 : m_SequencesPath(sequencesPath),
-  m_ColorDirs(colorDirs), m_DepthDirs(depthDirs),
-  m_SequenceCounter(-1), m_LabelsPath(labelsPath)
+  m_ColorDir1(colorDir1), m_ColorDir2(colorDir2),
+  m_DepthDir1(depthDir1), m_DepthDir2(depthDir2),
+  m_SequenceCounter(-1),
+  m_ColorFrameCounter(-1), m_DepthFrameCounter(-1), m_LabelsPath(labelsPath)
 {
     loadDirectories(m_SequencesPath, m_SequencesDirs);
 }
@@ -50,27 +51,35 @@ Reader::~Reader(void)
 }
 
 void Reader::setData(string sequencesPath,
-                     vector<string> colorDirs,
-                     vector<string> depthDirs)
+                     string colorDir1, string colorDir2,
+                     string depthDir1, string depthDir2)
 {
     m_SequencesPath = sequencesPath;
-    m_ColorDirs = colorDirs;
-    m_DepthDirs = depthDirs;
+    m_ColorDir1 = colorDir1;
+    m_ColorDir2 = colorDir2;
+    m_DepthDir1 = depthDir1;
+    m_DepthDir2 = depthDir2;
     m_SequenceCounter = -1;
+    m_ColorFrameCounter = -1;
+    m_DepthFrameCounter = -1;
     m_LabelsPath = "";
     
     loadDirectories(m_SequencesPath, m_SequencesDirs);
 }
 
 void Reader::setData(string sequencesPath,
-                     vector<string> colorDirs,
-                     vector<string> depthDirs,
+                     string colorDir1, string colorDir2,
+                     string depthDir1, string depthDir2,
                      string labelsPath)
 {
     m_SequencesPath = sequencesPath;
-    m_ColorDirs = colorDirs;
-    m_DepthDirs = depthDirs;
+    m_ColorDir1 = colorDir1;
+    m_ColorDir2 = colorDir2;
+    m_DepthDir1 = depthDir1;
+    m_DepthDir2 = depthDir2;
     m_SequenceCounter = -1;
+    m_ColorFrameCounter = -1;
+    m_DepthFrameCounter = -1;
     m_LabelsPath = labelsPath;
     
     loadDirectories(m_SequencesPath, m_SequencesDirs);
@@ -85,105 +94,55 @@ Reader& Reader::operator=(const Reader& rhs)
         
         m_SequencesDirs = rhs.m_SequencesDirs;
         
-        m_ColorDirs = rhs.m_ColorDirs;
-        m_DepthDirs = rhs.m_DepthDirs;
+        m_ColorDir1 = rhs.m_ColorDir1;
+        m_ColorDir2 = rhs.m_ColorDir2;
+        m_DepthDir1 = rhs.m_DepthDir1;
+        m_DepthDir2 = rhs.m_DepthDir2;
         
         m_SequenceCounter = rhs.m_SequenceCounter;
+        m_ColorFrameCounter = rhs.m_ColorFrameCounter;
+        m_DepthFrameCounter = rhs.m_DepthFrameCounter;
         
-//        m_ColorFrameCounter = rhs.m_ColorFrameCounter;
-//        m_DepthFrameCounter = rhs.m_DepthFrameCounter;
+        m_ColorFilenames1 = rhs.m_ColorFilenames1;
+        m_ColorFilenames2 = rhs.m_ColorFilenames2;
+        m_DepthFilenames1 = rhs.m_DepthFilenames1;
+        m_DepthFilenames2 = rhs.m_DepthFilenames2;
         
-//        m_ColorFilenames1 = rhs.m_ColorFilenames1;
-//        m_ColorFilenames2 = rhs.m_ColorFilenames2;
-//        m_DepthFilenames1 = rhs.m_DepthFilenames1;
-//        m_DepthFilenames2 = rhs.m_DepthFilenames2;
-        
-//        m_InteractionLabels = rhs.m_InteractionLabels;
-//        m_ActionLabels = rhs.m_ActionLabels;
+        m_InteractionLabels = rhs.m_InteractionLabels;
+        m_ActionLabels = rhs.m_ActionLabels;
     }
     
     return *this;
 }
 
-SequencePtr Reader::getSequence(int i)
+void Reader::readSequenceFrames()
 {
-    SequencePtr pSequence (new Sequence);
+    // Color streams
+    loadFilenames(m_SequencesPath + m_SequencesDirs[m_SequenceCounter] + "/Kinects/" + m_ColorDir1, "png", m_ColorFilenames1);
+    loadFilenames(m_SequencesPath + m_SequencesDirs[m_SequenceCounter] + "/Kinects/" + m_ColorDir2, "png", m_ColorFilenames2);
     
-    getSequence(i, *pSequence);
+    // Depth streams
+    loadFilenames(m_SequencesPath + m_SequencesDirs[m_SequenceCounter] + "/Kinects/" + m_DepthDir1, "png", m_DepthFilenames1);
+    loadFilenames(m_SequencesPath + m_SequencesDirs[m_SequenceCounter] + "/Kinects/" + m_DepthDir2, "png", m_DepthFilenames2);
     
-    return pSequence;
+    // assertions
+    assert (m_ColorFilenames1.size() == m_DepthFilenames1.size());
+    assert (m_ColorFilenames2.size() == m_DepthFilenames2.size());
+    assert (abs((int) m_ColorFilenames1.size() - (int) m_ColorFilenames2.size()) <= 2);
+    
+    m_ColorFrameCounter = -1;
+    m_DepthFrameCounter = -1;
 }
 
-void Reader::getSequence(int s, Sequence& sequence)
-{
-    // Stream
-    
-    for (int v = 0; v < m_ColorDirs.size(); v++)
-    {
-        vector<string> filenames;
-        loadFilenames(m_SequencesPath + m_SequencesDirs[s] + "/Kinects/" + m_ColorDirs[v], "png", filenames);
-        
-        vector<ColorFrame> colorFrames;
-        for (int f = 0; f < filenames.size(); f++)
-        {
-            ColorFrame frame;
-            readColorFrame(m_SequencesPath, m_ColorDirs[v], filenames, f, frame);
-            colorFrames.push_back(frame);
-        }
-        sequence.addColorStream(colorFrames, v);
-    }
-    
-    for (int v = 0; v < m_DepthDirs.size(); v++)
-    {
-        vector<string> filenames;
-        loadFilenames(m_SequencesPath + m_SequencesDirs[s] + "/Kinects/" + m_DepthDirs[v], "png", filenames);
-        
-        vector<DepthFrame> depthFrames;
-        for (int f = 0; f < filenames.size(); f++)
-        {
-            DepthFrame frame;
-            readDepthFrame(m_SequencesPath, m_DepthDirs[v], filenames, f, frame);
-            depthFrames.push_back(frame);
-        }
-        sequence.addDepthStream(depthFrames, v);
-    }
-    
-    // Labels
-    vector<unsigned char> interactions, actions;
-    getSequenceLabels(s, interactions, actions);
-    sequence.setInteractionLabels(interactions);
-    sequence.setActionLabels(actions);
-}
-
-SequencePtr Reader::getNextSequence()
-{
-    
-}
-
-void Reader::getNextSequence(Sequence& sequence)
-{
-    
-}
-
-bool Reader::hasNextSequence()
-{
-    return m_SequenceCounter >= 0 && m_SequenceCounter < m_SequencesDirs.size();
-}
-
-bool Reader::hasSequence(int i)
-{
-    return i >= 0 && i < m_SequencesDirs.size();
-}
-
-void Reader::getSequenceLabels(int sid, vector<unsigned char>& interactions, vector<unsigned char>& actions)
+void Reader::readSequenceLabels()
 {
     if (m_LabelsPath.compare("") == 0)
     {
         return;
     }
     
-    interactions = vector<unsigned char>(m_ColorFilenames1.size(), 0);
-    actions = vector<unsigned char>(m_ColorFilenames1.size(), 0);
+    m_InteractionLabels = vector<unsigned char>(m_ColorFilenames1.size(), 0);
+    m_ActionLabels = vector<unsigned char>(m_ColorFilenames1.size(), 0);
 
     std::ifstream infile(m_LabelsPath + m_SequencesDirs[m_SequenceCounter] + ".csv");
     if (!infile.is_open())
@@ -199,24 +158,24 @@ void Reader::getSequenceLabels(int sid, vector<unsigned char>& interactions, vec
         if (cat.compare("interaction") == 0)
         {
             if (subcat.compare("pillbox") == 0)
-                interactions[vFrame] |= (unsigned char) pow(2, (int) Remedi::PILLBOX);
+                m_InteractionLabels[vFrame] |= (unsigned char) pow(2, (int) Remedi::PILLBOX);
             else if (subcat.compare("dish") == 0)
-                interactions[vFrame] |= (unsigned char) pow(2, (int) Remedi::DISH);
+                m_InteractionLabels[vFrame] |= (unsigned char) pow(2, (int) Remedi::DISH);
             else if (subcat.compare("book") == 0)
-                interactions[vFrame] |= (unsigned char) pow(2, (int) Remedi::BOOK);
+                m_InteractionLabels[vFrame] |= (unsigned char) pow(2, (int) Remedi::BOOK);
             else if (subcat.compare("glass") == 0)
-                interactions[vFrame] |= (unsigned char) pow(2, (int) Remedi::GLASS);
+                m_InteractionLabels[vFrame] |= (unsigned char) pow(2, (int) Remedi::GLASS);
         }
         else if (cat.compare("action") == 0)
         {
             if (subcat.compare("takingpill") == 0)
-                actions[vFrame] |= (unsigned char) pow(2, (int) Remedi::TAKINGPILL);
+                m_ActionLabels[vFrame] |= (unsigned char) pow(2, (int) Remedi::TAKINGPILL);
             else if (subcat.compare("eating") == 0)
-                actions[vFrame] |= (unsigned char) pow(2, (int) Remedi::EATING);
+                m_ActionLabels[vFrame] |= (unsigned char) pow(2, (int) Remedi::EATING);
             else if (subcat.compare("reading") == 0)
-                actions[vFrame] |= (unsigned char) pow(2, (int) Remedi::READING);
+                m_ActionLabels[vFrame] |= (unsigned char) pow(2, (int) Remedi::READING);
             else if (subcat.compare("drinking") == 0)
-                actions[vFrame] |= (unsigned char) pow(2, (int) Remedi::DRINKING);
+                m_ActionLabels[vFrame] |= (unsigned char) pow(2, (int) Remedi::DRINKING);
         }
     }
 }
@@ -311,7 +270,7 @@ void Reader::loadDirectories(string parent, vector<string>& directories)
 //    return dframe.isValid();
 //}
 
-/*
+
 bool Reader::readColorFrame(string sequencesPath, string colorDir, vector<string> filenames, int i, ColorFrame& cframe)
 {
     assert (i < filenames.size());
@@ -465,4 +424,3 @@ bool Reader::getDepthPairedFrames(int i, DepthFrame& frameA, DepthFrame& frameB)
 
 	return validA && validB;
 }
-*/
