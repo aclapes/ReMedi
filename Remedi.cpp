@@ -82,8 +82,8 @@ void Remedi::Run(bool display)
 	/*
 	 * Loop
 	 */
-    
-    reader.nextSequence();
+    Sequence sequence;
+    reader.getNextSequence(sequence);
     
     monitorizer.clear();
     

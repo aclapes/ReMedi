@@ -10,7 +10,7 @@ using namespace std;
 
 class Reader
 {
-    typedef boost::shared_ptr<Sequence> SequencePtr;
+    //typedef boost::shared_ptr<Sequence> SequencePtr;
     
 public:
     Reader();
@@ -38,9 +38,9 @@ public:
     bool hasNextSequence();
     bool hasSequence(int s);
     
-    SequencePtr getSequence(int i);
+    Sequence::Ptr getSequence(int i);
     void getSequence(int i, Sequence& sequence);
-    SequencePtr getNextSequence();
+    Sequence::Ptr getNextSequence();
     void getNextSequence(Sequence& sequence);
 
     
@@ -72,10 +72,9 @@ public:
     
 private:
 	// Private methods
-    void getSequenceLabels(int s, vector<unsigned char>& interactions, vector<unsigned char>& actions);
-    
-    void loadFilenames(string dir, const char* filetype, vector<string>& filenames);
     void loadDirectories(string parent, vector<string>& directories);
+    void loadFilenames(string dir, const char* filetype, vector<string>& filenames);
+    void loadSequenceLabels(int s, vector<unsigned char>& interactions, vector<unsigned char>& actions);
     
 //	bool readNextColorFrame(string dataPath, string colorDir, vector<string> filenames, ColorFrame& cframe);
 //	bool readNextDepthFrame(string dataPath, string depthDir, vector<string> filenames, DepthFrame& dframe);
@@ -83,8 +82,8 @@ private:
 //	bool readPreviousDepthFrame(string dataPath, string depthDir, vector<string> filenames, DepthFrame& dframe);
 	bool readColorFrame(string dataPath, string colorDir, vector<string> filenames, int i, ColorFrame& cframe);
 	bool readDepthFrame(string dataPath, string depthDir, vector<string> filenames, int i, DepthFrame& dframe);
-    bool readColorFrame(string dataPath, string colorDir, string filename, ColorFrame& cframe);
-	bool readDepthFrame(string dataPath, string depthDir, string filename, DepthFrame& dframe);
+//    bool readColorFrame(string dataPath, string colorDir, string filename, ColorFrame& cframe);
+//	bool readDepthFrame(string dataPath, string depthDir, string filename, DepthFrame& dframe);
 
 	bool isValid(ColorFrame cframe);
 	bool isValid(DepthFrame dframe);
@@ -97,7 +96,7 @@ private:
     int m_SequenceCounter;
 
     vector<string>  m_ColorDirs, m_DepthDirs;
-//    vector<string> m_ColorFilenames1, m_ColorFilenames2, m_DepthFilenames1, m_DepthFilenames2;
+    vector<vector<string> > m_ColorFilenames, m_DepthFilenames;
     
 //    int m_ColorFrameCounter, m_DepthFrameCounter;
     

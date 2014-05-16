@@ -14,7 +14,7 @@ using namespace std;
 
 class Remedi; // solving cross reference
 
-typedef boost::shared_ptr<Sequence> SequencePtr;
+//typedef boost::shared_ptr<Sequence> SequencePtr;
 
 
 Reader::Reader() {}
@@ -105,9 +105,9 @@ Reader& Reader::operator=(const Reader& rhs)
     return *this;
 }
 
-SequencePtr Reader::getSequence(int i)
+Sequence::Ptr Reader::getSequence(int i)
 {
-    SequencePtr pSequence (new Sequence);
+    Sequence::Ptr pSequence (new Sequence);
     
     getSequence(i, *pSequence);
     
@@ -120,8 +120,7 @@ void Reader::getSequence(int s, Sequence& sequence)
     
     for (int v = 0; v < m_ColorDirs.size(); v++)
     {
-        vector<string> filenames;
-        loadFilenames(m_SequencesPath + m_SequencesDirs[s] + "/Kinects/" + m_ColorDirs[v], "png", filenames);
+        loadFilenames(m_SequencesPath + m_SequencesDirs[s] + "/Kinects/" + m_ColorDirs[v], "png", m_ColorFilenames[v]);
         
         vector<ColorFrame> colorFrames;
         for (int f = 0; f < filenames.size(); f++)
@@ -136,7 +135,7 @@ void Reader::getSequence(int s, Sequence& sequence)
     for (int v = 0; v < m_DepthDirs.size(); v++)
     {
         vector<string> filenames;
-        loadFilenames(m_SequencesPath + m_SequencesDirs[s] + "/Kinects/" + m_DepthDirs[v], "png", filenames);
+        loadFilenames(m_SequencesPath + m_SequencesDirs[s] + "/Kinects/" + m_DepthDirs[v], "png", m_DepthFilenames[v]);
         
         vector<DepthFrame> depthFrames;
         for (int f = 0; f < filenames.size(); f++)
@@ -150,12 +149,12 @@ void Reader::getSequence(int s, Sequence& sequence)
     
     // Labels
     vector<unsigned char> interactions, actions;
-    getSequenceLabels(s, interactions, actions);
+    loadSequenceLabels(s, interactions, actions);
     sequence.setInteractionLabels(interactions);
     sequence.setActionLabels(actions);
 }
 
-SequencePtr Reader::getNextSequence()
+Sequence::Ptr Reader::getNextSequence()
 {
     
 }
@@ -175,15 +174,15 @@ bool Reader::hasSequence(int i)
     return i >= 0 && i < m_SequencesDirs.size();
 }
 
-void Reader::getSequenceLabels(int sid, vector<unsigned char>& interactions, vector<unsigned char>& actions)
+void Reader::loadSequenceLabels(int sid, vector<unsigned char>& interactions, vector<unsigned char>& actions)
 {
     if (m_LabelsPath.compare("") == 0)
     {
         return;
     }
     
-    interactions = vector<unsigned char>(m_ColorFilenames1.size(), 0);
-    actions = vector<unsigned char>(m_ColorFilenames1.size(), 0);
+    interactions = vector<unsigned char>(m_ColorFilenames[0].size(), 0);
+    actions = vector<unsigned char>(m_ColorFilenames[0].size(), 0);
 
     std::ifstream infile(m_LabelsPath + m_SequencesDirs[m_SequenceCounter] + ".csv");
     if (!infile.is_open())
@@ -221,39 +220,39 @@ void Reader::getSequenceLabels(int sid, vector<unsigned char>& interactions, vec
     }
 }
 
-bool Reader::setSequence(int i)
-{
-    if (i < 0 || i >= m_SequencesDirs.size())
-        return false;
-    
-    m_SequenceCounter = i;
-    
-    readSequenceFrames();
-    readSequenceLabels();
-}
-
-string Reader::getSequencePath()
-{
-    return m_SequencesPath + m_SequencesDirs[m_SequenceCounter] + "/";
-}
-
-string Reader::getSequenceDirName()
-{
-    return m_SequencesDirs[m_SequenceCounter];
-}
-
-bool Reader::nextSequence()
-{
-    if (m_SequenceCounter == m_SequencesDirs.size() - 1)
-    {
-        return false;
-    }
-    
-    m_SequenceCounter++;
-    
-    readSequenceFrames();
-    readSequenceLabels();
-}
+//bool Reader::setSequence(int i)
+//{
+//    if (i < 0 || i >= m_SequencesDirs.size())
+//        return false;
+//    
+//    m_SequenceCounter = i;
+//    
+//    readSequenceFrames();
+//    readSequenceLabels();
+//}
+//
+//string Reader::getSequencePath()
+//{
+//    return m_SequencesPath + m_SequencesDirs[m_SequenceCounter] + "/";
+//}
+//
+//string Reader::getSequenceDirName()
+//{
+//    return m_SequencesDirs[m_SequenceCounter];
+//}
+//
+//bool Reader::nextSequence()
+//{
+//    if (m_SequenceCounter == m_SequencesDirs.size() - 1)
+//    {
+//        return false;
+//    }
+//    
+//    m_SequenceCounter++;
+//    
+//    readSequenceFrames();
+//    readSequenceLabels();
+//}
 
 void Reader::loadFilenames(string dir, const char* filetype, vector<string>& filenames)
 {
@@ -311,7 +310,7 @@ void Reader::loadDirectories(string parent, vector<string>& directories)
 //    return dframe.isValid();
 //}
 
-/*
+
 bool Reader::readColorFrame(string sequencesPath, string colorDir, vector<string> filenames, int i, ColorFrame& cframe)
 {
     assert (i < filenames.size());
@@ -335,7 +334,7 @@ bool Reader::readDepthFrame(string sequencesPath, string depthDir, vector<string
     return dframe.isValid();
 }
 
-
+/*
 bool Reader::readColorFrame(string sequencesPath, string colorDir, string filename, ColorFrame& cframe)
 {
 	string filePath = sequencesPath + m_SequencesDirs[m_SequenceCounter] + "/Kinects/" + colorDir + filename;

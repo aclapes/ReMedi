@@ -50,7 +50,11 @@ public:
     vector<ColorFrame> previousColorFrame(int step = 1); // multi-view
     vector<DepthFrame> previousDepthFrame(int step = 1);
     
+    int getNumOfFrames();
+    
     void setDelay(vector<int> delay);
+    
+    typedef boost::shared_ptr<Sequence> Ptr;
     
 private:
     vector< vector<ColorFrame> > m_ColorStream;

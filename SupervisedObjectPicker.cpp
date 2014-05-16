@@ -9,6 +9,8 @@
 #include "SupervisedObjectPicker.h"
 #include "DetectionOutput.h"
 
+#include <vector>
+#include <string>
 #include <fstream>
 #include <boost/algorithm/string.hpp>
 //#include <boost/algorithm/string/split.hpp>
@@ -18,6 +20,8 @@
 
 #include "conversion.h"
 #include <boost/assign/std/vector.hpp>
+
+#include "Sequence.h"
 
 using namespace boost::assign;
 using namespace std;
@@ -41,18 +45,23 @@ string g_ModelNames[] =
     "dish", "pillbox", "book", "tetrabrick", "glass"
 };
 
-SupervisedObjectPicker::SupervisedObjectPicker(string parentDir, int sid,
+SupervisedObjectPicker::SupervisedObjectPicker(string parentDir,
+                                               Sequence::Ptr pSequence,
                                                int numOfViews, int numOfObjects)
-: m_sid(sid), m_NumOfViews(numOfViews), m_NumOfObjects(numOfObjects), m_Object(0), m_Tol(0.05)
+: m_NumOfViews(numOfViews), m_NumOfObjects(numOfObjects), m_Object(0), m_Tol(0.05)
 {
-    m_ParentDir = parentDir;
-    string sequencesPath = m_ParentDir + "Data/Sequences/";
-    vector<string> colorDirs = "Color1/", "Color2/";
-    vector<string> depthDirs = "Depth1/", "Depth2/";
+//    m_ParentDir = parentDir;
+//    string sequencesPath = m_ParentDir + "Data/Sequences/";
+//    vector<string> colorDirs;
+//    colorDirs += "Color1/", "Color2/";
+//    vector<string> depthDirs;
+//    depthDirs += "Depth1/", "Depth2/";
+//    
+//    Reader reader( sequencesPath, colorDirs, depthDirs );
     
-    Reader reader( sequencesPath, colorDirs, dephtDirs, labelsPath );
-    m_Reader.setSequence(m_sid);
-    m_NumOfFrames = m_Reader.getNumOfFrames();
+//    Sequence sequence;
+//    m_Reader.getSequence(m_sid, sequence);
+    m_NumOfFrames = pSequence->getNumOfFrames();
 
     m_ResY = 480;
     m_ResX = 640;
@@ -126,19 +135,19 @@ void SupervisedObjectPicker::mark(int wx, int wy)
     if (!found)
     {
         m_ClickedPositions[ptr][m_Object].push_back( pcl::PointXYZ(x, y, m_ConcatDepth.at<unsigned short>(wx,wy)) );
-        m_Presses[ptr][m_Object].push_back(m_Reader.getColorFrameCounter());
+        m_Presses[ptr][m_Object].push_back(pSequence->getColorFrameCounter());
     }
     else
     {
         int begin, end;
-        if (m_Presses[ptr][m_Object][idx] <= m_Reader.getColorFrameCounter())
+        if (m_Presses[ptr][m_Object][idx] <= pSequence->getColorFrameCounter())
         {
             begin = m_Presses[ptr][m_Object][idx];
-            end = m_Reader.getColorFrameCounter();
+            end = pSequence->getColorFrameCounter();
         }
         else
         {
-            begin = m_Reader.getColorFrameCounter();
+            begin = pSequence->getColorFrameCounter();
             end = m_Presses[ptr][m_Object][idx];
         }
         
@@ -169,15 +178,15 @@ void SupervisedObjectPicker::remove(int wx, int wy)
     int ptr = i * m_NumOfViews + j;
     bool found = false;
     pcl::PointXYZ point;
-    for (int i = 0; i < m_Positions[ptr][m_Reader.getColorFrameCounter()][m_Object].size() && !found; i++)
+    for (int i = 0; i < m_Positions[ptr][pSequence->getColorFrameCounter()][m_Object].size() && !found; i++)
     {
-        found = sqrtf( powf(x - m_Positions[ptr][m_Reader.getColorFrameCounter()][m_Object][i].x, 2)
-                      + powf(y - m_Positions[ptr][m_Reader.getColorFrameCounter()][m_Object][i].y, 2) ) < 20;
+        found = sqrtf( powf(x - m_Positions[ptr][pSequence->getColorFrameCounter()][m_Object][i].x, 2)
+                      + powf(y - m_Positions[ptr][pSequence->getColorFrameCounter()][m_Object][i].y, 2) ) < 20;
         if (found)
-            point = m_Positions[ptr][m_Reader.getColorFrameCounter()][m_Object][i];
+            point = m_Positions[ptr][pSequence->getColorFrameCounter()][m_Object][i];
     }
     
-    for (int f = 0; f < m_Reader.getNumOfFrames(); f++)
+    for (int f = 0; f < pSequence->getNumOfFrames(); f++)
     {
         bool found = false;
         for (int i = 0; i < m_Positions[ptr][f][m_Object].size() && !found; i++)

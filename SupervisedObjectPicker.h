@@ -13,14 +13,15 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "Reader.h"
+#include "Sequence.h"
 #include "ColorFrame.h"
 #include "DetectionOutput.h"
 
 class SupervisedObjectPicker
 {
 public:
-    SupervisedObjectPicker(string parentDir, int sid, int numOfViews, int numOfObjects);
+    SupervisedObjectPicker(string parentDir, Sequence::Ptr sequence,
+                           int numOfViews, int numOfObjects);
     
     void run();
     

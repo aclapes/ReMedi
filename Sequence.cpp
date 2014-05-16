@@ -86,7 +86,7 @@ bool Sequence::hasNextColorFrame(int step)
     return true;
 }
 
-bool Sequence::hasNextColorFrame(int step)
+bool Sequence::hasNextDepthFrame(int step)
 {
     for (int i = 0; i < m_DepthStream.size(); i++)
         if (m_DepthFrameCounter + m_Delay[i] + step >= m_DepthStream[i].size() - 1)
@@ -126,7 +126,7 @@ bool Sequence::hasPreviousColorFrame(int step)
     return true;
 }
 
-bool Sequence::hasPreviousColorFrame(int step)
+bool Sequence::hasPreviousDepthFrame(int step)
 {
     for (int i = 0; i < m_DepthStream.size(); i++)
         if (m_DepthFrameCounter + m_Delay[i] - step < 0)
@@ -165,6 +165,11 @@ void sequence::setInteractionLabels(vector<unsigned char> labels)
 void sequence::setActionLabels(vector<unsigned char> labels)
 {
     m_ActionLabels = labels;
+}
+
+int Sequence::getNumOfFrames()
+{
+    return m_DepthStream[0].size() - m_Delay[0];
 }
 
 void Sequence::setDelay(vector<int> delay)
