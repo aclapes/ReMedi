@@ -46,9 +46,10 @@ string g_ModelNames[] =
 };
 
 SupervisedObjectPicker::SupervisedObjectPicker(string parentDir,
-                                               Sequence::Ptr pSequence,
+                                               Sequence::Ptr sequence,
                                                int numOfViews, int numOfObjects)
-: m_NumOfViews(numOfViews), m_NumOfObjects(numOfObjects), m_Object(0), m_Tol(0.05)
+: m_pSequence(sequence), m_NumOfViews(numOfViews), m_NumOfObjects(numOfObjects),
+  m_Object(0), m_Tol(0.05)
 {
 //    m_ParentDir = parentDir;
 //    string sequencesPath = m_ParentDir + "Data/Sequences/";
@@ -61,7 +62,7 @@ SupervisedObjectPicker::SupervisedObjectPicker(string parentDir,
     
 //    Sequence sequence;
 //    m_Reader.getSequence(m_sid, sequence);
-    m_NumOfFrames = pSequence->getNumOfFrames();
+    m_NumOfFrames = m_pSequence->getNumOfFrames();
 
     m_ResY = 480;
     m_ResX = 640;
@@ -135,19 +136,19 @@ void SupervisedObjectPicker::mark(int wx, int wy)
     if (!found)
     {
         m_ClickedPositions[ptr][m_Object].push_back( pcl::PointXYZ(x, y, m_ConcatDepth.at<unsigned short>(wx,wy)) );
-        m_Presses[ptr][m_Object].push_back(pSequence->getColorFrameCounter());
+        m_Presses[ptr][m_Object].push_back(m_pSequence->colorAt());
     }
     else
     {
         int begin, end;
-        if (m_Presses[ptr][m_Object][idx] <= pSequence->getColorFrameCounter())
+        if (m_Presses[ptr][m_Object][idx] <= m_pSequence->colorAt())
         {
             begin = m_Presses[ptr][m_Object][idx];
-            end = pSequence->getColorFrameCounter();
+            end = m_pSequence->colorAt();
         }
         else
         {
-            begin = pSequence->getColorFrameCounter();
+            begin = m_pSequence->colorAt();
             end = m_Presses[ptr][m_Object][idx];
         }
         
@@ -178,15 +179,15 @@ void SupervisedObjectPicker::remove(int wx, int wy)
     int ptr = i * m_NumOfViews + j;
     bool found = false;
     pcl::PointXYZ point;
-    for (int i = 0; i < m_Positions[ptr][pSequence->getColorFrameCounter()][m_Object].size() && !found; i++)
+    for (int i = 0; i < m_Positions[ptr][m_pSequence->colorAt()][m_Object].size() && !found; i++)
     {
-        found = sqrtf( powf(x - m_Positions[ptr][pSequence->getColorFrameCounter()][m_Object][i].x, 2)
-                      + powf(y - m_Positions[ptr][pSequence->getColorFrameCounter()][m_Object][i].y, 2) ) < 20;
+        found = sqrtf( powf(x - m_Positions[ptr][m_pSequence->colorAt()][m_Object][i].x, 2)
+                      + powf(y - m_Positions[ptr][m_pSequence->colorAt()][m_Object][i].y, 2) ) < 20;
         if (found)
-            point = m_Positions[ptr][pSequence->getColorFrameCounter()][m_Object][i];
+            point = m_Positions[ptr][m_pSequence->colorAt()][m_Object][i];
     }
     
-    for (int f = 0; f < pSequence->getNumOfFrames(); f++)
+    for (int f = 0; f < m_pSequence->getNumOfFrames(); f++)
     {
         bool found = false;
         for (int i = 0; i < m_Positions[ptr][f][m_Object].size() && !found; i++)
@@ -260,7 +261,7 @@ void SupervisedObjectPicker::draw(int wx, int wy)
         for (int o = 0; o < m_NumOfObjects; o++)
         {
             cv::Scalar color (255.0 * g_Colors[o][0], 255.0 * g_Colors[o][1], 255.0 * g_Colors[o][2]);
-            vector<pcl::PointXYZ> tmp = m_Positions[v][m_Reader.getColorFrameCounter()][o];
+            vector<pcl::PointXYZ> tmp = m_Positions[v][m_pSequence->colorAt()][o];
             for (int p = 0; p < tmp.size(); p++)
             {
                 int coordX = vj*getResX()+tmp[p].x;
@@ -347,7 +348,7 @@ void SupervisedObjectPicker::draw(int wx, int wy)
     
     // Draw number of frame
 
-    string text = to_string(m_Reader.getColorFrameCounter());
+    string text = to_string(m_pSequence->colorAt());
     fontFace = cv::FONT_HERSHEY_SCRIPT_SIMPLEX;
     fontScale = 1;
     thickness = 3;
@@ -356,7 +357,7 @@ void SupervisedObjectPicker::draw(int wx, int wy)
     // Draw top rectangle
     int progressBarHeight = 7;
     cv::rectangle(concatColorTmp, cv::Point(0,0), cv::Point(m_ConcatColor.cols, progressBarHeight), cv::Scalar(0,0,0));
-    float percentage = ((float) m_Reader.getColorFrameCounter()) / m_Reader.getNumOfFrames();
+    float percentage = ((float) m_pSequence->colorAt()) / m_pSequence->getNumOfFrames();
     cv::rectangle(concatColorTmp, cv::Point(0,0), cv::Point(m_ConcatColor.cols * percentage, progressBarHeight), cv::Scalar(50, 255, 50), -1);
     
     // Display all
@@ -372,7 +373,7 @@ void SupervisedObjectPicker::mouseCallback(int event, int x, int y, int flags, v
         _this->mark(x,y);
         _this->draw(x,y);
         
-//        cout << "Left button of the mouse is clicked - position (" << viewX << ", " << viewY << ") - frame (" << _this->m_Reader.getColorFrameCounter() << ")" << endl;
+//        cout << "Left button of the mouse is clicked - position (" << viewX << ", " << viewY << ") - frame (" << _this->m_Reader.colorAt() << ")" << endl;
     }
     else if  ( event == cv::EVENT_RBUTTONDOWN )
     {
@@ -489,8 +490,8 @@ void SupervisedObjectPicker::run()
     cv::namedWindow("Pick");
     cv::setMouseCallback("Pick", SupervisedObjectPicker::mouseCallback, (void*) this);
     
-    bool bSuccess = m_Reader.nextColorPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB);
-    m_Reader.nextDepthPairedFrames(m_CurrentDepthFrameA, m_CurrentDepthFrameB);
+//    bool bSuccess = m_pSequence->nextColorPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB);
+//    m_Reader.nextDepthPairedFrames(m_CurrentDepthFrameA, m_CurrentDepthFrameB);
     int c = -1;
     bool quit = false;
     while (!quit)
@@ -498,23 +499,47 @@ void SupervisedObjectPicker::run()
         switch (c)
         {
             case 'a':
-                bSuccess = m_Reader.previousColorPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB);
+                if (m_pSequence->hasPreviousColorFrame())
+                {
+                    vector<ColorFrame> colorFrame(2);
+                    colorFrame = m_pSequence->previousColorFrame();
+                    m_CurrentColorFrameA = colorFrame[0];
+                    m_CurrentColorFrameB = colorFrame[1];
+                }
                 break;
             case 'd':
-                bSuccess = m_Reader.nextColorPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB);
+                if (m_pSequence->hasNextColorFrame())
+                {
+                    vector<ColorFrame> colorFrame(2);
+                    colorFrame = m_pSequence->nextColorFrame();
+                    m_CurrentColorFrameA = colorFrame[0];
+                    m_CurrentColorFrameB = colorFrame[1];
+                }
                 break;
             case 'A':
-                bSuccess = m_Reader.previousColorPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB, 10);
+                if (m_pSequence->hasPreviousColorFrame(10))
+                {
+                    vector<ColorFrame> colorFrame(2);
+                    colorFrame = m_pSequence->previousColorFrame();
+                    m_CurrentColorFrameA = colorFrame[0];
+                    m_CurrentColorFrameB = colorFrame[1];
+                }
                 break;
             case 'D':
-                bSuccess = m_Reader.nextColorPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB, 10);
+                if (m_pSequence->hasNextColorFrame(10))
+                {
+                    vector<ColorFrame> colorFrame(2);
+                    colorFrame = m_pSequence->nextColorFrame(10);
+                    m_CurrentColorFrameA = colorFrame[0];
+                    m_CurrentColorFrameB = colorFrame[1];
+                }
                 break;
             case 'l':
-                m_DOutput.read(m_ParentDir + "Data/ObjectLabels/", m_Reader.getSequenceDirName(), "csv");
+                m_DOutput.read(m_ParentDir + "Data/ObjectLabels/", m_pSequence->getName(), "csv");
                 mark(m_DOutput);
                 break;
             case 'k':
-                m_DOutput.write(m_ParentDir + "Data/ObjectLabels/", m_Reader.getSequenceDirName(), "csv");
+                m_DOutput.write(m_ParentDir + "Data/ObjectLabels/", m_pSequence->getName(), "csv");
                 break;
             case 27:
                 exit(0);
@@ -524,13 +549,10 @@ void SupervisedObjectPicker::run()
                 break;
         }
         
-            if (bSuccess)
-            {
-                cv::hconcat(m_CurrentColorFrameA.getMat(), m_CurrentColorFrameB.getMat(), m_ConcatColor);
-                cv::hconcat(m_CurrentDepthFrameA.getDepthMap(), m_CurrentDepthFrameB.getDepthMap(), m_ConcatDepth);
-                draw(m_X, m_Y);
-            }
+        cv::hconcat(m_CurrentColorFrameA.getMat(), m_CurrentColorFrameB.getMat(), m_ConcatColor);
+        cv::hconcat(m_CurrentDepthFrameA.getDepthMap(), m_CurrentDepthFrameB.getDepthMap(), m_ConcatDepth);
+        draw(m_X, m_Y);
 
-            c = cv::waitKey();
+        c = cv::waitKey();
     }
 }

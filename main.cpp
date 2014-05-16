@@ -2,6 +2,9 @@
 #include "SupervisedObjectPicker.h"
 
 #include <pcl/console/parse.h>
+#include <boost/assign/std/vector.hpp>
+
+using namespace boost::assign;
 
 #ifdef _WIN32
 string g_parentDir = "../";
@@ -18,7 +21,16 @@ int main (int argc, char** argv)
     int sid; // sequence autoincremental id
     if (pcl::console::parse (argc, argv, "-p", sid) >= 0)
     {
-        SupervisedObjectPicker pp(g_parentDir, sid, 2, 5);
+        string sequencesPath = g_parentDir + "Data/Sequences/";
+        vector<string> colorDirs;
+        colorDirs += "Color1/", "Color2/";
+        vector<string> depthDirs;
+        depthDirs += "Depth1/", "Depth2/";
+        
+        Reader reader (sequencesPath, colorDirs, depthDirs);
+        Sequence::Ptr seq = reader.getSequence(1);
+        
+        SupervisedObjectPicker pp(g_parentDir, seq, 2, 5);
         pp.run();
         
         return 0;

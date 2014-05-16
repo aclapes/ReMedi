@@ -11,13 +11,12 @@
 Sequence::Sequence()
 : m_ColorFrameCounter(-1), m_DepthFrameCounter(-1)
 {
-    
 }
 
 Sequence::Sequence(vector<vector<ColorFrame> > colorStream, vector<vector<DepthFrame> > depthStream)
 : m_ColorStream(colorStream), m_DepthStream(depthStream), m_ColorFrameCounter(-1), m_DepthFrameCounter(-1)
 {
-    
+    m_Delay.resize(m_ColorStream.size(), 0);
 }
 
 Sequence::Sequence(const Sequence& rhs)
@@ -34,25 +33,61 @@ Sequence& Sequence::operator=(const Sequence& rhs)
 {
     if (this != &rhs)
     {
+        m_Name = rhs.m_Name;
         m_ColorStream = rhs.m_ColorStream;
         m_DepthStream = rhs.m_DepthStream;
         m_ColorFrameCounter = rhs.m_ColorFrameCounter;
         m_DepthFrameCounter = rhs.m_DepthFrameCounter;
         m_InteractionLabels = rhs.m_InteractionLabels;
         m_ActionLabels = rhs.m_ActionLabels;
+        m_Delay = rhs.m_Delay;
     }
     
     return *this;
 }
 
+string Sequence::getName()
+{
+    return m_Name;
+}
+
+void Sequence::setName(string name)
+{
+    m_Name = name;
+}
+
 void Sequence::setColorStream(vector<vector<ColorFrame> > stream)
 {
     m_ColorStream = stream;
+    m_Delay.resize(m_ColorStream.size(), 0);
 }
 
 void Sequence::setDepthStream(vector<vector<DepthFrame> > stream)
 {
     m_DepthStream = stream;
+    m_Delay.resize(m_DepthStream.size(), 0);
+}
+
+void Sequence::addColorStreamView(vector<ColorFrame> stream)
+{
+    m_ColorStream.push_back(stream);
+    m_Delay.resize( (m_ColorStream.size() >= m_DepthStream.size() ) ? m_ColorStream.size() : m_DepthStream.size(), 0);
+}
+
+void Sequence::addDepthStreamView(vector<DepthFrame> stream)
+{
+    m_DepthStream.push_back(stream);
+    m_Delay.resize( (m_ColorStream.size() >= m_DepthStream.size() ) ? m_ColorStream.size() : m_DepthStream.size(), 0);
+}
+
+void Sequence::setColorStreamView(vector<ColorFrame> stream, int view)
+{
+    m_ColorStream[view] = stream;
+}
+
+void Sequence::setDepthStreamView(vector<DepthFrame> stream, int view)
+{
+    m_DepthStream[view] = stream;
 }
 
 void Sequence::addColorFrame(ColorFrame colorFrame, int view)
@@ -157,12 +192,12 @@ vector<DepthFrame> Sequence::previousDepthFrame(int step)
     return frame;
 }
 
-void sequence::setInteractionLabels(vector<unsigned char> labels)
+void Sequence::setInteractionLabels(vector<unsigned char> labels)
 {
     m_InteractionLabels = labels;
 }
 
-void sequence::setActionLabels(vector<unsigned char> labels)
+void Sequence::setActionLabels(vector<unsigned char> labels)
 {
     m_ActionLabels = labels;
 }
@@ -170,6 +205,16 @@ void sequence::setActionLabels(vector<unsigned char> labels)
 int Sequence::getNumOfFrames()
 {
     return m_DepthStream[0].size() - m_Delay[0];
+}
+
+int Sequence::colorAt()
+{
+    return m_ColorFrameCounter + m_Delay[0];
+}
+
+int Sequence::depthAt()
+{
+    return m_DepthFrameCounter + m_Delay[0];
 }
 
 void Sequence::setDelay(vector<int> delay)

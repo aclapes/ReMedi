@@ -62,7 +62,7 @@ Monitorizer& Monitorizer::operator=(const Monitorizer& rhs)
         m_CloudB = rhs.m_CloudB;
         
         m_CloudjectDetector = rhs.m_CloudjectDetector;
-        m_MotionSegmentator = rhs.m_MotionSegmentator;
+//        m_MotionSegmentator = rhs.m_MotionSegmentator;
         
         m_cloudjects = rhs.m_cloudjects; // yet present
         
@@ -453,7 +453,7 @@ void Monitorizer::setClusteringToleranceFactor(int factor)
     m_ClusterTolFactor = factor;
 }
 
-void Monitorizer::getDetectionOutput()
+DetectionOutput Monitorizer::getObjectDetectionOutput()
 {
-    
+    return m_CloudjectDetector.getDetectionOutput();
 }

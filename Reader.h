@@ -73,15 +73,15 @@ public:
 private:
 	// Private methods
     void loadDirectories(string parent, vector<string>& directories);
-    void loadFilenames(string dir, const char* filetype, vector<string>& filenames);
+    void loadFilesPaths(string dir, const char* filetype, vector<string>& filenames);
     void loadSequenceLabels(int s, vector<unsigned char>& interactions, vector<unsigned char>& actions);
     
 //	bool readNextColorFrame(string dataPath, string colorDir, vector<string> filenames, ColorFrame& cframe);
 //	bool readNextDepthFrame(string dataPath, string depthDir, vector<string> filenames, DepthFrame& dframe);
 //    bool readPreviousColorFrame(string dataPath, string colorDir, vector<string> filenames, ColorFrame& cframe);
 //	bool readPreviousDepthFrame(string dataPath, string depthDir, vector<string> filenames, DepthFrame& dframe);
-	bool readColorFrame(string dataPath, string colorDir, vector<string> filenames, int i, ColorFrame& cframe);
-	bool readDepthFrame(string dataPath, string depthDir, vector<string> filenames, int i, DepthFrame& dframe);
+	bool readColorFrame(vector<string> filesPaths, int f, ColorFrame& cframe);
+	bool readDepthFrame(vector<string> filesPaths, int f, DepthFrame& dframe);
 //    bool readColorFrame(string dataPath, string colorDir, string filename, ColorFrame& cframe);
 //	bool readDepthFrame(string dataPath, string depthDir, string filename, DepthFrame& dframe);
 
@@ -96,7 +96,7 @@ private:
     int m_SequenceCounter;
 
     vector<string>  m_ColorDirs, m_DepthDirs;
-    vector<vector<string> > m_ColorFilenames, m_DepthFilenames;
+    vector<vector<string> > m_ColorFilesPaths, m_DepthFilesPaths;
     
 //    int m_ColorFrameCounter, m_DepthFrameCounter;
     

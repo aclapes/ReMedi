@@ -52,7 +52,7 @@ CloudjectDetector& CloudjectDetector::operator=(const CloudjectDetector& rhs)
 
 void CloudjectDetector::clear()
 {
-    m_CloudjectHistory.clear();
+    m_CloudjectsHistory.clear();
     m_AppearedCloudjects.clear();
     m_DisappearedCloudjects.clear();
     m_DetectionOutput.clear();

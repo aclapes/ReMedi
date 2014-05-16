@@ -26,13 +26,19 @@ public:
     ~Sequence();
     Sequence& operator=(const Sequence& rhs);
     
+    void setName(string name);
+    string getName();
+    
     void addColorFrame(ColorFrame colorFrame, int view);
     void addColorFrame(vector<ColorFrame> colorFrame);
     void addDepthFrame(DepthFrame depthFrame, int view);
     void addDepthFrame(vector<DepthFrame> colorFrame);
     
-    void addColorStream(vector<ColorFrame> stream, int view);
-    void addDepthStream(vector<DepthFrame> stream, int view);
+    void addColorStreamView(vector<ColorFrame> stream);
+    void addDepthStreamView(vector<DepthFrame> stream);
+    
+    void setColorStreamView(vector<ColorFrame> stream, int view);
+    void setDepthStreamView(vector<DepthFrame> stream, int view);
 
     void setColorStream(vector<vector<ColorFrame> > stream);
     void setDepthStream(vector<vector<DepthFrame> > stream);
@@ -51,12 +57,16 @@ public:
     vector<DepthFrame> previousDepthFrame(int step = 1);
     
     int getNumOfFrames();
+    int colorAt();
+    int depthAt();
     
     void setDelay(vector<int> delay);
     
     typedef boost::shared_ptr<Sequence> Ptr;
     
 private:
+    string m_Name;
+    
     vector< vector<ColorFrame> > m_ColorStream;
     vector< vector<DepthFrame> > m_DepthStream;
     int m_ColorFrameCounter;

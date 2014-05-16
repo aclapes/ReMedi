@@ -41,8 +41,7 @@ private:
     int getResX();
     int getResY();
     
-    Reader m_Reader;
-    int m_sid;
+    Sequence::Ptr m_pSequence;
     
     string m_ParentDir;
     ColorFrame m_CurrentColorFrameA, m_CurrentColorFrameB;
@@ -62,13 +61,11 @@ private:
     vector<int>  m_PushedFrames;
     
     float m_Tol;
-    
-    vector< vector< vector< vector<pcl::PointXYZ> > > > m_Positions;
-    vector< vector < vector<pcl::PointXYZ> > > m_ClickedPositions;
-    vector< vector < vector< int > > > m_Presses;
-    
     int m_X, m_Y;
     
+    vector< vector < vector<pcl::PointXYZ> > > m_ClickedPositions;
+    vector< vector < vector< int > > > m_Presses;
+    vector< vector< vector< vector<pcl::PointXYZ> > > > m_Positions;
     DetectionOutput m_DOutput;
 };
 
