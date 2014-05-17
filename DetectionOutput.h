@@ -21,7 +21,7 @@ class DetectionOutput
 {
 public:
     DetectionOutput();
-    DetectionOutput(int nviews, int nframes, int nobjects, float tol);
+    DetectionOutput(int nviews, vector<int> nframes, int nobjects, float tol);
     DetectionOutput(vector< vector< vector< vector< pcl::PointXYZ > > > > positions);
     DetectionOutput(const DetectionOutput& rhs);
     ~DetectionOutput();
@@ -30,7 +30,7 @@ public:
     
     void setPositions(vector< vector< vector< vector< pcl::PointXYZ > > > > positions);
     int getNumOfViews();
-    int getNumOfFrames();
+    vector<int> getNumOfFrames();
     int getNumOfObjects();
 //    void setNumOfViews(int n);
 //    void setNumOfFrames(int n);
@@ -53,7 +53,7 @@ private:
     vector< vector< vector< vector<pcl::PointXYZ> > > > m_Positions;
 
     int m_NumOfViews;
-    int m_NumOfFrames;
+    vector<int> m_NumOfFrames;
     int m_NumOfObjects;
     float m_Tol; // do not add a new detection if there is another very close
 };

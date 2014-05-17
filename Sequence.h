@@ -56,11 +56,12 @@ public:
     vector<ColorFrame> previousColorFrame(int step = 1); // multi-view
     vector<DepthFrame> previousDepthFrame(int step = 1);
     
-    int getNumOfFrames();
-    int colorAt();
-    int depthAt();
+    int getNumOfViews();
+    vector<int> getNumOfFrames();
+    vector<int> colorAt();
+    vector<int> depthAt();
     
-    void setDelay(vector<int> delay);
+    void setDelays(vector<int> delays);
     
     typedef boost::shared_ptr<Sequence> Ptr;
     
@@ -69,13 +70,14 @@ private:
     
     vector< vector<ColorFrame> > m_ColorStream;
     vector< vector<DepthFrame> > m_DepthStream;
-    int m_ColorFrameCounter;
-    int m_DepthFrameCounter;
+    
+    vector<int> m_ColorFrameCounter;
+    vector<int> m_DepthFrameCounter;
     
     vector<unsigned char> m_InteractionLabels;
     vector<unsigned char> m_ActionLabels;
     
-    vector<int> m_Delay;
+    vector<int> m_Delays;
 };
 
 #endif /* defined(__remedi__Sequence__) */

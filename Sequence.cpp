@@ -9,14 +9,17 @@
 #include "Sequence.h"
 
 Sequence::Sequence()
-: m_ColorFrameCounter(-1), m_DepthFrameCounter(-1)
 {
 }
 
 Sequence::Sequence(vector<vector<ColorFrame> > colorStream, vector<vector<DepthFrame> > depthStream)
-: m_ColorStream(colorStream), m_DepthStream(depthStream), m_ColorFrameCounter(-1), m_DepthFrameCounter(-1)
+: m_ColorStream(colorStream), m_DepthStream(depthStream)
 {
-    m_Delay.resize(m_ColorStream.size(), 0);
+    assert(m_ColorStream.size() == m_DepthStream.size());
+    
+    m_ColorFrameCounter.resize(m_ColorStream.size(), -1);
+    m_DepthFrameCounter.resize(m_DepthStream.size(), -1);
+    m_Delays.resize(m_ColorStream.size(), 0);
 }
 
 Sequence::Sequence(const Sequence& rhs)
@@ -26,7 +29,6 @@ Sequence::Sequence(const Sequence& rhs)
 
 Sequence::~Sequence()
 {
-    
 }
 
 Sequence& Sequence::operator=(const Sequence& rhs)
@@ -40,7 +42,7 @@ Sequence& Sequence::operator=(const Sequence& rhs)
         m_DepthFrameCounter = rhs.m_DepthFrameCounter;
         m_InteractionLabels = rhs.m_InteractionLabels;
         m_ActionLabels = rhs.m_ActionLabels;
-        m_Delay = rhs.m_Delay;
+        m_Delays = rhs.m_Delays;
     }
     
     return *this;
@@ -59,25 +61,33 @@ void Sequence::setName(string name)
 void Sequence::setColorStream(vector<vector<ColorFrame> > stream)
 {
     m_ColorStream = stream;
-    m_Delay.resize(m_ColorStream.size(), 0);
+    
+    m_ColorFrameCounter.resize(m_ColorStream.size(), -1);
+    m_Delays.resize(m_ColorStream.size(), 0);
 }
 
 void Sequence::setDepthStream(vector<vector<DepthFrame> > stream)
 {
     m_DepthStream = stream;
-    m_Delay.resize(m_DepthStream.size(), 0);
+    
+    m_DepthFrameCounter.resize(m_DepthStream.size(), -1);
+    m_Delays.resize(m_DepthStream.size(), 0);
 }
 
 void Sequence::addColorStreamView(vector<ColorFrame> stream)
 {
     m_ColorStream.push_back(stream);
-    m_Delay.resize( (m_ColorStream.size() >= m_DepthStream.size() ) ? m_ColorStream.size() : m_DepthStream.size(), 0);
+    
+    m_ColorFrameCounter.resize((m_ColorStream.size() >= m_DepthStream.size()) ? m_ColorStream.size() : m_DepthStream.size(), -1);
+    m_Delays.resize((m_ColorStream.size() >= m_DepthStream.size() ) ? m_ColorStream.size() : m_DepthStream.size(), 0);
 }
 
 void Sequence::addDepthStreamView(vector<DepthFrame> stream)
 {
     m_DepthStream.push_back(stream);
-    m_Delay.resize( (m_ColorStream.size() >= m_DepthStream.size() ) ? m_ColorStream.size() : m_DepthStream.size(), 0);
+    
+    m_DepthFrameCounter.resize((m_ColorStream.size() >= m_DepthStream.size()) ? m_ColorStream.size() : m_DepthStream.size(), -1);
+    m_Delays.resize((m_ColorStream.size() >= m_DepthStream.size() ) ? m_ColorStream.size() : m_DepthStream.size(), 0);
 }
 
 void Sequence::setColorStreamView(vector<ColorFrame> stream, int view)
@@ -115,7 +125,7 @@ void Sequence::addDepthFrame(vector<DepthFrame> depthFrame)
 bool Sequence::hasNextColorFrame(int step)
 {
     for (int i = 0; i < m_ColorStream.size(); i++)
-        if (m_ColorFrameCounter + m_Delay[i] + step >= m_ColorStream[i].size() - 1)
+        if (m_ColorFrameCounter[i] + m_Delays[i] + step >= m_ColorStream[i].size() - 1)
             return false;
     
     return true;
@@ -124,7 +134,7 @@ bool Sequence::hasNextColorFrame(int step)
 bool Sequence::hasNextDepthFrame(int step)
 {
     for (int i = 0; i < m_DepthStream.size(); i++)
-        if (m_DepthFrameCounter + m_Delay[i] + step >= m_DepthStream[i].size() - 1)
+        if (m_DepthFrameCounter[i] + m_Delays[i] + step >= m_DepthStream[i].size() - 1)
             return false;
     
     return true;
@@ -132,22 +142,24 @@ bool Sequence::hasNextDepthFrame(int step)
 
 vector<ColorFrame> Sequence::nextColorFrame(int step)
 {
-     m_ColorFrameCounter += step;
+    for (int i = 0; i < m_ColorStream.size(); i++)
+        m_ColorFrameCounter[i] += step;
     
     vector<ColorFrame> frame;
     for (int i = 0; i < m_ColorStream.size(); i++)
-        frame.push_back(m_ColorStream[i][m_ColorFrameCounter + m_Delay[i]]);
+        frame.push_back(m_ColorStream[i][m_ColorFrameCounter[i] + m_Delays[i]]);
 
     return frame;
 }
 
 vector<DepthFrame> Sequence::nextDepthFrame(int step)
 {
-    m_DepthFrameCounter += step;
+    for (int i = 0; i < m_DepthStream.size(); i++)
+        m_DepthFrameCounter[i] += step;
     
     vector<DepthFrame> frame;
     for (int i = 0; i < m_DepthStream.size(); i++)
-        frame.push_back(m_DepthStream[i][m_DepthFrameCounter + m_Delay[i]]);
+        frame.push_back(m_DepthStream[i][m_DepthFrameCounter[i] + m_Delays[i]]);
     
     return frame;
 }
@@ -155,7 +167,7 @@ vector<DepthFrame> Sequence::nextDepthFrame(int step)
 bool Sequence::hasPreviousColorFrame(int step)
 {
     for (int i = 0; i < m_ColorStream.size(); i++)
-        if (m_ColorFrameCounter + m_Delay[i] - step < 0)
+        if (m_ColorFrameCounter[i] + m_Delays[i] - step < 0)
             return false;
     
     return true;
@@ -164,7 +176,7 @@ bool Sequence::hasPreviousColorFrame(int step)
 bool Sequence::hasPreviousDepthFrame(int step)
 {
     for (int i = 0; i < m_DepthStream.size(); i++)
-        if (m_DepthFrameCounter + m_Delay[i] - step < 0)
+        if (m_DepthFrameCounter[i] + m_Delays[i] - step < 0)
             return false;
     
     return true;
@@ -172,22 +184,24 @@ bool Sequence::hasPreviousDepthFrame(int step)
 
 vector<ColorFrame> Sequence::previousColorFrame(int step)
 {
-    m_ColorFrameCounter -= step;
+    for (int i = 0; i < m_ColorStream.size(); i++)
+        m_ColorFrameCounter[i] -= step;
     
     vector<ColorFrame> frame;
     for (int i = 0; i < m_ColorStream.size(); i++)
-        frame.push_back(m_ColorStream[i][m_ColorFrameCounter + m_Delay[i]]);
+        frame.push_back(m_ColorStream[i][m_ColorFrameCounter[i] + m_Delays[i]]);
     
     return frame;
 }
 
 vector<DepthFrame> Sequence::previousDepthFrame(int step)
 {
-    m_DepthFrameCounter -= step;
+    for (int i = 0; i < m_DepthStream.size(); i++)
+        m_DepthFrameCounter[i] -= step;
     
     vector<DepthFrame> frame;
     for (int i = 0; i < m_DepthStream.size(); i++)
-        frame.push_back(m_DepthStream[i][m_DepthFrameCounter + m_Delay[i]]);
+        frame.push_back(m_DepthStream[i][m_DepthFrameCounter[i] + m_Delays[i]]);
     
     return frame;
 }
@@ -202,22 +216,40 @@ void Sequence::setActionLabels(vector<unsigned char> labels)
     m_ActionLabels = labels;
 }
 
-int Sequence::getNumOfFrames()
+int Sequence::getNumOfViews()
 {
-    return m_DepthStream[0].size() - m_Delay[0];
+    return m_ColorStream.size();
 }
 
-int Sequence::colorAt()
+vector<int> Sequence::getNumOfFrames()
 {
-    return m_ColorFrameCounter + m_Delay[0];
+    vector<int> numOfFrames(m_ColorStream.size());
+    for (int i = 0; i < m_ColorStream.size(); i++)
+        numOfFrames[i] = m_ColorStream[i].size();
+    
+    return numOfFrames;
 }
 
-int Sequence::depthAt()
+vector<int> Sequence::colorAt()
 {
-    return m_DepthFrameCounter + m_Delay[0];
+    vector<int> colorFrameDelayedCounter(m_ColorStream.size());
+    
+    for (int i = 0; i < m_ColorStream.size(); i++)
+        colorFrameDelayedCounter[i] = m_ColorFrameCounter[i] + m_Delays[i];
+    
+    return colorFrameDelayedCounter;
 }
 
-void Sequence::setDelay(vector<int> delay)
+vector<int> Sequence::depthAt()
 {
-    m_Delay = delay;
+    vector<int> depthFrameDelayedCounter(m_DepthStream.size());
+    for (int i = 0; i < m_DepthStream.size(); i++)
+        depthFrameDelayedCounter[i] = m_DepthFrameCounter[i] + m_Delays[i];
+    
+    return depthFrameDelayedCounter;
+}
+
+void Sequence::setDelays(vector<int> delays)
+{
+    m_Delays = delays;
 }

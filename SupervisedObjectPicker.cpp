@@ -47,28 +47,15 @@ string g_ModelNames[] =
 
 SupervisedObjectPicker::SupervisedObjectPicker(string parentDir,
                                                Sequence::Ptr sequence,
-                                               int numOfViews, int numOfObjects)
-: m_pSequence(sequence), m_NumOfViews(numOfViews), m_NumOfObjects(numOfObjects),
-  m_Object(0), m_Tol(0.05)
+                                               int numOfObjects)
+: m_ParentDir(parentDir), m_pSequence(sequence), m_NumOfObjects(numOfObjects),
+ m_Object(0), m_Tol(0.05), m_X(0), m_Y(0)
 {
-//    m_ParentDir = parentDir;
-//    string sequencesPath = m_ParentDir + "Data/Sequences/";
-//    vector<string> colorDirs;
-//    colorDirs += "Color1/", "Color2/";
-//    vector<string> depthDirs;
-//    depthDirs += "Depth1/", "Depth2/";
-//    
-//    Reader reader( sequencesPath, colorDirs, depthDirs );
-    
-//    Sequence sequence;
-//    m_Reader.getSequence(m_sid, sequence);
-    m_NumOfFrames = m_pSequence->getNumOfFrames();
+    m_NumOfViews    = m_pSequence->getNumOfViews();
+    m_NumOfFrames   = m_pSequence->getNumOfFrames();
 
     m_ResY = 480;
     m_ResX = 640;
-    
-    m_X = 0;
-    m_Y = 0;
     
     m_Positions.resize(m_NumOfViews);
     m_ClickedPositions.resize(m_NumOfViews);
@@ -76,8 +63,8 @@ SupervisedObjectPicker::SupervisedObjectPicker(string parentDir,
     
     for (int i = 0; i < m_NumOfViews; i++)
     {
-        m_Positions[i].resize(m_NumOfFrames);
-        for (int j = 0; j < m_NumOfFrames; j++)
+        m_Positions[i].resize(m_NumOfFrames[i]);
+        for (int j = 0; j < m_NumOfFrames[i]; j++)
             m_Positions[i][j].resize(m_NumOfObjects);
     }
     
@@ -136,19 +123,19 @@ void SupervisedObjectPicker::mark(int wx, int wy)
     if (!found)
     {
         m_ClickedPositions[ptr][m_Object].push_back( pcl::PointXYZ(x, y, m_ConcatDepth.at<unsigned short>(wx,wy)) );
-        m_Presses[ptr][m_Object].push_back(m_pSequence->colorAt());
+        m_Presses[ptr][m_Object].push_back(m_pSequence->colorAt()[ptr]);
     }
     else
     {
         int begin, end;
-        if (m_Presses[ptr][m_Object][idx] <= m_pSequence->colorAt())
+        if (m_Presses[ptr][m_Object][idx] <= m_pSequence->colorAt()[ptr])
         {
             begin = m_Presses[ptr][m_Object][idx];
-            end = m_pSequence->colorAt();
+            end = m_pSequence->colorAt()[ptr];
         }
         else
         {
-            begin = m_pSequence->colorAt();
+            begin = m_pSequence->colorAt()[ptr];
             end = m_Presses[ptr][m_Object][idx];
         }
         
@@ -179,15 +166,15 @@ void SupervisedObjectPicker::remove(int wx, int wy)
     int ptr = i * m_NumOfViews + j;
     bool found = false;
     pcl::PointXYZ point;
-    for (int i = 0; i < m_Positions[ptr][m_pSequence->colorAt()][m_Object].size() && !found; i++)
+    for (int i = 0; i < m_Positions[ptr][m_pSequence->colorAt()[ptr]][m_Object].size() && !found; i++)
     {
-        found = sqrtf( powf(x - m_Positions[ptr][m_pSequence->colorAt()][m_Object][i].x, 2)
-                      + powf(y - m_Positions[ptr][m_pSequence->colorAt()][m_Object][i].y, 2) ) < 20;
+        found = sqrtf( powf(x - m_Positions[ptr][m_pSequence->colorAt()[ptr]][m_Object][i].x, 2)
+                      + powf(y - m_Positions[ptr][m_pSequence->colorAt()[ptr]][m_Object][i].y, 2) ) < 20;
         if (found)
-            point = m_Positions[ptr][m_pSequence->colorAt()][m_Object][i];
+            point = m_Positions[ptr][m_pSequence->colorAt()[ptr]][m_Object][i];
     }
     
-    for (int f = 0; f < m_pSequence->getNumOfFrames(); f++)
+    for (int f = 0; f < m_pSequence->getNumOfFrames()[ptr]; f++)
     {
         bool found = false;
         for (int i = 0; i < m_Positions[ptr][f][m_Object].size() && !found; i++)
@@ -210,8 +197,8 @@ void SupervisedObjectPicker::mark(DetectionOutput dout)
 {
     for (int v = 0; v < dout.getNumOfViews(); v++)
     {
-        m_Positions[v].resize(dout.getNumOfFrames());
-        for (int f = 0; f < dout.getNumOfFrames(); f++)
+        m_Positions[v].resize(dout.getNumOfFrames()[v]);
+        for (int f = 0; f < dout.getNumOfFrames()[v]; f++)
         {
             m_Positions[v][f].resize(dout.getNumOfObjects());
         }
@@ -219,7 +206,7 @@ void SupervisedObjectPicker::mark(DetectionOutput dout)
     
     // Draw set points
     for (int v = 0; v < dout.getNumOfViews(); v++)
-        for (int f = 0; f < dout.getNumOfFrames(); f++)
+        for (int f = 0; f < dout.getNumOfFrames()[v]; f++)
             for (int o = 0; o < dout.getNumOfObjects(); o++)
             {
                 vector<pcl::PointXYZ> points;
@@ -261,7 +248,7 @@ void SupervisedObjectPicker::draw(int wx, int wy)
         for (int o = 0; o < m_NumOfObjects; o++)
         {
             cv::Scalar color (255.0 * g_Colors[o][0], 255.0 * g_Colors[o][1], 255.0 * g_Colors[o][2]);
-            vector<pcl::PointXYZ> tmp = m_Positions[v][m_pSequence->colorAt()][o];
+            vector<pcl::PointXYZ> tmp = m_Positions[v][m_pSequence->colorAt()[v]][o];
             for (int p = 0; p < tmp.size(); p++)
             {
                 int coordX = vj*getResX()+tmp[p].x;
@@ -347,18 +334,27 @@ void SupervisedObjectPicker::draw(int wx, int wy)
     }
     
     // Draw number of frame
-
-    string text = to_string(m_pSequence->colorAt());
     fontFace = cv::FONT_HERSHEY_SCRIPT_SIMPLEX;
     fontScale = 1;
     thickness = 3;
-    cv::putText(concatColorTmp, text, cv::Point(0, this->getResY() - 1), fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
+    cv::putText(concatColorTmp, to_string(m_pSequence->colorAt()[0]), cv::Point(0, this->getResY() - 1), fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
+    cv::putText(concatColorTmp, to_string(m_pSequence->colorAt()[1]), cv::Point(this->getResX(), this->getResY() - 1), fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
     
-    // Draw top rectangle
+    
+    // Draw top rectangles
     int progressBarHeight = 7;
-    cv::rectangle(concatColorTmp, cv::Point(0,0), cv::Point(m_ConcatColor.cols, progressBarHeight), cv::Scalar(0,0,0));
-    float percentage = ((float) m_pSequence->colorAt()) / m_pSequence->getNumOfFrames();
-    cv::rectangle(concatColorTmp, cv::Point(0,0), cv::Point(m_ConcatColor.cols * percentage, progressBarHeight), cv::Scalar(50, 255, 50), -1);
+    float percentage;
+    
+    int widthA = m_CurrentColorFrameA.getMat().cols;
+    int widthB = m_CurrentColorFrameB.getMat().cols;
+    
+    cv::rectangle(concatColorTmp, cv::Point(0,0), cv::Point(widthA, progressBarHeight), cv::Scalar(0,0,0));
+    percentage = ((float) m_pSequence->colorAt()[0]) / m_pSequence->getNumOfFrames()[0];
+    cv::rectangle(concatColorTmp, cv::Point(0,0), cv::Point(widthA * percentage, progressBarHeight), cv::Scalar(50, 255, 50), -1);
+    
+    cv::rectangle(concatColorTmp, cv::Point(widthA,0), cv::Point(widthA + widthB, progressBarHeight), cv::Scalar(0,0,0));
+    percentage = ((float) m_pSequence->colorAt()[1]) / m_pSequence->getNumOfFrames()[1];
+    cv::rectangle(concatColorTmp, cv::Point(widthA,0), cv::Point(widthA + widthB * percentage, progressBarHeight), cv::Scalar(50, 255, 50), -1);
     
     // Display all
     cv::imshow("Pick", concatColorTmp);
@@ -373,7 +369,7 @@ void SupervisedObjectPicker::mouseCallback(int event, int x, int y, int flags, v
         _this->mark(x,y);
         _this->draw(x,y);
         
-//        cout << "Left button of the mouse is clicked - position (" << viewX << ", " << viewY << ") - frame (" << _this->m_Reader.colorAt() << ")" << endl;
+//        cout << "Left button of the mouse is clicked - position (" << viewX << ", " << viewY << ") - frame (" << _this->m_Reader.colorAt()[ptr] << ")" << endl;
     }
     else if  ( event == cv::EVENT_RBUTTONDOWN )
     {
@@ -396,7 +392,7 @@ void SupervisedObjectPicker::mouseCallback(int event, int x, int y, int flags, v
     }
 }
 
-void SupervisedObjectPicker::keyboardHandler(int key)
+void SupervisedObjectPicker::modelHandler(int key)
 {
     if (key >= '0' && key <= '9')
     {
@@ -485,54 +481,75 @@ void SupervisedObjectPicker::keyboardHandler(int key)
 //    cout << "Loaded" << endl;
 //}
 
+void SupervisedObjectPicker::nextPairedFrames(ColorFrame& color1, ColorFrame& color2,
+                                              DepthFrame& depth1, DepthFrame& depth2,
+                                              int step)
+{
+    if (m_pSequence->hasNextColorFrame(step))
+    {
+        vector<ColorFrame> colorFrame = m_pSequence->nextColorFrame(step);
+        color1 = colorFrame[0].getMat();
+        color2 = colorFrame[1].getMat();
+    }
+    
+    if (m_pSequence->hasNextDepthFrame(step))
+    {
+        vector<DepthFrame> depthFrame = m_pSequence->nextDepthFrame(step);
+        depth1 = depthFrame[0];
+        depth2 = depthFrame[1];
+    }
+}
+
+void SupervisedObjectPicker::prevPairedFrames(ColorFrame& color1, ColorFrame& color2,
+                                              DepthFrame& depth1, DepthFrame& depth2,
+                                              int step)
+{
+    if (m_pSequence->hasPreviousColorFrame(step))
+    {
+        vector<ColorFrame> colorFrame = m_pSequence->previousColorFrame(step);
+        color1 = colorFrame[0];
+        color2 = colorFrame[1];
+    }
+    
+    if (m_pSequence->hasPreviousDepthFrame(step))
+    {
+        vector<DepthFrame> depthFrame = m_pSequence->previousDepthFrame(step);
+        depth1 = depthFrame[0];
+        depth2 = depthFrame[1];
+    }
+}
+
 void SupervisedObjectPicker::run()
 {
     cv::namedWindow("Pick");
     cv::setMouseCallback("Pick", SupervisedObjectPicker::mouseCallback, (void*) this);
     
-//    bool bSuccess = m_pSequence->nextColorPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB);
-//    m_Reader.nextDepthPairedFrames(m_CurrentDepthFrameA, m_CurrentDepthFrameB);
-    int c = -1;
+    nextPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB,
+                     m_CurrentDepthFrameA, m_CurrentDepthFrameB);
+    
+    int c;
     bool quit = false;
     while (!quit)
     {
         switch (c)
         {
             case 'a':
-                if (m_pSequence->hasPreviousColorFrame())
-                {
-                    vector<ColorFrame> colorFrame(2);
-                    colorFrame = m_pSequence->previousColorFrame();
-                    m_CurrentColorFrameA = colorFrame[0];
-                    m_CurrentColorFrameB = colorFrame[1];
-                }
+                prevPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB,
+                                 m_CurrentDepthFrameA, m_CurrentDepthFrameB);
                 break;
             case 'd':
-                if (m_pSequence->hasNextColorFrame())
-                {
-                    vector<ColorFrame> colorFrame(2);
-                    colorFrame = m_pSequence->nextColorFrame();
-                    m_CurrentColorFrameA = colorFrame[0];
-                    m_CurrentColorFrameB = colorFrame[1];
-                }
+                nextPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB,
+                                 m_CurrentDepthFrameA, m_CurrentDepthFrameB);
                 break;
             case 'A':
-                if (m_pSequence->hasPreviousColorFrame(10))
-                {
-                    vector<ColorFrame> colorFrame(2);
-                    colorFrame = m_pSequence->previousColorFrame();
-                    m_CurrentColorFrameA = colorFrame[0];
-                    m_CurrentColorFrameB = colorFrame[1];
-                }
+                prevPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB,
+                                 m_CurrentDepthFrameA, m_CurrentDepthFrameB,
+                                 10);
                 break;
             case 'D':
-                if (m_pSequence->hasNextColorFrame(10))
-                {
-                    vector<ColorFrame> colorFrame(2);
-                    colorFrame = m_pSequence->nextColorFrame(10);
-                    m_CurrentColorFrameA = colorFrame[0];
-                    m_CurrentColorFrameB = colorFrame[1];
-                }
+                nextPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB,
+                                 m_CurrentDepthFrameA, m_CurrentDepthFrameB,
+                                 10);
                 break;
             case 'l':
                 m_DOutput.read(m_ParentDir + "Data/ObjectLabels/", m_pSequence->getName(), "csv");
@@ -545,7 +562,7 @@ void SupervisedObjectPicker::run()
                 exit(0);
                 break;
             default:
-                keyboardHandler(c);
+                modelHandler(c);
                 break;
         }
         

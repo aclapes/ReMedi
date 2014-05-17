@@ -20,15 +20,20 @@
 class SupervisedObjectPicker
 {
 public:
-    SupervisedObjectPicker(string parentDir, Sequence::Ptr sequence,
-                           int numOfViews, int numOfObjects);
+    SupervisedObjectPicker(string parentDir, Sequence::Ptr sequence, int numOfObjects);
     
     void run();
     
 private:
     // Mouse actions
     static void mouseCallback(int event, int x, int y, int flags, void* userdata);
-    void keyboardHandler(int key);
+    void modelHandler(int key);
+    void nextPairedFrames(ColorFrame& color1, ColorFrame& color2,
+                          DepthFrame& depth1, DepthFrame& depth2,
+                          int step = 1);
+    void prevPairedFrames(ColorFrame& color1, ColorFrame& color2,
+                          DepthFrame& depth1, DepthFrame& depth2,
+                          int step = 1);
     
     void mark(int wx, int wy);
     void mark(DetectionOutput dout);
@@ -48,11 +53,12 @@ private:
     DepthFrame m_CurrentDepthFrameA, m_CurrentDepthFrameB;
     
     int m_NumOfViews;
-    int m_NumOfFrames;
+    vector<int> m_NumOfFrames;
     int m_NumOfObjects;
     
     cv::Mat m_ConcatColor;
     cv::Mat m_ConcatDepth;
+    int m_Delays;
     
     int m_ResX, m_ResY;
     

@@ -42,6 +42,8 @@ public:
     void getSequence(int i, Sequence& sequence);
     Sequence::Ptr getNextSequence();
     void getNextSequence(Sequence& sequence);
+    
+    void setDelays(vector<int> delays);
 
     
 //	void loadColorStreams(string dataPath, string colorDir1, string colorDir2);
@@ -97,6 +99,8 @@ private:
 
     vector<string>  m_ColorDirs, m_DepthDirs;
     vector<vector<string> > m_ColorFilesPaths, m_DepthFilesPaths;
+    
+    vector<int> m_Delays;
     
 //    int m_ColorFrameCounter, m_DepthFrameCounter;
     

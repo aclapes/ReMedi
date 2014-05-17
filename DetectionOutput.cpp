@@ -18,15 +18,15 @@ DetectionOutput::DetectionOutput()
     
 }
 
-DetectionOutput::DetectionOutput(int nviews, int nframes, int nobjects, float tol)
+DetectionOutput::DetectionOutput(int nviews, vector<int> nframes, int nobjects, float tol)
 : m_NumOfViews(nviews), m_NumOfFrames(nframes), m_NumOfObjects(nobjects), m_Tol(tol)
 {
     m_Positions.resize(m_NumOfViews);
     
     for (int i = 0; i < m_NumOfViews; i++)
     {
-        m_Positions[i].resize(m_NumOfFrames);
-        for (int j = 0; j < m_NumOfFrames; j++)
+        m_Positions[i].resize(m_NumOfFrames[i]);
+        for (int j = 0; j < m_NumOfFrames[i]; j++)
         {
             m_Positions[i][j].resize(m_NumOfObjects);
         }
@@ -56,7 +56,8 @@ DetectionOutput& DetectionOutput::operator=(const DetectionOutput& rhs)
         if (m_Positions.size() > 0)
         {
             m_NumOfViews = m_Positions.size();
-            m_NumOfFrames = m_Positions[0].size();
+            for (int i = 0; i < m_NumOfViews; i++)
+                m_NumOfFrames.push_back(m_Positions[i].size());
             m_NumOfObjects = m_Positions[0][0].size();
         }
         m_Tol = rhs.m_Tol;
@@ -80,7 +81,8 @@ void DetectionOutput::setPositions(vector<vector<vector<vector<pcl::PointXYZ > >
     
     // Set important variables
     m_NumOfViews = m_Positions.size();
-    m_NumOfFrames = m_Positions[0].size();
+    for (int i = 0; i < m_NumOfViews; i++)
+        m_NumOfFrames.push_back(m_Positions[i].size());
     m_NumOfObjects = m_Positions[0][0].size();
 }
 
@@ -89,7 +91,7 @@ int DetectionOutput::getNumOfViews()
     return m_NumOfViews;
 }
 
-int DetectionOutput::getNumOfFrames()
+vector<int> DetectionOutput::getNumOfFrames()
 {
     return m_NumOfFrames;
 }
@@ -161,8 +163,9 @@ void DetectionOutput::get(int view, int frame, int object, vector<pcl::PointXYZ>
 void DetectionOutput::clear()
 {
     m_Positions.clear();
+    
     m_NumOfViews = 0;
-    m_NumOfFrames = 0;
+    m_NumOfFrames.clear();
     m_NumOfObjects = 0;
 }
 
@@ -172,10 +175,11 @@ void DetectionOutput::write(string path, string filename, string extension)
     for (int v = 0; v < m_NumOfViews; v++)
     {
         ofstream outFile;
-        outFile.open(path + filename + "_" + to_string(v) + "." + extension, ios::out);
+        string outputPath = path + filename + "_" + to_string(v) + "." + extension;
+        outFile.open(outputPath, ios::out);
         
         // create two view files
-        for (int f = 0; f < m_NumOfFrames; f++)
+        for (int f = 0; f < m_NumOfFrames[v]; f++)
         {
             for (int o = 0; o < m_NumOfObjects; o++)
             {
@@ -202,8 +206,8 @@ void DetectionOutput::read(string path, string filename, string extension)
     
     for (int i = 0; i < m_NumOfViews; i++)
     {
-        m_Positions[i].resize(m_NumOfFrames);
-        for (int j = 0; j < m_NumOfFrames; j++)
+        m_Positions[i].resize(m_NumOfFrames[i]);
+        for (int j = 0; j < m_NumOfFrames[i]; j++)
         {
             m_Positions[i][j].resize(m_NumOfObjects);
         }

@@ -22,15 +22,20 @@ int main (int argc, char** argv)
     if (pcl::console::parse (argc, argv, "-p", sid) >= 0)
     {
         string sequencesPath = g_parentDir + "Data/Sequences/";
+        
         vector<string> colorDirs;
         colorDirs += "Color1/", "Color2/";
-        vector<string> depthDirs;
+        vector<string > depthDirs;
         depthDirs += "Depth1/", "Depth2/";
         
         Reader reader (sequencesPath, colorDirs, depthDirs);
+        vector<int> delays;
+        delays += 2,0;
+        reader.setDelays(delays);
+        
         Sequence::Ptr seq = reader.getSequence(1);
         
-        SupervisedObjectPicker pp(g_parentDir, seq, 2, 5);
+        SupervisedObjectPicker pp(g_parentDir, seq, 5);
         pp.run();
         
         return 0;

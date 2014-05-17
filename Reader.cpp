@@ -151,6 +151,8 @@ void Reader::getSequence(int s, Sequence& sequence)
         sequence.addDepthStreamView(depthFrames);
     }
     
+    sequence.setDelays(m_Delays);
+    
     // Labels
     vector<unsigned char> interactions, actions;
     loadSequenceLabels(s, interactions, actions);
@@ -160,12 +162,21 @@ void Reader::getSequence(int s, Sequence& sequence)
 
 Sequence::Ptr Reader::getNextSequence()
 {
+    Sequence::Ptr pSequence (new Sequence);
     
+    getNextSequence(*pSequence);
+    
+    return pSequence;
 }
 
 void Reader::getNextSequence(Sequence& sequence)
 {
-    
+    getSequence(m_SequenceCounter++, sequence);
+}
+
+void Reader::setDelays(vector<int> delays)
+{
+    m_Delays = delays;
 }
 
 bool Reader::hasNextSequence()
