@@ -216,6 +216,24 @@ void Sequence::setActionLabels(vector<unsigned char> labels)
     m_ActionLabels = labels;
 }
 
+vector<ColorFrame> Sequence::getColorFrame(int i)
+{
+    vector<ColorFrame> frame;
+    for (int v = 0; v < m_ColorStream.size(); v++)
+        frame.push_back(m_ColorStream[v][i]);
+    
+    return frame;
+}
+
+vector<DepthFrame> Sequence::getDepthFrame(int i)
+{
+    vector<DepthFrame> frame;
+    for (int v = 0; v < m_DepthStream.size(); v++)
+        frame.push_back(m_DepthStream[v][i]);
+    
+    return frame;
+}
+
 int Sequence::getNumOfViews()
 {
     return m_ColorStream.size();

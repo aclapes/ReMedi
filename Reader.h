@@ -38,6 +38,8 @@ public:
     bool hasNextSequence();
     bool hasSequence(int s);
     
+    void setSequence(int i);
+    
     Sequence::Ptr getSequence(int i);
     void getSequence(int i, Sequence& sequence);
     Sequence::Ptr getNextSequence();
@@ -76,7 +78,7 @@ private:
 	// Private methods
     void loadDirectories(string parent, vector<string>& directories);
     void loadFilesPaths(string dir, const char* filetype, vector<string>& filenames);
-    void loadSequenceLabels(int s, vector<unsigned char>& interactions, vector<unsigned char>& actions);
+    void loadSequenceLabels(int length, vector<unsigned char>& interactions, vector<unsigned char>& actions);
     
 //	bool readNextColorFrame(string dataPath, string colorDir, vector<string> filenames, ColorFrame& cframe);
 //	bool readNextDepthFrame(string dataPath, string depthDir, vector<string> filenames, DepthFrame& dframe);

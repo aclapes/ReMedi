@@ -101,6 +101,8 @@ public:
     PointT getLeftRefPoint();
     PointT getRightRefPoint();
     
+    typedef boost::shared_ptr<InteractiveRegisterer> Ptr;
+    
 private:
     void find_transformation (const PointCloudPtr, const PointCloudPtr, Eigen::Matrix4f&);
 //    void align (const PointCloudPtr, const PointCloudPtr,

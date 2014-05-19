@@ -9,8 +9,10 @@ class BackgroundSubtractor
 {
 public:
 	BackgroundSubtractor(int, int);
+    BackgroundSubtractor(const BackgroundSubtractor& rhs);
 	~BackgroundSubtractor(void);
     
+    BackgroundSubtractor& operator=(const BackgroundSubtractor& rhs);
 	void operator()(DepthFrame, float alpha = 0);
 	void operator()(DepthFrame, DepthFrame, float alpha = 0);
 
@@ -18,6 +20,8 @@ public:
 
 	void subtract(DepthFrame, DepthFrame&);
 	void subtract(DepthFrame, DepthFrame, DepthFrame&, DepthFrame&);
+    
+    typedef boost::shared_ptr<BackgroundSubtractor> Ptr;
 
 private:
 	void operator()(cv::BackgroundSubtractorMOG2*, DepthFrame&, float alpha = 0);

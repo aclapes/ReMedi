@@ -105,17 +105,29 @@ Reader& Reader::operator=(const Reader& rhs)
     return *this;
 }
 
-Sequence::Ptr Reader::getSequence(int i)
+void Reader::setSequence(int i)
+{
+    m_SequenceCounter = i;
+}
+
+Sequence::Ptr Reader::getSequence(int s)
 {
     Sequence::Ptr pSequence (new Sequence);
     
-    getSequence(i, *pSequence);
+    if (hasSequence(s))
+    {
+        m_SequenceCounter = s;
+        getSequence(m_SequenceCounter, *pSequence);
+    }
     
     return pSequence;
 }
 
 void Reader::getSequence(int s, Sequence& sequence)
 {
+    if (s != m_SequenceCounter && hasSequence(s))
+        m_SequenceCounter = s;
+    
     sequence.setName(m_SequencesDirs[s]);
     
     // Stream
@@ -154,10 +166,14 @@ void Reader::getSequence(int s, Sequence& sequence)
     sequence.setDelays(m_Delays);
     
     // Labels
+    
     vector<unsigned char> interactions, actions;
-    loadSequenceLabels(s, interactions, actions);
-    sequence.setInteractionLabels(interactions);
-    sequence.setActionLabels(actions);
+    loadSequenceLabels(sequence.getNumOfFrames()[0], interactions, actions);
+    
+    if (interactions.size() > 0)
+        sequence.setInteractionLabels(interactions);
+    if (actions.size() > 0)
+        sequence.setActionLabels(actions);
 }
 
 Sequence::Ptr Reader::getNextSequence()
@@ -171,7 +187,7 @@ Sequence::Ptr Reader::getNextSequence()
 
 void Reader::getNextSequence(Sequence& sequence)
 {
-    getSequence(m_SequenceCounter++, sequence);
+    getSequence(++m_SequenceCounter, sequence);
 }
 
 void Reader::setDelays(vector<int> delays)
@@ -181,7 +197,7 @@ void Reader::setDelays(vector<int> delays)
 
 bool Reader::hasNextSequence()
 {
-    return m_SequenceCounter >= 0 && m_SequenceCounter < m_SequencesDirs.size();
+    return ((m_SequenceCounter + 1) >= 0) && ((m_SequenceCounter + 1) < m_SequencesDirs.size());
 }
 
 bool Reader::hasSequence(int i)
@@ -189,22 +205,21 @@ bool Reader::hasSequence(int i)
     return i >= 0 && i < m_SequencesDirs.size();
 }
 
-void Reader::loadSequenceLabels(int sid, vector<unsigned char>& interactions, vector<unsigned char>& actions)
+void Reader::loadSequenceLabels(int length, vector<unsigned char>& interactions, vector<unsigned char>& actions)
 {
     if (m_LabelsPath.compare("") == 0)
-    {
         return;
-    }
-    
-    interactions = vector<unsigned char>(m_ColorFilesPaths[0].size(), 0);
-    actions = vector<unsigned char>(m_ColorFilesPaths[0].size(), 0);
 
-    std::ifstream infile(m_LabelsPath + m_SequencesDirs[m_SequenceCounter] + ".csv");
+    string sequenceDir = m_SequencesDirs[m_SequenceCounter];
+    std::ifstream infile(m_LabelsPath + sequenceDir + ".csv");
     if (!infile.is_open())
     {
         cerr << "ERROR: file doesn't exist." << endl;
         return;
     }
+    
+    interactions = vector<unsigned char>(length, 0);
+    actions = vector<unsigned char>(length, 0);
     
     string cat, subcat;
     int vFrame, wFrameIni, wFrameEnd, val;

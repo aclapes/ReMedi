@@ -12,9 +12,29 @@ BackgroundSubtractor::BackgroundSubtractor(int nFrames, int nmixtures) : m_NFram
 	m_pSubtractorB->set("backgroundRatio", 0.999);
 }
 
+BackgroundSubtractor::BackgroundSubtractor(const BackgroundSubtractor& rhs)
+{
+    *this = rhs;
+}
 
 BackgroundSubtractor::~BackgroundSubtractor(void)
 {
+    delete m_pSubtractorA;
+    delete m_pSubtractorB;
+}
+
+
+BackgroundSubtractor& BackgroundSubtractor::operator=(const BackgroundSubtractor& rhs)
+{
+    if (this != &rhs)
+    {
+        m_pSubtractorA = rhs.m_pSubtractorA;
+        m_pSubtractorB = rhs.m_pSubtractorB;
+        
+        m_NFrames = rhs.m_NFrames;
+    }
+    
+    return *this;
 }
 
 

@@ -25,8 +25,8 @@ public:
     enum Action { TAKINGPILL = 0, EATING = 1, READING = 2, DRINKING = 3 };
     
 private:
-	void modelBackground(Reader reader, BackgroundSubtractor& bs);
-	void interactWithRegisterer(Reader reader, InteractiveRegisterer& registerer);
+	void modelBackground(Sequence::Ptr pSequence, BackgroundSubtractor& bs);
+	void interactWithRegisterer(Sequence::Ptr pSequence, InteractiveRegisterer& registerer);
 	void modelTablePlanes(pcl::PointCloud<pcl::PointXYZ>::Ptr pRegisteredCloudA,
                           pcl::PointCloud<pcl::PointXYZ>::Ptr pRegisteredCloudB,
                           TableModeler& tableModeler);

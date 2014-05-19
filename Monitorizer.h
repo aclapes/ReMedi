@@ -8,6 +8,7 @@
 #include <pcl/point_types.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
+#include "BackgroundSubtractor.h"
 #include "InteractiveRegisterer.h"
 #include "TableModeler.h"
 #include "DepthFrame.h"
@@ -20,6 +21,7 @@
 #include "MonitorizerParams.hpp"
 
 #include "conversion.h"
+#include "Sequence.h"
 #include "DetectionOutput.h"
 
 using namespace std;
@@ -33,32 +35,35 @@ class Monitorizer
     typedef boost::shared_ptr<Cloudject> CloudjectPtr;
 
 public:
-	Monitorizer(InteractiveRegisterer ir, TableModeler tm, CloudjectDetector cd);
+	Monitorizer(BackgroundSubtractor::Ptr pBS, InteractiveRegisterer::Ptr pIR,
+                TableModeler::Ptr pTM, CloudjectDetector::Ptr pCD);
 	Monitorizer(const Monitorizer& rhs);
 	~Monitorizer(void);
     Monitorizer& operator=(const Monitorizer& rhs);
     void clear();
     
-	void setParams(MonitorizerParams);
+    void setSequence(Sequence::Ptr pSequence);
+    void setParams(MonitorizerParams params);
     void setLeafSize(float leafSize);
     void setClusteringToleranceFactor(int factor);
-
-	void monitor(DepthFrame, DepthFrame);
-    void display();
+    void setVisualization(bool visualize = false);
+    
+	void monitor(DetectionOutput& output);
+    void process(DepthFrame dFrameA, DepthFrame dFrameB);
 
 	void updateFrameHistory(DepthFrame, DepthFrame);
 	bool isHistoryComplete();
 
 	void bufferDepthFrame(std::vector<DepthFrame>&, DepthFrame);
 	bool isBufferFilled(std::vector<DepthFrame>);
-
-	void visualizeCloudjects(pcl::visualization::PCLVisualizer::Ptr pViz);
     
     DetectionOutput getObjectDetectionOutput();
-
+    
 private:
 	void segmentMotion(float, cv::Mat&, cv::Mat&); // threshold and motion mask
 	void segmentMotionInView(std::vector<DepthFrame>, float, cv::Mat&);
+    
+    void visualize();
 
 	// Temporal coherence per pixel segmentation
 //	void segmentPerPixelStatics(cv::Mat&, cv::Mat&, float);
@@ -85,12 +90,18 @@ private:
                        float leafSize = .005f);
     
 	// Members
+    Sequence::Ptr m_pSequence;
 	MonitorizerParams m_Params;
 
-	InteractiveRegisterer m_ir;
-	TableModeler m_tm;
+    BackgroundSubtractor::Ptr m_pBS;
+    InteractiveRegisterer::Ptr m_pIR;
+    TableModeler::Ptr m_pTM;
+    CloudjectDetector::Ptr m_pCloudjectDetector;
+    //	MotionSegmentator m_MotionSegmentator;
+    
+    pcl::visualization::PCLVisualizer::Ptr m_pViz;
+    bool m_bVisualize;
 
-	pcl::visualization::PCLVisualizer::Ptr m_pViz;
 	int m_SceneVp;
 	int m_ObjectsVpA, m_ObjectsVpB;
 
@@ -99,9 +110,6 @@ private:
 
 	PointCloudPtr m_CloudA;
 	PointCloudPtr m_CloudB;
-
-	CloudjectDetector m_CloudjectDetector;
-//	MotionSegmentator m_MotionSegmentator;
 
 	std::vector<Cloudject> m_cloudjects; // yet present
 

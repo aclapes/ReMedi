@@ -56,6 +56,9 @@ public:
     vector<ColorFrame> previousColorFrame(int step = 1); // multi-view
     vector<DepthFrame> previousDepthFrame(int step = 1);
     
+    vector<ColorFrame> getColorFrame(int i); // multi-view
+    vector<DepthFrame> getDepthFrame(int i);
+    
     int getNumOfViews();
     vector<int> getNumOfFrames();
     vector<int> colorAt();

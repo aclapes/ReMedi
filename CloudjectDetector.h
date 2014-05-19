@@ -67,6 +67,8 @@ public:
     
     DetectionOutput getDetectionOutput();
     
+    typedef boost::shared_ptr<CloudjectDetector> Ptr;
+    
 private:
 	// Methods
     void findInliers(vector<PointCloudPtr>, vector<PointCloudPtr>, vector<PointCloudPtr>&);
