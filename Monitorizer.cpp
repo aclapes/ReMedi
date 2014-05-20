@@ -286,8 +286,8 @@ void Monitorizer::visualize()
 //}
 
 
-//void Monitorizer::segmentStatics(vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> candidatesA, vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> candidatesB,
-//	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& staticsA, vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& staticsB, float thresh)
+//void Monitorizer::segmentStatics(vector<pcl::PointCloud<PointT>::Ptr> candidatesA, vector<pcl::PointCloud<PointT>::Ptr> candidatesB,
+//	vector<pcl::PointCloud<PointT>::Ptr>& staticsA, vector<pcl::PointCloud<PointT>::Ptr>& staticsB, float thresh)
 //{
 //	segmentStaticsInView(candidatesA, m_centroidsA, staticsA, thresh);
 //	segmentStaticsInView(candidatesB, m_centroidsB, staticsB, thresh);
@@ -295,9 +295,9 @@ void Monitorizer::visualize()
 //
 //
 //void Monitorizer::segmentStaticsInView( 
-//	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> candidates,
+//	vector<pcl::PointCloud<PointT>::Ptr> candidates,
 //	vector<vector<Eigen::Vector4f> >& centroids,
-//	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& statics, float thresh)
+//	vector<pcl::PointCloud<PointT>::Ptr>& statics, float thresh)
 //{
 //	for (int i = 0; i < centroids[centroids.size()-1].size(); i++)
 //	{
@@ -325,7 +325,7 @@ void Monitorizer::visualize()
 //}
 
 
-void Monitorizer::extractClusters(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB, vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clustersA, vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clustersB, float leafSize)
+void Monitorizer::extractClusters(pcl::PointCloud<PointT>::Ptr pCloudA, pcl::PointCloud<PointT>::Ptr pCloudB, vector<pcl::PointCloud<PointT>::Ptr>& clustersA, vector<pcl::PointCloud<PointT>::Ptr>& clustersB, float leafSize)
 {
 	extractClustersFromView(pCloudA, clustersA, leafSize);
 	extractClustersFromView(pCloudB, clustersB, leafSize);
@@ -359,11 +359,11 @@ void Monitorizer::extractClustersFromView(pcl::PointCloud<PointT>::Ptr pCloud, v
     }
 
 	// Creating the KdTree object for the search method of the extraction
-	pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
+	pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT>);
 	tree->setInputCloud (pCloudF);
 
 	vector<pcl::PointIndices> clusterIndices;
-	pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+	pcl::EuclideanClusterExtraction<PointT> ec;
     float tol = (leafSize > 0.f) ? m_ClusterTolFactor * leafSize : m_ClusterTolFactor * 0.005;
 	ec.setClusterTolerance (tol); // cm
 	ec.setMinClusterSize (0.1/leafSize);
@@ -372,7 +372,7 @@ void Monitorizer::extractClustersFromView(pcl::PointCloud<PointT>::Ptr pCloud, v
 	ec.setInputCloud (pCloudF);
 	ec.extract (clusterIndices);
 
-	vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clustersF; // clusters filtered
+	vector<pcl::PointCloud<PointT>::Ptr> clustersF; // clusters filtered
 
 	pcl::PassThrough<PointT> pt;
 	PointT min, max;
@@ -380,7 +380,7 @@ void Monitorizer::extractClustersFromView(pcl::PointCloud<PointT>::Ptr pCloud, v
 	int j = 0;
 	for (vector<pcl::PointIndices>::const_iterator it = clusterIndices.begin (); it != clusterIndices.end (); ++it)
 	{
-		pcl::PointCloud<pcl::PointXYZ>::Ptr pClusterF (new pcl::PointCloud<pcl::PointXYZ>);
+		pcl::PointCloud<PointT>::Ptr pClusterF (new pcl::PointCloud<PointT>);
 		for (vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
 			pClusterF->points.push_back (pCloudF->points[*pit]); //*
 		pClusterF->width = pClusterF->points.size();

@@ -55,3 +55,13 @@ void Frame::setMat(cv::Mat mat, cv::Mat mask)
 	//m_Mat.create(mat.rows, mat.cols, mat.type());
 	mat.copyTo(m_Mat, mask);
 }
+
+int Frame::getResX()
+{
+    return m_Mat.cols;
+}
+
+int Frame::getResY()
+{
+    return m_Mat.rows;
+}

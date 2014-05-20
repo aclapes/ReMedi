@@ -20,7 +20,9 @@
 class SupervisedObjectPicker
 {
 public:
-    SupervisedObjectPicker(string parentDir, Sequence::Ptr sequence, int numOfObjects);
+    SupervisedObjectPicker(string objectsDir, int numOfObjects);
+    
+    void setSequence(Sequence::Ptr pSequence);
     
     void run();
     
@@ -48,7 +50,7 @@ private:
     
     Sequence::Ptr m_pSequence;
     
-    string m_ParentDir;
+    string m_ObjectsDir;
     ColorFrame m_CurrentColorFrameA, m_CurrentColorFrameB;
     DepthFrame m_CurrentDepthFrameA, m_CurrentDepthFrameB;
     

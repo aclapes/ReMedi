@@ -26,36 +26,49 @@
 using namespace boost::assign;
 using namespace std;
 
-int g_Colors[][3] = {
-    {1, 0, 0},
-    {0, 1, 0},
-    {0, 0, 1},
-    {1, 1, 0},
-    {1, 0, 1},
-    {0, 1, 1},
-    {1, .5, 0},
-    {1, 0, .5},
-    {0, 1, .5},
-    {0, .5, 1},
-    {.5, 1, 0}
-};
-
+// Object names
 string g_ModelNames[] =
 {
     "dish", "pillbox", "book", "tetrabrick", "glass"
 };
 
-SupervisedObjectPicker::SupervisedObjectPicker(string parentDir,
-                                               Sequence::Ptr sequence,
+// Marker colors (as many as objects at least)
+int g_Colors[][3] = {
+    {1, 0, 0},
+    {0, 1, 0},
+    {0, 0, 1},
+    {1, 1, 0},
+    {1, 0, 1}//,
+//    {0, 1, 1},
+//    {1, 1, 1},
+//    {0, 0, 0},
+//    {1, .5, 0},
+//    {1, 0, .5},
+//    {.5, 1, 0},
+//    {0, 1, .5},
+//    {.5, 0, 1},
+//    {0, .5, 1},
+//    {.5, 1, 0}
+};
+
+
+SupervisedObjectPicker::SupervisedObjectPicker(string objectsDir,
                                                int numOfObjects)
-: m_ParentDir(parentDir), m_pSequence(sequence), m_NumOfObjects(numOfObjects),
+: m_ObjectsDir(objectsDir), m_NumOfObjects(numOfObjects),
  m_Object(0), m_Tol(0.05), m_X(0), m_Y(0)
 {
+
+}
+
+void SupervisedObjectPicker::setSequence(Sequence::Ptr pSequence)
+{
+    m_pSequence = pSequence;
+    
     m_NumOfViews    = m_pSequence->getNumOfViews();
     m_NumOfFrames   = m_pSequence->getNumOfFrames();
-
-    m_ResY = 480;
-    m_ResX = 640;
+    
+    m_ResY = m_pSequence->getColorFrame(0)[0].getResY();
+    m_ResX = m_pSequence->getColorFrame(0)[0].getResX();
     
     m_Positions.resize(m_NumOfViews);
     m_ClickedPositions.resize(m_NumOfViews);
@@ -74,7 +87,7 @@ SupervisedObjectPicker::SupervisedObjectPicker(string parentDir,
         m_Presses[i].resize(m_NumOfObjects);
     }
     
-    m_DOutput = DetectionOutput(m_NumOfViews, m_NumOfFrames, m_NumOfObjects, m_Tol);
+    m_DOutput = DetectionOutput(m_NumOfViews, m_NumOfFrames, m_NumOfObjects, m_To
 }
 
 cv::Mat SupervisedObjectPicker::getConcatColor()
@@ -552,11 +565,11 @@ void SupervisedObjectPicker::run()
                                  10);
                 break;
             case 'l':
-                m_DOutput.read(m_ParentDir + "Data/ObjectLabels/", m_pSequence->getName(), "csv");
+                m_DOutput.read(m_ObjectsDir, m_pSequence->getName(), "csv");
                 mark(m_DOutput);
                 break;
             case 'k':
-                m_DOutput.write(m_ParentDir + "Data/ObjectLabels/", m_pSequence->getName(), "csv");
+                m_DOutput.write(m_ObjectsDir, m_pSequence->getName(), "csv");
                 break;
             case 27:
                 exit(0);

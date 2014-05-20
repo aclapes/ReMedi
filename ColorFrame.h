@@ -20,6 +20,8 @@ public:
 
 	// Methods
 	bool isValid();
+    int getResX();
+    int getResY();
     
     void show(std::string wndName);
 };

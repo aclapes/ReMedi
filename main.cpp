@@ -35,7 +35,8 @@ int main (int argc, char** argv)
         
         Sequence::Ptr seq = reader.getSequence(1);
         
-        SupervisedObjectPicker pp(g_parentDir, seq, 5);
+        SupervisedObjectPicker pp(g_ParentDir + "Data/ObjectLabels/", 5);
+        pp.setSequence(seq);
         pp.run();
         
         return 0;

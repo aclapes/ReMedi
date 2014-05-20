@@ -33,6 +33,16 @@ bool ColorFrame::isValid()
 	return Frame::isValid();
 }
 
+int Frame::getResX()
+{
+    return Frame::getResX();
+}
+
+int Frame::getResY()
+{
+    return Frame::getResY();
+}
+
 void ColorFrame::show(std::string wndName)
 {
     cv::namedWindow(wndName);

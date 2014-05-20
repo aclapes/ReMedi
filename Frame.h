@@ -16,7 +16,9 @@ public:
 
 	// Methods
 	bool isValid();
-
+    int getResX();
+    int getResY();
+    
 	cv::Mat getMat();
 	void getMat(cv::Mat&);
 
