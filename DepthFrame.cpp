@@ -56,6 +56,16 @@ DepthFrame& DepthFrame::operator=(const DepthFrame& other)
 	return *this;
 }
 
+int DepthFrame::getResX()
+{
+    return Frame::getResX();
+}
+
+int DepthFrame::getResY()
+{
+    return Frame::getResY();
+}
+
 cv::Mat DepthFrame::getMask()
 {
 	return m_Mask;

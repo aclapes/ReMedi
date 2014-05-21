@@ -140,6 +140,24 @@ bool Sequence::hasNextDepthFrame(int step)
     return true;
 }
 
+bool Sequence::hasPreviousColorFrame(int step)
+{
+    for (int i = 0; i < m_ColorStream.size(); i++)
+        if (m_ColorFrameCounter[i] + m_Delays[i] - step < 0)
+            return false;
+    
+    return true;
+}
+
+bool Sequence::hasPreviousDepthFrame(int step)
+{
+    for (int i = 0; i < m_DepthStream.size(); i++)
+        if (m_DepthFrameCounter[i] + m_Delays[i] - step < 0)
+            return false;
+    
+    return true;
+}
+
 vector<ColorFrame> Sequence::nextColorFrame(int step)
 {
     for (int i = 0; i < m_ColorStream.size(); i++)
@@ -162,24 +180,6 @@ vector<DepthFrame> Sequence::nextDepthFrame(int step)
         frame.push_back(m_DepthStream[i][m_DepthFrameCounter[i] + m_Delays[i]]);
     
     return frame;
-}
-
-bool Sequence::hasPreviousColorFrame(int step)
-{
-    for (int i = 0; i < m_ColorStream.size(); i++)
-        if (m_ColorFrameCounter[i] + m_Delays[i] - step < 0)
-            return false;
-    
-    return true;
-}
-
-bool Sequence::hasPreviousDepthFrame(int step)
-{
-    for (int i = 0; i < m_DepthStream.size(); i++)
-        if (m_DepthFrameCounter[i] + m_Delays[i] - step < 0)
-            return false;
-    
-    return true;
 }
 
 vector<ColorFrame> Sequence::previousColorFrame(int step)
@@ -206,16 +206,6 @@ vector<DepthFrame> Sequence::previousDepthFrame(int step)
     return frame;
 }
 
-void Sequence::setInteractionLabels(vector<unsigned char> labels)
-{
-    m_InteractionLabels = labels;
-}
-
-void Sequence::setActionLabels(vector<unsigned char> labels)
-{
-    m_ActionLabels = labels;
-}
-
 vector<ColorFrame> Sequence::getColorFrame(int i)
 {
     vector<ColorFrame> frame;
@@ -232,6 +222,60 @@ vector<DepthFrame> Sequence::getDepthFrame(int i)
         frame.push_back(m_DepthStream[v][i]);
     
     return frame;
+}
+
+void Sequence::nextColorFrame(vector<cv::Mat>& colorMats, int step)
+{
+    for (int i = 0; i < m_ColorStream.size(); i++)
+        m_ColorFrameCounter[i] += step;
+    
+    colorMats.clear();
+    for (int i = 0; i < m_ColorStream.size(); i++)
+        colorMats.push_back(m_ColorStream[i][m_ColorFrameCounter[i] + m_Delays[i]].getMat());
+}
+
+void Sequence::nextDepthFrame(vector<cv::Mat>& depthMats, int step)
+{
+    for (int i = 0; i < m_DepthStream.size(); i++)
+        m_DepthFrameCounter[i] += step;
+    
+    depthMats.clear();
+    for (int i = 0; i < m_DepthStream.size(); i++)
+        depthMats.push_back(m_DepthStream[i][m_DepthFrameCounter[i] + m_Delays[i]].getMat());
+}
+
+void Sequence::previousColorFrame(vector<cv::Mat>& colorMats, int step)
+{
+    for (int i = 0; i < m_ColorStream.size(); i++)
+        m_ColorFrameCounter[i] -= step;
+    
+    colorMats.clear();
+    for (int i = 0; i < m_ColorStream.size(); i++)
+        colorMats.push_back(m_ColorStream[i][m_ColorFrameCounter[i] + m_Delays[i]].getMat());
+}
+
+void Sequence::previousDepthFrame(vector<cv::Mat>& depthMats, int step)
+{
+    for (int i = 0; i < m_DepthStream.size(); i++)
+        m_DepthFrameCounter[i] -= step;
+
+    depthMats.clear();
+    for (int i = 0; i < m_DepthStream.size(); i++)
+        depthMats.push_back(m_DepthStream[i][m_DepthFrameCounter[i] + m_Delays[i]].getMat());
+}
+
+void Sequence::getColorFrame(vector<cv::Mat>& colorMats, int i)
+{
+    colorMats.clear();
+    for (int v = 0; v < m_ColorStream.size(); v++)
+        colorMats.push_back(m_ColorStream[v][i + m_Delays[v]].getMat());
+}
+
+void Sequence::getDepthFrame(vector<cv::Mat>& depthMats, int i)
+{
+    depthMats.clear();
+    for (int v = 0; v < m_DepthStream.size(); v++)
+        depthMats.push_back(m_DepthStream[v][i + m_Delays[v]].getMat());
 }
 
 int Sequence::getNumOfViews()
@@ -270,4 +314,14 @@ vector<int> Sequence::depthAt()
 void Sequence::setDelays(vector<int> delays)
 {
     m_Delays = delays;
+}
+
+void Sequence::setInteractionLabels(vector<unsigned char> labels)
+{
+    m_InteractionLabels = labels;
+}
+
+void Sequence::setActionLabels(vector<unsigned char> labels)
+{
+    m_ActionLabels = labels;
 }

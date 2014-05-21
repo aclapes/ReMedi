@@ -29,6 +29,8 @@ public:
 
 	// Methods
 	bool isValid();
+    int getResX();
+    int getResY();
 	cv::Mat getMask();
 	void setMask(cv::Mat);
 	cv::Mat getDepthMap(cv::Mat&);

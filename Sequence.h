@@ -48,16 +48,22 @@ public:
     
     bool hasNextColorFrame(int step = 1);
     bool hasNextDepthFrame(int step = 1);
-    vector<ColorFrame> nextColorFrame(int step = 1); // multi-view
-    vector<DepthFrame> nextDepthFrame(int step = 1);
-    
     bool hasPreviousColorFrame(int step = 1);
     bool hasPreviousDepthFrame(int step = 1);
+    
+    vector<ColorFrame> nextColorFrame(int step = 1); // multi-view
+    vector<DepthFrame> nextDepthFrame(int step = 1);
     vector<ColorFrame> previousColorFrame(int step = 1); // multi-view
     vector<DepthFrame> previousDepthFrame(int step = 1);
-    
     vector<ColorFrame> getColorFrame(int i); // multi-view
     vector<DepthFrame> getDepthFrame(int i);
+    
+    void nextColorFrame(vector<cv::Mat>& colorMat, int step = 1); // multi-view
+    void nextDepthFrame(vector<cv::Mat>& depthMat, int step = 1);
+    void previousColorFrame(vector<cv::Mat>& colorMat, int step = 1); // multi-view
+    void previousDepthFrame(vector<cv::Mat>& depthMat, int step = 1);
+    void getColorFrame(vector<cv::Mat>& colorMat, int i); // multi-view
+    void getDepthFrame(vector<cv::Mat>& depthMat, int i);
     
     int getNumOfViews();
     vector<int> getNumOfFrames();

@@ -60,15 +60,21 @@ SupervisedObjectPicker::SupervisedObjectPicker(string objectsDir,
 
 }
 
+void SupervisedObjectPicker::setViewsDisplay(int h, int w)
+{
+    m_H = h;
+    m_W = w;
+}
+
 void SupervisedObjectPicker::setSequence(Sequence::Ptr pSequence)
 {
     m_pSequence = pSequence;
     
-    m_NumOfViews    = m_pSequence->getNumOfViews();
-    m_NumOfFrames   = m_pSequence->getNumOfFrames();
-    
     m_ResY = m_pSequence->getColorFrame(0)[0].getResY();
     m_ResX = m_pSequence->getColorFrame(0)[0].getResX();
+    
+    m_NumOfViews    = m_pSequence->getNumOfViews();
+    m_NumOfFrames   = m_pSequence->getNumOfFrames();
     
     m_Positions.resize(m_NumOfViews);
     m_ClickedPositions.resize(m_NumOfViews);
@@ -87,17 +93,7 @@ void SupervisedObjectPicker::setSequence(Sequence::Ptr pSequence)
         m_Presses[i].resize(m_NumOfObjects);
     }
     
-    m_DOutput = DetectionOutput(m_NumOfViews, m_NumOfFrames, m_NumOfObjects, m_To
-}
-
-cv::Mat SupervisedObjectPicker::getConcatColor()
-{
-    return m_ConcatColor;
-}
-
-cv::Mat SupervisedObjectPicker::getConcatDepth()
-{
-    return m_ConcatDepth;
+    m_DOutput = DetectionOutput(m_NumOfViews, m_NumOfFrames, m_NumOfObjects, m_Tol);
 }
 
 int SupervisedObjectPicker::getResX()
@@ -112,16 +108,18 @@ int SupervisedObjectPicker::getResY()
 
 void SupervisedObjectPicker::mark(int wx, int wy)
 {
-    // View coordinates in window's views
+    // view coordinates in window's views
     int j = wx / getResX();
     int i = wy / getResY();
-    // Mouse (x,y) coordinates in (i,j) view
+    // mouse (x,y) coordinates in (i,j) view
     int x = wx % getResX();
     int y = wy % getResY();
-    // View
+    // view
     int ptr = i * m_NumOfViews + j;
     
-    if (m_ConcatDepth.at<unsigned short>(wy,wx) == 0)
+    // error in depth measurement
+    unsigned short depth;
+    if ( (depth = m_DepthViewsFrame.at<unsigned short>(wy,wx)) == 0)
         return;
     
     int idx;
@@ -129,13 +127,14 @@ void SupervisedObjectPicker::mark(int wx, int wy)
     for (int i = 0; i < m_ClickedPositions[ptr][m_Object].size() && !found; i++)
     {
         found = sqrtf( powf(x - m_ClickedPositions[ptr][m_Object][i].x, 2)
-                      + powf(y - m_ClickedPositions[ptr][m_Object][i].y, 2) ) < 20;
+                      + powf(y - m_ClickedPositions[ptr][m_Object][i].y, 2)
+                      + powf(depth - m_ClickedPositions[ptr][m_Object][i].z, 2)) < 0.05;
         if (found) idx = i;
     }
     
     if (!found)
     {
-        m_ClickedPositions[ptr][m_Object].push_back( pcl::PointXYZ(x, y, m_ConcatDepth.at<unsigned short>(wx,wy)) );
+        m_ClickedPositions[ptr][m_Object].push_back( pcl::PointXYZ(x, y, m_DepthViewsFrame.at<unsigned short>(wx,wy)) );
         m_Presses[ptr][m_Object].push_back(m_pSequence->colorAt()[ptr]);
     }
     else
@@ -169,20 +168,24 @@ void SupervisedObjectPicker::mark(int wx, int wy)
 
 void SupervisedObjectPicker::remove(int wx, int wy)
 {
-    // View coordinates in window's views
+    // view coordinates in window's views
     int j = wx / getResX();
     int i = wy / getResY();
-    // Mouse (x,y) coordinates in (i,j) view
+    // mouse (x,y) coordinates in (i,j) view
     int x = wx % getResX();
     int y = wy % getResY();
-    
+    // view
     int ptr = i * m_NumOfViews + j;
+    
+    unsigned short depth = m_DepthViewsFrame.at<unsigned short>(wy,wx);
+    
     bool found = false;
     pcl::PointXYZ point;
     for (int i = 0; i < m_Positions[ptr][m_pSequence->colorAt()[ptr]][m_Object].size() && !found; i++)
     {
         found = sqrtf( powf(x - m_Positions[ptr][m_pSequence->colorAt()[ptr]][m_Object][i].x, 2)
-                      + powf(y - m_Positions[ptr][m_pSequence->colorAt()[ptr]][m_Object][i].y, 2) ) < 20;
+                      + powf(y - m_Positions[ptr][m_pSequence->colorAt()[ptr]][m_Object][i].y, 2)
+                      + powf(depth - m_Positions[ptr][m_pSequence->colorAt()[ptr]][m_Object][i].z, 2)) < m_Tol;
         if (found)
             point = m_Positions[ptr][m_pSequence->colorAt()[ptr]][m_Object][i];
     }
@@ -190,14 +193,11 @@ void SupervisedObjectPicker::remove(int wx, int wy)
     for (int f = 0; f < m_pSequence->getNumOfFrames()[ptr]; f++)
     {
         bool found = false;
-        for (int i = 0; i < m_Positions[ptr][f][m_Object].size() && !found; i++)
+        for (int i = 0; i < !found && m_Positions[ptr][f][m_Object].size(); i++)
         {
             found = m_Positions[ptr][f][m_Object][i].x == point.x && m_Positions[ptr][f][m_Object][i].y == point.y;
             if (found)
             {
-//                    pcl::PointXYZ rwp;
-//                    ProjectiveToRealworld(m_Positions[ptr][f][m_Object][i], getResX(), getResY(), rwp);
-//                    m_DOutput.remove(ptr, f, m_Object, rwp);
                 m_DOutput.remove(ptr, f, m_Object, i);
                 m_Positions[ptr][f][m_Object].erase(m_Positions[ptr][f][m_Object].begin() + i);
             }
@@ -243,12 +243,11 @@ void SupervisedObjectPicker::draw(int wx, int wy)
     int x = wx % getResX();
     int y = wy % getResY();
     
-    cv::Mat concatColorTmp = m_ConcatColor.clone();
+    cv::Mat colorViewsFrame = m_ColorViewsFrame.clone();
     
     int fontFace = cv::FONT_HERSHEY_SCRIPT_SIMPLEX;
     double fontScale = 0.75;
     int thickness = 1.5;
-    
     
     // Draw set points
     int ptr = i * m_NumOfViews + j;
@@ -267,7 +266,7 @@ void SupervisedObjectPicker::draw(int wx, int wy)
                 int coordX = vj*getResX()+tmp[p].x;
                 int coordY = vi*getResY()+tmp[p].y;
                 
-                cv::circle(concatColorTmp, cv::Point(coordX,coordY), 5, color, -1);
+                cv::circle(colorViewsFrame, cv::Point(coordX,coordY), 5, color, -1);
             }
         }
     }
@@ -283,7 +282,7 @@ void SupervisedObjectPicker::draw(int wx, int wy)
 //            int vj = v % m_NumOfViews;
 //            int coordX = vj*getResX()+m_ClickedPositions[v][m_Object][l].x;
 //            int coordY = vi*getResY()+m_ClickedPositions[v][m_Object][l].y;
-//            cv::circle(concatColorTmp, cv::Point(coordX,coordY), 5, color, 1);
+//            cv::circle(colorViewsFrame, cv::Point(coordX,coordY), 5, color, 1);
 //        }
 //    }
     
@@ -302,8 +301,8 @@ void SupervisedObjectPicker::draw(int wx, int wy)
                 int coordX = vj*getResX()+m_ClickedPositions[v][o][p].x;
                 int coordY = vi*getResY()+m_ClickedPositions[v][o][p].y;
                 
-                pcl::PointXYZ projMouse(wx,wy, m_ConcatDepth.at<unsigned short>(wy,wx));
-                pcl::PointXYZ projMark(coordX,coordY, m_ConcatDepth.at<unsigned short>(coordY,coordX));
+                pcl::PointXYZ projMouse(wx,wy, m_DepthViewsFrame.at<unsigned short>(wy,wx));
+                pcl::PointXYZ projMark(coordX,coordY, m_DepthViewsFrame.at<unsigned short>(coordY,coordX));
                 
                 pcl::PointXYZ rwMouse, rwMark;
                 ProjectiveToRealworld(projMouse, getResX(), getResY(), rwMouse);
@@ -314,63 +313,82 @@ void SupervisedObjectPicker::draw(int wx, int wy)
                 
                 if ( o == m_Object && distance < m_Tol )
                 {
-                    cv::circle(concatColorTmp, cv::Point(coordX,coordY), 5, color, -1);
+                    cv::circle(colorViewsFrame, cv::Point(coordX,coordY), 5, color, -1);
                     mouseNearToMark = true;
                 }
                 else
                 {
-                    cv::circle(concatColorTmp, cv::Point(coordX,coordY), 5, color, 2);
+                    cv::circle(colorViewsFrame, cv::Point(coordX,coordY), 5, color, 2);
                 }
 
-                cv::putText(concatColorTmp, g_ModelNames[o], cv::Point(coordX + fontScale, coordY + fontScale), fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
+                cv::putText(colorViewsFrame, g_ModelNames[o], cv::Point(coordX + fontScale, coordY + fontScale), fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
             }
         }
     }
     
-    if (m_ConcatDepth.at<unsigned short>(wy,wx) > 0)
+    if (m_DepthViewsFrame.at<unsigned short>(wy,wx) > 0)
     {
         // Draw mouse pointer
         
         cv::Scalar color (255.0 * g_Colors[m_Object][0], 255.0 * g_Colors[m_Object][1], 255.0 * g_Colors[m_Object][2]);
-        cv::circle(concatColorTmp, cv::Point(wx,wy), 5, cv::Scalar(255,255,255), -1);
-        cv::circle(concatColorTmp, cv::Point(wx,wy), 3, color, -1);
+        cv::circle(colorViewsFrame, cv::Point(wx,wy), 5, cv::Scalar(255,255,255), -1);
+        cv::circle(colorViewsFrame, cv::Point(wx,wy), 3, color, -1);
         
         if (!mouseNearToMark)
         {
             string text = to_string(m_Object);
             cv::Point textOrg(wx,wy);
-            cv::putText(concatColorTmp, g_ModelNames[m_Object],
+            cv::putText(colorViewsFrame, g_ModelNames[m_Object],
                         cv::Point(wx + fontScale, wy + fontScale),
                         fontFace, fontScale,
                         cv::Scalar::all(255), thickness, 8);
         }
     }
+
+    
+    int progressBarHeight = 7;
     
     // Draw number of frame
     fontFace = cv::FONT_HERSHEY_SCRIPT_SIMPLEX;
     fontScale = 1;
     thickness = 3;
-    cv::putText(concatColorTmp, to_string(m_pSequence->colorAt()[0]), cv::Point(0, this->getResY() - 1), fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
-    cv::putText(concatColorTmp, to_string(m_pSequence->colorAt()[1]), cv::Point(this->getResX(), this->getResY() - 1), fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
-    
+    int baseline;
+    cv::Size textSize;
+    for (int i = 0; i < m_H; i++) for (int j = 0; j < m_W; j++)
+    {
+        string sid = to_string(m_pSequence->colorAt()[i * m_W + j]);
+        textSize = cv::getTextSize(sid, fontFace, fontScale, 3, &baseline);
+        cv::rectangle(colorViewsFrame,
+                      cv::Point(j * getResX(), i * getResY() + progressBarHeight),
+                      cv::Point(j * getResX() + textSize.width + 2*thickness, i * getResY() + progressBarHeight + textSize.height + 2*thickness),
+                      cv::Scalar(0,0,0), CV_FILLED);
+        cv::putText(colorViewsFrame,
+                    sid,
+                    cv::Point(j * getResX() + thickness, i * getResY() + progressBarHeight + textSize.height + thickness),
+                    fontFace, fontScale, cv::Scalar::all(255), thickness, 8);
+    }
     
     // Draw top rectangles
-    int progressBarHeight = 7;
     float percentage;
     
-    int widthA = m_CurrentColorFrameA.getMat().cols;
-    int widthB = m_CurrentColorFrameB.getMat().cols;
-    
-    cv::rectangle(concatColorTmp, cv::Point(0,0), cv::Point(widthA, progressBarHeight), cv::Scalar(0,0,0));
-    percentage = ((float) m_pSequence->colorAt()[0]) / m_pSequence->getNumOfFrames()[0];
-    cv::rectangle(concatColorTmp, cv::Point(0,0), cv::Point(widthA * percentage, progressBarHeight), cv::Scalar(50, 255, 50), -1);
-    
-    cv::rectangle(concatColorTmp, cv::Point(widthA,0), cv::Point(widthA + widthB, progressBarHeight), cv::Scalar(0,0,0));
-    percentage = ((float) m_pSequence->colorAt()[1]) / m_pSequence->getNumOfFrames()[1];
-    cv::rectangle(concatColorTmp, cv::Point(widthA,0), cv::Point(widthA + widthB * percentage, progressBarHeight), cv::Scalar(50, 255, 50), -1);
+    for (int i = 0; i < m_H; i++) for (int j = 0; j < m_W; j++)
+    {
+        cv::rectangle(colorViewsFrame,
+                      cv::Point(j * getResX(), i * getResY()),
+                      cv::Point((j+1) * getResX() - 1, i * getResY() + progressBarHeight),
+                      cv::Scalar(0,0,0));
+        
+        percentage = ((float) m_pSequence->colorAt()[i * getResX() + j]) / m_pSequence->getNumOfFrames()[i * getResX() + j];
+        
+        cv::rectangle(colorViewsFrame,
+                      cv::Point(j * getResX(), i * getResY()),
+                      cv::Point(j * getResX() - 1 + getResX() * percentage, i * getResY() + progressBarHeight),
+                      cv::Scalar(50, 255, 50),
+                      -1);
+    }
     
     // Display all
-    cv::imshow("Pick", concatColorTmp);
+    cv::imshow("Pick", colorViewsFrame);
 }
 
 void SupervisedObjectPicker::mouseCallback(int event, int x, int y, int flags, void* userdata)
@@ -381,23 +399,17 @@ void SupervisedObjectPicker::mouseCallback(int event, int x, int y, int flags, v
     {
         _this->mark(x,y);
         _this->draw(x,y);
-        
-//        cout << "Left button of the mouse is clicked - position (" << viewX << ", " << viewY << ") - frame (" << _this->m_Reader.colorAt()[ptr] << ")" << endl;
     }
     else if  ( event == cv::EVENT_RBUTTONDOWN )
     {
         _this->remove(x,y);
-//        cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
     }
     else if  ( event == cv::EVENT_MBUTTONDOWN )
     {
         // DISABLED
-        //cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
     }
     else if ( event == cv::EVENT_MOUSEMOVE )
     {
-//        cout << "Mouse move over the window - position (" << x << ", " << y << ")" << endl;
-        
         _this->draw(x,y);
         
         _this->m_X = x;
@@ -419,116 +431,43 @@ void SupervisedObjectPicker::modelHandler(int key)
     }
 }
 
-//void SupervisedObjectPicker::write()
-//{
-//    // Draw set points
-//    for (int v = 0; v < m_NumOfViews; v++)
-//    {
-//        ofstream outFile;
-//        string outPath(m_ParentDir + "Data/ObjectLabels/" + m_Reader.getSequenceDirName() + "_v" + to_string(v) + ".csv");
-//        outFile.open(outPath, ios::out);
-//        
-//        // create two view files
-//        for (int f = 0; f < m_Reader.getNumOfFrames(); f++)
-//        {
-//            for (int o = 0; o < m_NumOfObjects; o++)
-//            {
-//                outFile << o << ":";
-//                
-//                vector<cv::Point> tmp = m_Positions[v][f][o];
-//                
-//                for (int p = 0; p < tmp.size(); p++)
-//                {
-//                    outFile << tmp[p].x << "," << tmp[p].y << ";";
-//                    
-//                } outFile << "\t";
-//            } outFile << endl;
-//        }
-//        outFile.close();
-//    }
-//    
-//    cout << "Saved" << endl;
-//}
-//
-//void SupervisedObjectPicker::read()
-//{
-//    // Draw set points
-//    for (int v = 0; v < m_NumOfViews; v++)
-//    {
-//        ifstream inFile;
-//        string inPath(m_ParentDir + "Data/ObjectLabels/" + m_Reader.getSequenceDirName() + "_v" + to_string(v) + ".csv");
-//        inFile.open(inPath, ios::in);
-//        
-//        // create two view files
-//        for (int f = 0; f < m_Reader.getNumOfFrames(); f++)
-//        {
-//            string line;
-//            getline(inFile, line);
-//            
-//            vector<string> objects_sublines; // ex: 1:202,22;104,123;
-//            boost::split(objects_sublines, line, boost::is_any_of("\t"));
-//
-//            for (int o = 0; o < objects_sublines.size() - 1; o++)
-//            {
-//                vector<string> object_struct;
-//                boost::split(object_struct, objects_sublines[o], boost::is_any_of(":"));
-//
-//                int oid = stoi(object_struct[0]); // object id
-//                if (object_struct[1].size() <= 2)
-//                    continue;
-//                
-//                vector<string> positions;
-//                boost::split(positions, object_struct[1], boost::is_any_of(";")); // object id's positions
-//                
-//                for (int p = 0; p < positions.size() - 1; p++)
-//                {
-//                    vector<string> coordinates;
-//                    boost::split(coordinates, positions[p], boost::is_any_of(","));
-////
-//                    m_Positions[v][f][oid].push_back(cv::Point(stoi(coordinates[0]), stoi(coordinates[1])));
-//                }
-//            }
-//        }
-//    }
-//
-//    cout << "Loaded" << endl;
-//}
-
-void SupervisedObjectPicker::nextPairedFrames(ColorFrame& color1, ColorFrame& color2,
-                                              DepthFrame& depth1, DepthFrame& depth2,
-                                              int step)
+void SupervisedObjectPicker::nextFrames(vector<cv::Mat>& colorFrames,
+                                        vector<cv::Mat>& depthFrames,
+                                        int step)
 {
     if (m_pSequence->hasNextColorFrame(step))
-    {
-        vector<ColorFrame> colorFrame = m_pSequence->nextColorFrame(step);
-        color1 = colorFrame[0].getMat();
-        color2 = colorFrame[1].getMat();
-    }
+        m_pSequence->nextColorFrame(colorFrames, step);
     
     if (m_pSequence->hasNextDepthFrame(step))
-    {
-        vector<DepthFrame> depthFrame = m_pSequence->nextDepthFrame(step);
-        depth1 = depthFrame[0];
-        depth2 = depthFrame[1];
-    }
+        m_pSequence->nextDepthFrame(depthFrames, step);
 }
 
-void SupervisedObjectPicker::prevPairedFrames(ColorFrame& color1, ColorFrame& color2,
-                                              DepthFrame& depth1, DepthFrame& depth2,
-                                              int step)
+void SupervisedObjectPicker::prevFrames(vector<cv::Mat>& colorFrames,
+                                        vector<cv::Mat>& depthFrames,
+                                        int step)
 {
     if (m_pSequence->hasPreviousColorFrame(step))
-    {
-        vector<ColorFrame> colorFrame = m_pSequence->previousColorFrame(step);
-        color1 = colorFrame[0];
-        color2 = colorFrame[1];
-    }
+        m_pSequence->previousColorFrame(colorFrames, step);
     
     if (m_pSequence->hasPreviousDepthFrame(step))
+        m_pSequence->previousDepthFrame(depthFrames, step);
+}
+
+void SupervisedObjectPicker::concatenateViews(vector<cv::Mat> views, int h, int w,
+                                              cv::Mat& viewsFrame)
+{
+    assert (views.size() == h * w);
+    
+    viewsFrame.release();
+    
+    viewsFrame.create(0, views[0].cols * w, views[0].type());
+    for (int i = 0; i < h; i++)
     {
-        vector<DepthFrame> depthFrame = m_pSequence->previousDepthFrame(step);
-        depth1 = depthFrame[0];
-        depth2 = depthFrame[1];
+        cv::Mat rowViewsMat = views[i * w + 0];
+        for (int j = 1; j < w; j++)
+            cv::hconcat(rowViewsMat, views[i * w + j], rowViewsMat);
+        
+        viewsFrame.push_back(rowViewsMat);
     }
 }
 
@@ -537,8 +476,7 @@ void SupervisedObjectPicker::run()
     cv::namedWindow("Pick");
     cv::setMouseCallback("Pick", SupervisedObjectPicker::mouseCallback, (void*) this);
     
-    nextPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB,
-                     m_CurrentDepthFrameA, m_CurrentDepthFrameB);
+    nextFrames(m_CurrentColorFrames, m_CurrentDepthFrames);
     
     int c;
     bool quit = false;
@@ -547,22 +485,16 @@ void SupervisedObjectPicker::run()
         switch (c)
         {
             case 'a':
-                prevPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB,
-                                 m_CurrentDepthFrameA, m_CurrentDepthFrameB);
+                prevFrames(m_CurrentColorFrames, m_CurrentDepthFrames);
                 break;
             case 'd':
-                nextPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB,
-                                 m_CurrentDepthFrameA, m_CurrentDepthFrameB);
+                nextFrames(m_CurrentColorFrames, m_CurrentDepthFrames);
                 break;
             case 'A':
-                prevPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB,
-                                 m_CurrentDepthFrameA, m_CurrentDepthFrameB,
-                                 10);
+                prevFrames(m_CurrentColorFrames, m_CurrentDepthFrames, 10);
                 break;
             case 'D':
-                nextPairedFrames(m_CurrentColorFrameA, m_CurrentColorFrameB,
-                                 m_CurrentDepthFrameA, m_CurrentDepthFrameB,
-                                 10);
+                nextFrames(m_CurrentColorFrames, m_CurrentDepthFrames, 10);
                 break;
             case 'l':
                 m_DOutput.read(m_ObjectsDir, m_pSequence->getName(), "csv");
@@ -579,8 +511,9 @@ void SupervisedObjectPicker::run()
                 break;
         }
         
-        cv::hconcat(m_CurrentColorFrameA.getMat(), m_CurrentColorFrameB.getMat(), m_ConcatColor);
-        cv::hconcat(m_CurrentDepthFrameA.getDepthMap(), m_CurrentDepthFrameB.getDepthMap(), m_ConcatDepth);
+        concatenateViews(m_CurrentColorFrames, m_H, m_W, m_ColorViewsFrame);
+        concatenateViews(m_CurrentDepthFrames, m_H, m_W, m_DepthViewsFrame);
+
         draw(m_X, m_Y);
 
         c = cv::waitKey();

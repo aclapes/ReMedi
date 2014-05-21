@@ -7,9 +7,9 @@
 using namespace boost::assign;
 
 #ifdef _WIN32
-string g_parentDir = "../";
+string g_ParentDir = "../";
 #elif __APPLE__
-string g_parentDir = "../../";
+string g_ParentDir = "../../";
 #endif
 
 int main (int argc, char** argv)
@@ -21,7 +21,7 @@ int main (int argc, char** argv)
     int sid; // sequence autoincremental id
     if (pcl::console::parse (argc, argv, "-p", sid) >= 0)
     {
-        string sequencesPath = g_parentDir + "Data/Sequences/";
+        string sequencesPath = g_ParentDir + "Data/Sequences/";
         
         vector<string> colorDirs;
         colorDirs += "Color1/", "Color2/";
@@ -37,6 +37,7 @@ int main (int argc, char** argv)
         
         SupervisedObjectPicker pp(g_ParentDir + "Data/ObjectLabels/", 5);
         pp.setSequence(seq);
+        pp.setViewsDisplay(1,2);
         pp.run();
         
         return 0;
@@ -53,7 +54,7 @@ int main (int argc, char** argv)
         cout << "Display the processing of the sequences [NO]" << endl;
     }
     
-    Remedi app(g_parentDir);
+    Remedi app(g_ParentDir);
 	app.Run(display);
 
 	return 0;

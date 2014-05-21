@@ -22,58 +22,65 @@ class SupervisedObjectPicker
 public:
     SupervisedObjectPicker(string objectsDir, int numOfObjects);
     
+    void setViewsDisplay(int h, int w);
     void setSequence(Sequence::Ptr pSequence);
-    
+
     void run();
     
 private:
-    // Mouse actions
+    
+    // Methods
+    
     static void mouseCallback(int event, int x, int y, int flags, void* userdata);
     void modelHandler(int key);
-    void nextPairedFrames(ColorFrame& color1, ColorFrame& color2,
-                          DepthFrame& depth1, DepthFrame& depth2,
-                          int step = 1);
-    void prevPairedFrames(ColorFrame& color1, ColorFrame& color2,
-                          DepthFrame& depth1, DepthFrame& depth2,
-                          int step = 1);
+    
+    void nextFrames(vector<cv::Mat>& colorFrames,
+                    vector<cv::Mat>& depthFrames,
+                    int step = 1);
+    void prevFrames(vector<cv::Mat>& colorFrames,
+                    vector<cv::Mat>& depthFrames,
+                    int step = 1);
     
     void mark(int wx, int wy);
     void mark(DetectionOutput dout);
     void remove(int wx, int wy);
     void draw(int wx, int wy);
     
-    cv::Mat getConcatColor();
-    cv::Mat getConcatDepth();
-    
     int getResX();
     int getResY();
     
-    Sequence::Ptr m_pSequence;
+    void concatenateViews(vector<cv::Mat> views, int h, int w, cv::Mat& multiview);
+    
+    //
+    // Atributes
+    //
     
     string m_ObjectsDir;
-    ColorFrame m_CurrentColorFrameA, m_CurrentColorFrameB;
-    DepthFrame m_CurrentDepthFrameA, m_CurrentDepthFrameB;
-    
-    int m_NumOfViews;
-    vector<int> m_NumOfFrames;
     int m_NumOfObjects;
     
-    cv::Mat m_ConcatColor;
-    cv::Mat m_ConcatDepth;
+    Sequence::Ptr m_pSequence;
+    int m_ResX, m_ResY;
+    int m_NumOfViews;
+    vector<int> m_NumOfFrames;
+    vector<cv::Mat> m_CurrentColorFrames;
+    vector<cv::Mat> m_CurrentDepthFrames;
     int m_Delays;
     
-    int m_ResX, m_ResY;
-    
-    int m_Object;
-    vector<bool> m_PushedStates;
-    vector<int>  m_PushedFrames;
-    
-    float m_Tol;
-    int m_X, m_Y;
+    // graphical interface
+    int m_H, m_W;
+    cv::Mat m_ColorViewsFrame;// m_ConcatColor;
+    cv::Mat m_DepthViewsFrame;//m_ConcatDepth;
+
+    int m_X, m_Y; // current mouse position
+    int m_Object; // selected object to label
+    float m_Tol;  // tolerance distance between mouse and already placed mark
     
     vector< vector < vector<pcl::PointXYZ> > > m_ClickedPositions;
     vector< vector < vector< int > > > m_Presses;
     vector< vector< vector< vector<pcl::PointXYZ> > > > m_Positions;
+    
+    // annotation
+    
     DetectionOutput m_DOutput;
 };
 

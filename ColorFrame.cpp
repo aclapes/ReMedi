@@ -33,12 +33,12 @@ bool ColorFrame::isValid()
 	return Frame::isValid();
 }
 
-int Frame::getResX()
+int ColorFrame::getResX()
 {
     return Frame::getResX();
 }
 
-int Frame::getResY()
+int ColorFrame::getResY()
 {
     return Frame::getResY();
 }

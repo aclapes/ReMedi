@@ -8,25 +8,27 @@ Frame::Frame(void)
 
 Frame::Frame(cv::Mat mat)
 {
-	mat.copyTo(m_Mat);
+	m_Mat = mat;
 }
 
 
 Frame::~Frame(void)
 {
-	m_Mat.release();
 }
 
 
 Frame::Frame(const Frame& other)
 {
-	other.m_Mat.copyTo(m_Mat);
+	*this = other;
 }
 
 
 Frame& Frame::operator=(const Frame& other)
 {
-	other.m_Mat.copyTo(m_Mat);
+	if (this != &other)
+    {
+        m_Mat = other.m_Mat;
+    }
 
 	return *this;
 }
