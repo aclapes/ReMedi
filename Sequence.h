@@ -21,6 +21,8 @@ class Sequence
 {
 public:
     Sequence();
+    Sequence(int numOfViews);
+    Sequence(vector<vector<string> > colorFramesPaths, vector<vector<string> > depthFramesPaths);
     Sequence(vector<vector<ColorFrame> > colorStream, vector<vector<DepthFrame> > depthStream);
     Sequence(const Sequence& rhs);
     ~Sequence();
@@ -29,22 +31,30 @@ public:
     void setName(string name);
     string getName();
     
+    void addColorFramePath(string colorFramePath, int view);
+    void addColorFramePath(vector<string> colorFramePaths);
+    void addDepthFramePath(string depthFramePath, int view);
+    void addDepthFramePath(vector<string> depthFramesPaths);
+    
     void addColorFrame(ColorFrame colorFrame, int view);
-    void addColorFrame(vector<ColorFrame> colorFrame);
+    void addColorFrame(vector<ColorFrame> colorFrames);
     void addDepthFrame(DepthFrame depthFrame, int view);
-    void addDepthFrame(vector<DepthFrame> colorFrame);
+    void addDepthFrame(vector<DepthFrame> depthFrames);
     
-    void addColorStreamView(vector<ColorFrame> stream);
-    void addDepthStreamView(vector<DepthFrame> stream);
+    void addColorStream(vector<ColorFrame> stream);
+    void addDepthStream(vector<DepthFrame> stream);
     
-    void setColorStreamView(vector<ColorFrame> stream, int view);
-    void setDepthStreamView(vector<DepthFrame> stream, int view);
+    void setColorStream(vector<ColorFrame> stream, int view);
+    void setDepthStream(vector<DepthFrame> stream, int view);
+    
+    void setColorStreams(vector<vector<ColorFrame> > streams);
+    void setDepthStreams(vector<vector<DepthFrame> > streams);
 
-    void setColorStream(vector<vector<ColorFrame> > stream);
-    void setDepthStream(vector<vector<DepthFrame> > stream);
-    
-    void setInteractionLabels(vector<unsigned char> labels);
-    void setActionLabels(vector<unsigned char> labels);
+    void setColorFramesPaths(vector<vector<string> > paths);
+    void setDepthFramesPaths(vector<vector<string> > paths);
+
+    void setInteractionLabels(vector<unsigned short> labels);
+    void setActionLabels(vector<unsigned short> labels);
     
     bool hasNextColorFrame(int step = 1);
     bool hasNextDepthFrame(int step = 1);
@@ -75,16 +85,24 @@ public:
     typedef boost::shared_ptr<Sequence> Ptr;
     
 private:
+    void readColorFrame(vector<string> paths, int i, ColorFrame& frame);
+    void readDepthFrame(vector<string> paths, int i, DepthFrame& frame);
+    
+    void readMat(vector<string> paths, int i, cv::Mat& mat);
+    
     string m_Name;
     
-    vector< vector<ColorFrame> > m_ColorStream;
-    vector< vector<DepthFrame> > m_DepthStream;
+    vector< vector<string> > m_ColorPaths;
+    vector< vector<string> > m_DepthPaths;
+    
+    vector< vector<ColorFrame> > m_ColorStreams;
+    vector< vector<DepthFrame> > m_DepthStreams;
     
     vector<int> m_ColorFrameCounter;
     vector<int> m_DepthFrameCounter;
     
-    vector<unsigned char> m_InteractionLabels;
-    vector<unsigned char> m_ActionLabels;
+    vector<unsigned short> m_InteractionLabels;
+    vector<unsigned short> m_ActionLabels;
     
     vector<int> m_Delays;
 };

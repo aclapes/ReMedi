@@ -23,6 +23,7 @@ public:
     DetectionOutput();
     DetectionOutput(int nviews, vector<int> nframes, int nobjects, float tol);
     DetectionOutput(vector< vector< vector< vector< pcl::PointXYZ > > > > positions);
+    DetectionOutput(string path, string filename, string extension);
     DetectionOutput(const DetectionOutput& rhs);
     ~DetectionOutput();
     
@@ -37,6 +38,7 @@ public:
 //    void setNumOfObjects(int n);
     void setTolerance(float tol);
     
+    void add(vector<vector<vector<pcl::PointXYZ> > > positions);
     void add(int view, int frame, int object, pcl::PointXYZ position);
     void remove(int view, int frame, int object, pcl::PointXYZ position);
     void remove(int view, int frame, int object, int i);
@@ -46,9 +48,12 @@ public:
     void read(string path, string filename, string extension);
     void write(string path, string filename, string extension);
     
+    void getResults(DetectionOutput groundtruth, int& tp, int& fn, int& fp);
+    
 private:
     float distance(pcl::PointXYZ p1, pcl::PointXYZ p2);
-
+    void getFrameResults(vector<vector<pcl::PointXYZ> > groundtruth, vector<vector<pcl::PointXYZ> > predictions, int& tp, int& fn, int& fp);
+    
     // view, frame, model, model_instances_positions, (x,y,z) "real world" position
     vector< vector< vector< vector<pcl::PointXYZ> > > > m_Positions;
 

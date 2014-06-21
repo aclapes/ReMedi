@@ -4,7 +4,7 @@
 
 void ProjectiveToRealworld(pcl::PointXYZ p, int xres, int yres, pcl::PointXYZ& rw)
 {
-    float invfocal = (xres == 640) ? 3.501e-3f : 3.501e-3f / 2.f; // Kinect inverse focal length. If depth map
+    float invfocal = (1/285.63f) / (xres/320.f);
     
     rw.x = ((p.x - xres/2) * invfocal * p.z) / 1000.f,
     rw.y = ((p.y - yres/2) * invfocal * p.z) / 1000.f,
@@ -13,11 +13,49 @@ void ProjectiveToRealworld(pcl::PointXYZ p, int xres, int yres, pcl::PointXYZ& r
 
 void RealworldToProjective(pcl::PointXYZ rw, int xres, int yres, pcl::PointXYZ& p)
 {
-    float invfocal = (xres == 640) ? 3.501e-3f : 3.501e-3f / 2.f; // Kinect inverse focal length. If depth map
+    float invfocal = (1/285.63f) / (xres/320.f);
     
     p.x = (int) ( ((rw.x) / (invfocal * rw.z)) + (xres / 2.f) );
     p.y = (int) ( ((rw.y) / (invfocal * rw.z)) + (yres / 2.f) );
     p.z = rw.z * 1000.f;
+}
+
+void ProjectiveToRealworld(pcl::PointCloud<pcl::PointXYZ>::Ptr pProjCloud, pcl::PointCloud<pcl::PointXYZ>& realCloud)
+{
+    realCloud.height = pProjCloud->height;
+    realCloud.width  = pProjCloud->width;
+    realCloud.resize( pProjCloud->height * pProjCloud->width );
+    
+    float invfocal = (1/285.63f) / (realCloud.width/320.f);
+    
+    for (unsigned int y = 0; y < realCloud.height; y++) for (unsigned int x = 0; x < realCloud.width; x++)
+    {
+        pcl::PointXYZ realPoint;
+        realPoint.x = ((x - realCloud.width/2) * invfocal * pProjCloud->at(x,y).z) / 1000.f,
+        realPoint.y = ((y - realCloud.height/2) * invfocal * pProjCloud->at(x,y).z) / 1000.f,
+        realPoint.z = pProjCloud->at(x,y).z / 1000.f;
+        
+        realCloud.at(x,y) = realPoint;
+    }
+}
+
+void RealworldToProjective(pcl::PointCloud<pcl::PointXYZ>::Ptr pRealCloud, pcl::PointCloud<pcl::PointXYZ>& projCloud)
+{
+    projCloud.height = pRealCloud->height;
+    projCloud.width  = pRealCloud->width;
+    projCloud.resize( pRealCloud->height * pRealCloud->width );
+    
+    float invfocal = (1/285.63f) / (projCloud.width/320.f);
+    
+    for (unsigned int y = 0; y < projCloud.height; y++) for (unsigned int x = 0; x < projCloud.width; x++)
+    {
+        pcl::PointXYZ projPoint;
+        projPoint.x = (int) ( ((pRealCloud->at(x,y).x) / (invfocal * pRealCloud->at(x,y).z)) + (projCloud.width / 2.f) );
+        projPoint.y = (int) ( ((pRealCloud->at(x,y).y) / (invfocal * pRealCloud->at(x,y).z)) + (projCloud.height / 2.f) );
+        projPoint.z = pRealCloud->at(x,y).z * 1000.f;
+        
+        projCloud.at(x,y) = projPoint;
+    }
 }
 
 void EigenToPointXYZ(Eigen::Vector4f eigen, pcl::PointXYZ& p)
@@ -45,9 +83,7 @@ void MatToPointCloud(cv::Mat& mat, pcl::PointCloud<pcl::PointXYZ>& cloud)
     cloud.resize(cloud.height * cloud.width);
     cloud.is_dense = true;
     
-    float invfocal = 3.501e-3f; // Kinect inverse focal length. If depth map resolution of: 320 x 240
-    if (mat.cols == 640) // else if 640 x 480
-        invfocal /= 2.0;
+    float invfocal = (1/285.63f) / (mat.cols/320.f); // 3.501e-3f / (mat.cols/320.f); // Kinect inverse focal length. If depth map resolution
     
 	float z;
 	float rwx, rwy, rwz;
@@ -76,9 +112,7 @@ void MatToColoredPointCloud(cv::Mat& depth, cv::Mat& color, pcl::PointCloud<pcl:
     cloud.resize(cloud.height * cloud.width);
     cloud.is_dense = true;
     
-    float invfocal = 3.501e-3f; // Kinect inverse focal length. If depth map resolution of: 320 x 240
-    if (depth.cols == 640) // else if 640 x 480
-        invfocal /= 2.0;
+    float invfocal = (1/285.63f) / (depth.cols/320.f); // Kinect inverse focal length. If depth map resolution
     
 	float z;
 	float rwx, rwy, rwz;
@@ -117,9 +151,7 @@ void MatToPointCloud(cv::Mat& mat, cv::Mat& mask, pcl::PointCloud<pcl::PointXYZ>
     cv::Mat temp = cv::Mat(mat.size(), CV_32F);
     mat.convertTo(temp, CV_32F);
     
-    float invfocal = 3.501e-3f; // Kinect inverse focal length. If depth map resolution of: 320 x 240
-    if (mat.cols == 640) // else if 640 x 480
-        invfocal /= 2.0;
+    float invfocal = (1/285.63f) / (mat.cols/320.f); // Kinect inverse focal length. If depth map resolution
     
 	unsigned short z_us;
 	float z;
@@ -146,9 +178,7 @@ void PointCloudToMat(pcl::PointCloud<pcl::PointXYZ>& cloud, cv::Mat& mat)
 {
 	mat = cv::Mat::zeros(cloud.height, cloud.width, CV_16UC1);
     
-    float invfocal = 3.501e-3f; // Kinect inverse focal length. If depth map resolution of: 320 x 240
-    if (mat.cols == 640) // else if 640 x 480
-        invfocal /= 2.0;
+    float invfocal = (1/285.63f) / (mat.cols/320.f); // Kinect inverse focal length. If depth map resolution
     
     for (unsigned int i = 0; i < cloud.points.size(); i++)
     {

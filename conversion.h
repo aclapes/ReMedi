@@ -13,6 +13,8 @@
 
 void ProjectiveToRealworld(pcl::PointXYZ p, int xres, int yres, pcl::PointXYZ& rw);
 void RealworldToProjective(pcl::PointXYZ rw, int xres, int yres, pcl::PointXYZ& p);
+void ProjectiveToRealworld(pcl::PointCloud<pcl::PointXYZ>::Ptr pProjCloud, pcl::PointCloud<pcl::PointXYZ>& realCloud);
+void RealworldToProjective(pcl::PointCloud<pcl::PointXYZ>::Ptr pRealCloud, pcl::PointCloud<pcl::PointXYZ>& projCloud);
 
 void EigenToPointXYZ(Eigen::Vector4f eigen, pcl::PointXYZ& p);
 pcl::PointXYZ EigenToPointXYZ(Eigen::Vector4f eigen);

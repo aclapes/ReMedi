@@ -1,5 +1,4 @@
 #include "Remedi.h"
-#include "SupervisedObjectPicker.h"
 
 #include <pcl/console/parse.h>
 #include <boost/assign/std/vector.hpp>
@@ -7,9 +6,9 @@
 using namespace boost::assign;
 
 #ifdef _WIN32
-string g_ParentDir = "../";
-#elif __APPLE__
 string g_ParentDir = "../../";
+#elif __APPLE__
+string g_ParentDir = "../../../";
 #endif
 
 int main (int argc, char** argv)
@@ -18,44 +17,25 @@ int main (int argc, char** argv)
     // -----Parse Command Line Arguments-----
     // --------------------------------------
     
-    int sid; // sequence autoincremental id
-    if (pcl::console::parse (argc, argv, "-p", sid) >= 0)
-    {
-        string sequencesPath = g_ParentDir + "Data/Sequences/";
-        
-        vector<string> colorDirs;
-        colorDirs += "Color1/", "Color2/";
-        vector<string > depthDirs;
-        depthDirs += "Depth1/", "Depth2/";
-        
-        Reader reader (sequencesPath, colorDirs, depthDirs);
-        vector<int> delays;
-        delays += 2,0;
-        reader.setDelays(delays);
-        
-        Sequence::Ptr seq = reader.getSequence(1);
-        
-        SupervisedObjectPicker pp(g_ParentDir + "Data/ObjectLabels/", 5);
-        pp.setSequence(seq);
-        pp.setViewsDisplay(1,2);
-        pp.run();
-        
-        return 0;
-    }
-    
-    bool display = false;
-    if (pcl::console::find_argument (argc, argv, "-d") >= 0)
-    {
-        display = true;
-        cout << "Display the processing of the sequences [YES]" << endl;
-    }
+    bool visualization = false;
+    cout << "Processing visualization ";
+    if ( (visualization = (pcl::console::find_argument (argc, argv, "-v") >= 0)) )
+        cout << "[YES]" << endl;
     else
-    {
-        cout << "Display the processing of the sequences [NO]" << endl;
-    }
+        cout << "[NO]" << endl;
+    
+    int registrationFrameID = -1;
+    cout << "Views landmarks interactive selection for registration ";
+    if ( pcl::console::parse (argc, argv, "-r", registrationFrameID) >= 0 )
+        cout << "[YES]" << endl;
+    else
+        cout << "[NO]" << endl;
     
     Remedi app(g_ParentDir);
-	app.Run(display);
+    app.setVisualization(visualization);
+    app.setInteractiveRegistration(registrationFrameID);
+    
+	app.run();
 
 	return 0;
 }

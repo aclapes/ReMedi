@@ -37,10 +37,6 @@ DepthFrame::DepthFrame(const DepthFrame& other) : Frame(other)
 
 DepthFrame::~DepthFrame(void)
 {
-	m_Mask.release();
-	m_projDepthMat.release();
-	m_UIDMat.release();
-
 	Frame::~Frame();
 }
 

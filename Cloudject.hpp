@@ -12,7 +12,7 @@
 
 using namespace std;
 
-enum Viewpoint { MASTER_VIEWPOINT = 0, SLAVE_VIEWPOINT = 1 };
+enum Viewpoint { MASTER_VIEWPOINT = 0, SLAVE_VIEWPOINT = 1, BINOCULAR_VIEWPOINT = 2 };
 
 
 template<typename PointT, typename SignatureT>
@@ -27,6 +27,8 @@ public:
 	CloudjectBase(PointCloudPtr view, int viewpoint, float leafSize = 0.0)
 	{
 		m_ID = -1;
+        
+        m_Viewpoint = viewpoint;
         
         m_OriginalViewA = PointCloudPtr(new PointCloud());
         m_OriginalViewB = PointCloudPtr(new PointCloud());
@@ -46,6 +48,9 @@ public:
 	CloudjectBase(PointCloudPtr viewA, PointCloudPtr viewB, float leafSize = 0.0)
 	{
 		m_ID = -1;
+        
+        m_Viewpoint = BINOCULAR_VIEWPOINT;
+        
         m_LeafSize = leafSize;
         
         m_OriginalViewA = PointCloudPtr(new PointCloud());
@@ -62,6 +67,8 @@ public:
 	CloudjectBase(const char* viewPath, int viewpoint, float leafSize = 0.0)
 	{
 		m_ID = -1;
+        
+        m_Viewpoint = viewpoint;
         
         m_OriginalViewA = PointCloudPtr(new PointCloud());
         m_OriginalViewB = PointCloudPtr(new PointCloud());
@@ -81,6 +88,8 @@ public:
 	CloudjectBase(const char* viewPathA, const char* viewPathB, float leafSize = 0.0)
 	{
 		m_ID = -1;
+        
+        m_Viewpoint = BINOCULAR_VIEWPOINT;
     
         m_LeafSize = leafSize;
         
@@ -100,7 +109,7 @@ public:
         *this = cloudject;
 	}
 
-	virtual ~CloudjectBase(void) {}
+//	virtual ~CloudjectBase(void) {}
 
     CloudjectBase& operator=(const CloudjectBase& cloudject)
     {
@@ -109,6 +118,7 @@ public:
             m_ID	= cloudject.m_ID;
             m_OriginalViewA = cloudject.m_OriginalViewA;
             m_OriginalViewB = cloudject.m_OriginalViewB;
+            m_Viewpoint = cloudject.m_Viewpoint;
             m_ViewA = cloudject.m_ViewA;
             m_ViewB = cloudject.m_ViewB;
             m_PosA	= cloudject.m_PosA;
@@ -234,6 +244,11 @@ public:
 		return m_MedianDistB;
 	}
 
+    int getViewpoint()
+    {
+        return m_Viewpoint;
+    }
+    
 
 	PointCloudPtr getViewA() const
 	{
@@ -355,7 +370,7 @@ protected:
 	int m_ID;
     string m_Name;
     
-	int m_View;
+	int m_Viewpoint;
 	PointCloudPtr m_OriginalViewA, m_OriginalViewB;
     
     float m_LeafSize;
@@ -376,34 +391,44 @@ class LFCloudjectBase : public CloudjectBase<PointT,SignatureT>
 	typedef typename pcl::PointCloud<SignatureT>::Ptr DescriptorPtr;
 
 public:
-	LFCloudjectBase() : CloudjectBase<PointT,SignatureT>() {}
+	LFCloudjectBase() : CloudjectBase<PointT,SignatureT>(),
+    m_DescriptorA(new Descriptor), m_DescriptorB(new Descriptor)
+    {}
 
 	LFCloudjectBase(PointCloudPtr view, int viewpoint, float leafSize = 0.0)
-		: CloudjectBase<PointT,SignatureT>(view, viewpoint, leafSize) {}
+		: CloudjectBase<PointT,SignatureT>(view, viewpoint, leafSize),
+        m_DescriptorA(new Descriptor), m_DescriptorB(new Descriptor)
+    {}
 
 	LFCloudjectBase(PointCloudPtr viewA, PointCloudPtr viewB, float leafSize = 0.0) 
-		: CloudjectBase<PointT,SignatureT>(viewA, viewB, leafSize) {}
+		: CloudjectBase<PointT,SignatureT>(viewA, viewB, leafSize),
+        m_DescriptorA(new Descriptor), m_DescriptorB(new Descriptor)
+    {}
 
 	LFCloudjectBase(const char* viewPath, int viewpoint, float leafSize = 0.0)
-    : CloudjectBase<PointT,SignatureT>(viewPath, viewpoint, leafSize) {}
+        : CloudjectBase<PointT,SignatureT>(viewPath, viewpoint, leafSize),
+        m_DescriptorA(new Descriptor), m_DescriptorB(new Descriptor)
+    {}
     
 	LFCloudjectBase(const char* viewPathA, const char* viewPathB, float leafSize = 0.0) 
-		: CloudjectBase<PointT,SignatureT>(viewPathA, viewPathB, leafSize) {}
+		: CloudjectBase<PointT,SignatureT>(viewPathA, viewPathB, leafSize),
+        m_DescriptorA(new Descriptor), m_DescriptorB(new Descriptor)
+    {}
 
-	LFCloudjectBase(const LFCloudjectBase<PointT,SignatureT>& cloudject) 
-		: CloudjectBase<PointT,SignatureT>(cloudject)
+	LFCloudjectBase(const LFCloudjectBase<PointT,SignatureT>& rhs)
+		: CloudjectBase<PointT,SignatureT>(rhs)
 	{
-        *this = cloudject;
+        *this = rhs;
 	}
 
-	virtual ~LFCloudjectBase() {}
+//	virtual ~LFCloudjectBase() {}
     
-    LFCloudjectBase& operator=(const LFCloudjectBase<PointT,SignatureT>& cloudject)
+    LFCloudjectBase& operator=(const LFCloudjectBase<PointT,SignatureT>& rhs)
     {
-        if (this != &cloudject)
+        if (this != &rhs)
         {
-            m_DescriptorA = cloudject.m_DescriptorA;
-            m_DescriptorB = cloudject.m_DescriptorB;
+            m_DescriptorA = rhs.m_DescriptorA;
+            m_DescriptorB = rhs.m_DescriptorB;
         }
         
         return *this;
@@ -427,6 +452,7 @@ public:
 	float medianDistToCentroidInViewA() { return CloudjectBase<PointT,SignatureT>::medianDistToCentroidInViewA(); }
 	float medianDistToCentroidInViewB() { return CloudjectBase<PointT,SignatureT>::medianDistToCentroidInViewB(); }
 
+    int getViewpoint() { return CloudjectBase<PointT,SignatureT>::getViewpoint(); }
 	PointCloudPtr getViewA() const { return CloudjectBase<PointT,SignatureT>::getViewA(); }
 	PointCloudPtr getViewB() const { return CloudjectBase<PointT,SignatureT>::getViewB(); }
 
@@ -489,28 +515,28 @@ public:
 	LFCloudject(const char* viewPathA, const char* viewPathB, float leafSize = 0.0) 
 		: LFCloudjectBase<PointT,pcl::FPFHSignature33>(viewPathA, viewPathB, leafSize) { }
 
-	LFCloudject(const LFCloudject<PointT,pcl::FPFHSignature33>& cloudject) 
-		: LFCloudjectBase<PointT,pcl::FPFHSignature33>(cloudject)
+	LFCloudject(const LFCloudject<PointT,pcl::FPFHSignature33>& rhs)
+		: LFCloudjectBase<PointT,pcl::FPFHSignature33>(rhs)
     {
-        *this = cloudject;
+        *this = rhs;
     }
 
-	virtual ~LFCloudject() {}
+//	virtual ~LFCloudject() {}
     
-    LFCloudject& operator=(const LFCloudject& cloudject)
-    {
-        if (this != &cloudject)
-        {
-            
-        }
-        
-        return *this;
-    }
+//    LFCloudject& operator=(const LFCloudject& cloudject)
+//    {
+//        return (LFCloudject) LFCloudjectBase<PointT,pcl::FPFHSignature33>::operator=(cloudject);
+//    }
 
 	//
 	// Methods
-	// 
-	
+	//
+    
+    LFCloudject& operator=(const LFCloudject<PointT,pcl::FPFHSignature33>& rhs)
+    {
+        return *this;
+    }
+    
 	int getID() { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getID(); }
 	void setID(int ID) { LFCloudjectBase<PointT,pcl::FPFHSignature33>::setID(ID); }
     
@@ -528,6 +554,7 @@ public:
 	float medianDistToCentroidInViewA() { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::medianDistToCentroidInViewA(); }
 	float medianDistToCentroidInViewB() { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::medianDistToCentroidInViewB(); }
 
+    int getViewpoint() { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getViewpoint(); }
 	PointCloudPtr getViewA() const { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getViewA(); }
 	PointCloudPtr getViewB() const { return LFCloudjectBase<PointT,pcl::FPFHSignature33>::getViewB(); }
 
@@ -646,7 +673,7 @@ public:
 	LFCloudject(const LFCloudject<PointT,pcl::PFHRGBSignature250>& cloudject) 
 		: LFCloudjectBase<PointT,pcl::PFHRGBSignature250>(cloudject) { }
 
-	virtual ~LFCloudject() {}
+//	virtual ~LFCloudject() {}
 
 	//
 	// Methods
@@ -669,6 +696,7 @@ public:
 	float medianDistToCentroidInViewA() { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::medianDistToCentroidInViewA(); }
 	float medianDistToCentroidInViewB() { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::medianDistToCentroidInViewB(); }
 
+    int getViewpoint() { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::getViewpoint(); }
 	PointCloudPtr getViewA() const { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::getViewA(); }
 	PointCloudPtr getViewB() const { return LFCloudjectBase<PointT,pcl::PFHRGBSignature250>::getViewB(); }
 

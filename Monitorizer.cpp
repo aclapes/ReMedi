@@ -1,13 +1,17 @@
+
 #include "Monitorizer.h"
+
+Monitorizer::Monitorizer()
+: m_pInteractionCloudA(new PointCloud), m_pInteractionCloudB(new PointCloud), m_bVisualize(false)
+{
+}
 
 Monitorizer::Monitorizer(BackgroundSubtractor::Ptr pBS,
                          InteractiveRegisterer::Ptr pIR,
                          TableModeler::Ptr pTM,
                          CloudjectDetector::Ptr pCD)
-: m_pBS(pBS), m_pIR(pIR), m_pTM(pTM), m_pCloudjectDetector(pCD),
-m_pInteractionCloudA(new PointCloud), m_pInteractionCloudB(new PointCloud),
-m_bVisualize(false)
-{    
+: m_pBS(pBS), m_pIR(pIR), m_pTM(pTM), m_pCD(pCD), m_pInteractionCloudA(new PointCloud), m_pInteractionCloudB(new PointCloud), m_bVisualize(false)
+{
 }
 
 Monitorizer::Monitorizer(const Monitorizer& rhs)
@@ -17,6 +21,10 @@ Monitorizer::Monitorizer(const Monitorizer& rhs)
 
 Monitorizer::~Monitorizer(void)
 {
+//    if (m_pViz != NULL && !m_pViz->wasStopped())
+//        m_pViz->close();
+    
+    cout << "~Monitorizer" << endl;
 }
 
 Monitorizer& Monitorizer::operator=(const Monitorizer& rhs)
@@ -28,7 +36,7 @@ Monitorizer& Monitorizer::operator=(const Monitorizer& rhs)
         m_pIR = rhs.m_pIR;
         m_pTM = rhs.m_pTM;
         
-        m_pViz = rhs.m_pViz;
+        //m_pViz = rhs.m_pViz;
         m_SceneVp = rhs.m_SceneVp;
         m_ObjectsVpA = rhs.m_ObjectsVpA;
         m_ObjectsVpB = rhs.m_ObjectsVpB;
@@ -39,7 +47,7 @@ Monitorizer& Monitorizer::operator=(const Monitorizer& rhs)
         m_CloudA = rhs.m_CloudA;
         m_CloudB = rhs.m_CloudB;
         
-        m_pCloudjectDetector = rhs.m_pCloudjectDetector;
+        m_pCD = rhs.m_pCD;
 //        m_MotionSegmentator = rhs.m_MotionSegmentator;
         
         m_cloudjects = rhs.m_cloudjects; // yet present
@@ -51,19 +59,41 @@ Monitorizer& Monitorizer::operator=(const Monitorizer& rhs)
         m_TextSize = rhs.m_TextSize;
         m_TextsVpA = rhs.m_TextsVpA;
         m_TextsVpB = rhs.m_TextsVpB;
+        
+        m_DetectionOutput = rhs.m_DetectionOutput;
     }
     
     return *this;
 }
 
-void Monitorizer::clear()
+void Monitorizer::setBackgroundSubtractor(BackgroundSubtractor::Ptr bs)
 {
-    m_pCloudjectDetector->clear();
+    m_pBS = bs;
 }
 
-void Monitorizer::setSequence(Sequence::Ptr pSequence)
+void Monitorizer::setRegisterer(InteractiveRegisterer::Ptr ir)
 {
-    m_pSequence = pSequence;
+    m_pIR = ir;
+}
+
+void Monitorizer::setTableModeler(TableModeler::Ptr tm)
+{
+    m_pTM = tm;
+}
+
+void Monitorizer::setCloudjectDetector(CloudjectDetector::Ptr cd)
+{
+    m_pCD = cd;
+}
+
+void Monitorizer::clear()
+{
+    m_pCD->clear();
+}
+
+void Monitorizer::setInputSequence(Sequence::Ptr pSequence)
+{
+    m_pSeq = pSequence;
 }
 
 void Monitorizer::setParams(MonitorizerParams params)
@@ -73,16 +103,16 @@ void Monitorizer::setParams(MonitorizerParams params)
 
 void Monitorizer::monitor(DetectionOutput& output)
 {
-    while (m_pSequence->hasNextDepthFrame())
+    while (m_pSeq->hasNextDepthFrame())
     {
         DepthFrame fgDepthFrameA, fgDepthFrameB;
-        vector<DepthFrame> frames = m_pSequence->nextDepthFrame();
+        vector<DepthFrame> frames = m_pSeq->nextDepthFrame();
         m_pBS->subtract(frames[0], frames[1], fgDepthFrameA, fgDepthFrameB);
         
         process(fgDepthFrameA, fgDepthFrameB);
     }
     
-    output = m_pCloudjectDetector->getDetectionOutput();
+    output = m_DetectionOutput;
 }
 
 void Monitorizer::process(DepthFrame dFrameA, DepthFrame dFrameB)
@@ -142,20 +172,52 @@ void Monitorizer::process(DepthFrame dFrameA, DepthFrame dFrameB)
     // - detect apparitions and disapparitions
     //
     
-    m_pCloudjectDetector->setInputClusters(actorClustersA, actorClustersB);
-    m_pCloudjectDetector->detect();
+    m_pCD->setInputClusters(actorClustersA, actorClustersB);
+    m_pCD->detect();
 
-    m_pCloudjectDetector->getPresentCloudjects(m_PresentCloudjects);
-    m_pCloudjectDetector->getAppearedCloudjects(m_AppearedCloudjects);
-    m_pCloudjectDetector->getDisappearedCloudjects(m_DisappearedCloudjects);
+    m_pCD->getPresentCloudjects(m_PresentCloudjects);
+    
+    vector<vector<vector<pcl::PointXYZ> > > positions(2);
+    for (int i = 0; i < positions.size(); i++)
+        positions[i].resize(m_pCD->getNumCloudjectModels());
+    
+    for (int i = 0; i < m_PresentCloudjects.size(); i++)
+    {
+        Cloudject cloudject = m_PresentCloudjects[i];
+        
+        // Detector output (xyz positions)
+        int oid  = cloudject.getID();
+        if (oid >= 0)
+        {
+            int view = cloudject.getViewpoint();
+            if (view != BINOCULAR_VIEWPOINT)
+            {
+                pcl::PointXYZ p = m_pIR->deregistration((view == MASTER_VIEWPOINT) ? cloudject.getPosA() : cloudject.getPosB(), view);
+                positions[view][oid].push_back( p );
+            }
+            else
+            {
+                positions[MASTER_VIEWPOINT][oid].push_back(m_pIR->deregistration(cloudject.getPosA(), MASTER_VIEWPOINT));
+                positions[SLAVE_VIEWPOINT][oid].push_back(m_pIR->deregistration(cloudject.getPosB(), SLAVE_VIEWPOINT));
+            }
+        }
+    }
+    
+    m_DetectionOutput.add(positions);
+    
+    
+    // ...
+    
+    m_pCD->getAppearedCloudjects(m_AppearedCloudjects);
+    m_pCD->getDisappearedCloudjects(m_DisappearedCloudjects);
     
     for (int i = 0; i < m_DisappearedCloudjects.size(); i++)
     {
-        bool grabInA = isInteractive(m_DisappearedCloudjects[i]->getViewA(), m_InteractorClustersA, 1.5 * m_LeafSize);
-        bool grabInB = isInteractive(m_DisappearedCloudjects[i]->getViewB(), m_InteractorClustersB, 1.5 * m_LeafSize);
+        bool grabInA = isInteractive(m_DisappearedCloudjects[i].getViewA(), m_InteractorClustersA, 1.5 * m_LeafSize);
+        bool grabInB = isInteractive(m_DisappearedCloudjects[i].getViewB(), m_InteractorClustersB, 1.5 * m_LeafSize);
         
-        if (grabInA || grabInB)
-            cout << m_DisappearedCloudjects[i]->getName() << endl;
+        if (m_bVisualize && (grabInA || grabInB))
+            cout << m_DisappearedCloudjects[i].getName() << endl;
     }
     
     if (m_bVisualize)
@@ -164,75 +226,75 @@ void Monitorizer::process(DepthFrame dFrameA, DepthFrame dFrameB)
 
 void Monitorizer::visualize()
 {
-    // Visualization
-    
-	m_pViz->removeAllPointClouds();
-    m_pViz->removeAllShapes();
-    
-    //	m_pViz->addPointCloud (pRCloudA, "cloud left", m_SceneVp);
-    //    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 1, 0, "cloud left");
-    //    m_pViz->addPointCloud (pRCloudB, "cloud right", m_SceneVp);
-    //    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 1, "cloud right");
-    
-    stringstream ss;
-    m_pViz->addPointCloud (m_pInteractionCloudA, "interaction left", m_ObjectsVpA);
-    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 1, 1, "interaction left");
-    for (int i = 0; i < m_InteractorClustersA.size(); i++)
-    {
-        ss.str("");
-        ss << "interactors left " << i;
-        m_pViz->addPointCloud (m_InteractorClustersA[i], ss.str(), m_ObjectsVpA);
-        m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0.35, 1, ss.str());
-    }
-    
-    
-    m_pViz->addPointCloud (m_pInteractionCloudB, "interaction right", m_ObjectsVpB);
-    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 1, 1, "interaction left");
-    for (int i = 0; i < m_InteractorClustersB.size(); i++)
-    {
-        ss.str("");
-        ss << "interactors righties " << i;
-        m_pViz->addPointCloud (m_InteractorClustersB[i], ss.str(), m_ObjectsVpB);
-        m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0.35, 1, ss.str());
-    }
-    
-    for (int i = 0; i < m_TextsVpA.size(); i++)
-        m_pViz->removeText3D("a" + m_TextsVpA[i], m_ObjectsVpA + 1);
-    
-    for (int i = 0; i < m_TextsVpB.size(); i++)
-        m_pViz->removeText3D("b" + m_TextsVpB[i], m_ObjectsVpB + 1);
-    
-    
-    for (int i = 0; i < m_PresentCloudjects.size(); i++)
-    {
-        size_t pid = ((size_t) &(*m_PresentCloudjects[i]));// pointer-based id
-        
-        if (!m_PresentCloudjects[i]->getViewA()->empty())
-        {
-            m_pViz->addPointCloud (m_PresentCloudjects[i]->getViewA(), "a" + to_string(pid), m_ObjectsVpA);
-            m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.8, 0.1, 0.1, "a" + to_string(pid));
-            
-            //            if (cloudjects[i].getID() >= 0)
-            //            {
-            m_pViz->addText3D(m_PresentCloudjects[i]->getName(), m_PresentCloudjects[i]->getPosA(), m_TextSize, 1.0, 1.0, 1.0, "a" + to_string(pid), m_ObjectsVpA + 1);
-            m_TextsVpA.push_back( to_string(pid) );
-            //            }
-        }
-        
-        if (!m_PresentCloudjects[i]->getViewB()->empty())
-        {
-            m_pViz->addPointCloud (m_PresentCloudjects[i]->getViewB(), "b" + to_string(pid), m_ObjectsVpB);
-            m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.8, 0.1, 0.1, "b" + to_string(pid));
-            
-            //            if (cloudjects[i].getID() >= 0)
-            //            {
-            m_pViz->addText3D(m_PresentCloudjects[i]->getName(), m_PresentCloudjects[i]->getPosB(), m_TextSize, 1.0, 1.0, 1.0, "b" + to_string(pid), m_ObjectsVpB + 1);
-            m_TextsVpB.push_back( "b" + to_string(pid) );
-            //            }
-        }
-    }
-    
-	m_pViz->spinOnce(10);
+//    // Visualization
+//    
+//	m_pViz->removeAllPointClouds();
+//    m_pViz->removeAllShapes();
+//    
+//    //	m_pViz->addPointCloud (pRCloudA, "cloud left", m_SceneVp);
+//    //    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 1, 0, "cloud left");
+//    //    m_pViz->addPointCloud (pRCloudB, "cloud right", m_SceneVp);
+//    //    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 1, "cloud right");
+//    
+//    stringstream ss;
+//    m_pViz->addPointCloud (m_pInteractionCloudA, "interaction left", m_ObjectsVpA);
+//    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 1, 1, "interaction left");
+//    for (int i = 0; i < m_InteractorClustersA.size(); i++)
+//    {
+//        ss.str("");
+//        ss << "interactors left " << i;
+//        m_pViz->addPointCloud (m_InteractorClustersA[i], ss.str(), m_ObjectsVpA);
+//        m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0.35, 1, ss.str());
+//    }
+//    
+//    
+//    m_pViz->addPointCloud (m_pInteractionCloudB, "interaction right", m_ObjectsVpB);
+//    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 1, 1, "interaction left");
+//    for (int i = 0; i < m_InteractorClustersB.size(); i++)
+//    {
+//        ss.str("");
+//        ss << "interactors righties " << i;
+//        m_pViz->addPointCloud (m_InteractorClustersB[i], ss.str(), m_ObjectsVpB);
+//        m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0.35, 1, ss.str());
+//    }
+//    
+//    for (int i = 0; i < m_TextsVpA.size(); i++)
+//        m_pViz->removeText3D("a" + m_TextsVpA[i], m_ObjectsVpA + 1);
+//    
+//    for (int i = 0; i < m_TextsVpB.size(); i++)
+//        m_pViz->removeText3D("b" + m_TextsVpB[i], m_ObjectsVpB + 1);
+//    
+//    
+//    for (int i = 0; i < m_PresentCloudjects.size(); i++)
+//    {
+//        size_t pid = ((size_t) &(m_PresentCloudjects[i]));// pointer-based id
+//        
+//        if (!m_PresentCloudjects[i].getViewA()->empty())
+//        {
+//            m_pViz->addPointCloud (m_PresentCloudjects[i].getViewA(), "a" + to_string(pid), m_ObjectsVpA);
+//            m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.8, 0.1, 0.1, "a" + to_string(pid));
+//            
+//            //            if (cloudjects[i].getID() >= 0)
+//            //            {
+//            m_pViz->addText3D(m_PresentCloudjects[i].getName(), m_PresentCloudjects[i].getPosA(), m_TextSize, 1.0, 1.0, 1.0, "a" + to_string(pid), m_ObjectsVpA + 1);
+//            m_TextsVpA.push_back( to_string(pid) );
+//            //            }
+//        }
+//    
+//        if (!m_PresentCloudjects[i].getViewB()->empty())
+//        {
+//            m_pViz->addPointCloud (m_PresentCloudjects[i].getViewB(), "b" + to_string(pid), m_ObjectsVpB);
+//            m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.8, 0.1, 0.1, "b" + to_string(pid));
+//            
+//            //            if (cloudjects[i].getID() >= 0)
+//            //            {
+//            m_pViz->addText3D(m_PresentCloudjects[i].getName(), m_PresentCloudjects[i].getPosB(), m_TextSize, 1.0, 1.0, 1.0, "b" + to_string(pid), m_ObjectsVpB + 1);
+//            m_TextsVpB.push_back( "b" + to_string(pid) );
+//            //            }
+//        }
+//    }
+//    
+//	m_pViz->spinOnce(10);
 }
 
 //void Monitorizer::segmentMotion(float thresh, cv::Mat& motionA, cv::Mat& motionB)
@@ -357,40 +419,43 @@ void Monitorizer::extractClustersFromView(pcl::PointCloud<PointT>::Ptr pCloud, v
     {
         pcl::copyPointCloud(*pCloudR, *pCloudF);
     }
+    
+    if (pCloudF->points.size() > 1)
+    {
+        // Creating the KdTree object for the search method of the extraction
+        pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT>);
+        tree->setInputCloud (pCloudF);
 
-	// Creating the KdTree object for the search method of the extraction
-	pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT>);
-	tree->setInputCloud (pCloudF);
+        vector<pcl::PointIndices> clusterIndices;
+        pcl::EuclideanClusterExtraction<PointT> ec;
+        float tol = (leafSize > 0.f) ? m_ClusterTolFactor * leafSize : m_ClusterTolFactor * 0.005;
+        ec.setClusterTolerance (tol); // cm
+        ec.setMinClusterSize (0.1/leafSize);
+        ec.setMaxClusterSize (1000/leafSize);
+        ec.setSearchMethod (tree);
+        ec.setInputCloud (pCloudF);
+        ec.extract (clusterIndices);
 
-	vector<pcl::PointIndices> clusterIndices;
-	pcl::EuclideanClusterExtraction<PointT> ec;
-    float tol = (leafSize > 0.f) ? m_ClusterTolFactor * leafSize : m_ClusterTolFactor * 0.005;
-	ec.setClusterTolerance (tol); // cm
-	ec.setMinClusterSize (0.1/leafSize);
-	ec.setMaxClusterSize (1000/leafSize);
-	ec.setSearchMethod (tree);
-	ec.setInputCloud (pCloudF);
-	ec.extract (clusterIndices);
+        vector<pcl::PointCloud<PointT>::Ptr> clustersF; // clusters filtered
 
-	vector<pcl::PointCloud<PointT>::Ptr> clustersF; // clusters filtered
+        pcl::PassThrough<PointT> pt;
+        PointT min, max;
 
-	pcl::PassThrough<PointT> pt;
-	PointT min, max;
+        int j = 0;
+        for (vector<pcl::PointIndices>::const_iterator it = clusterIndices.begin (); it != clusterIndices.end (); ++it)
+        {
+            pcl::PointCloud<PointT>::Ptr pClusterF (new pcl::PointCloud<PointT>);
+            for (vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
+                pClusterF->points.push_back (pCloudF->points[*pit]); //*
+            pClusterF->width = pClusterF->points.size();
+            pClusterF->height = 1;
+            pClusterF->is_dense = false;
 
-	int j = 0;
-	for (vector<pcl::PointIndices>::const_iterator it = clusterIndices.begin (); it != clusterIndices.end (); ++it)
-	{
-		pcl::PointCloud<PointT>::Ptr pClusterF (new pcl::PointCloud<PointT>);
-		for (vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); pit++)
-			pClusterF->points.push_back (pCloudF->points[*pit]); //*
-		pClusterF->width = pClusterF->points.size();
-		pClusterF->height = 1;
-		pClusterF->is_dense = false;
+            clusters.push_back(pClusterF);
 
-		clusters.push_back(pClusterF);
-
-		j++;
-	}
+            j++;
+        }
+    }
 }
 
 void Monitorizer::classifyTabletop(vector<PointCloudPtr> tabletopRegionClusters,
@@ -460,34 +525,34 @@ void Monitorizer::setVisualization(bool visualize)
 {
     m_bVisualize = visualize;
     
-    if (m_bVisualize)
-    {
-        m_pViz = pcl::visualization::PCLVisualizer::Ptr(new pcl::visualization::PCLVisualizer);
-        //    m_SceneVp = 1;
-        //    m_ObjectsVpA = 2;
-        //    m_ObjectsVpB = 3;
-        
-        //	m_pViz->createViewPort(0, 0, 0.5, 1, m_SceneVp);
-        //	m_pViz->createViewPort(0.5, 0.5, 1, 1, m_ObjectsVpA);
-        //	m_pViz->createViewPort(0.5, 0, 1, 0.5, m_ObjectsVpB);
-        
-        m_pViz->setPosition(0,0);
-        m_pViz->setSize(1280,480);
-        
-        m_pViz->createViewPort(0.0, 0.0, 0.5, 1.0, m_ObjectsVpA);
-        m_pViz->createViewPort(0.5, 0.0, 1.0, 1.0, m_ObjectsVpB);
-        
-        //	m_pViz->addCoordinateSystem(0.5, "SceneVp", m_SceneVp);
-        m_pViz->addCoordinateSystem(0.5, "ObjectsA", m_ObjectsVpA);
-        m_pViz->addCoordinateSystem(0.5, "ObjectsB", m_ObjectsVpB);
-        
-        m_pViz->setCameraPosition(0, 0, 3, 0, 0, 0);
-        
-        m_TextSize = 0.05;
-    }
+//    if (m_bVisualize)
+//    {
+//        m_pViz = pcl::visualization::PCLVisualizer::Ptr(new pcl::visualization::PCLVisualizer);
+//        //    m_SceneVp = 1;
+//        //    m_ObjectsVpA = 2;
+//        //    m_ObjectsVpB = 3;
+//        
+//        //	m_pViz->createViewPort(0, 0, 0.5, 1, m_SceneVp);
+//        //	m_pViz->createViewPort(0.5, 0.5, 1, 1, m_ObjectsVpA);
+//        //	m_pViz->createViewPort(0.5, 0, 1, 0.5, m_ObjectsVpB);
+//        
+//        m_pViz->setPosition(0,0);
+//        m_pViz->setSize(1280,480);
+//        
+//        m_pViz->createViewPort(0.0, 0.0, 0.5, 1.0, m_ObjectsVpA);
+//        m_pViz->createViewPort(0.5, 0.0, 1.0, 1.0, m_ObjectsVpB);
+//        
+//        //	m_pViz->addCoordinateSystem(0.5, "SceneVp", m_SceneVp);
+//        m_pViz->addCoordinateSystem(0.5, "ObjectsA", m_ObjectsVpA);
+//        m_pViz->addCoordinateSystem(0.5, "ObjectsB", m_ObjectsVpB);
+//        
+//        m_pViz->setCameraPosition(0, 0, 3, 0, 0, 0);
+//        
+//        m_TextSize = 0.05;
+//    }
 }
 
 DetectionOutput Monitorizer::getObjectDetectionOutput()
 {
-    return m_pCloudjectDetector->getDetectionOutput();
+    return m_DetectionOutput;
 }

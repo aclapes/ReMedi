@@ -5,8 +5,11 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/fstream.hpp>
 
+#include "Remedi.h"
 
-CloudjectDetector::CloudjectDetector(void)
+class Remedi;
+
+CloudjectDetector::CloudjectDetector()
 : m_NormalRadius(0.025), m_FpfhRadius(0.05), m_ScoreThreshold(0.5)
 {
 }
@@ -16,7 +19,7 @@ CloudjectDetector::CloudjectDetector(const CloudjectDetector& rhs)
     *this = rhs;
 }
 
-CloudjectDetector::~CloudjectDetector(void)
+CloudjectDetector::~CloudjectDetector()
 {
 }
 
@@ -55,7 +58,6 @@ void CloudjectDetector::clear()
     m_CloudjectsHistory.clear();
     m_AppearedCloudjects.clear();
     m_DisappearedCloudjects.clear();
-    m_DetectionOutput.clear();
 }
 
 void CloudjectDetector::loadCloudjectModels(string dir)
@@ -90,21 +92,21 @@ void CloudjectDetector::loadCloudjectModels(string dir)
                 {
                     cout << "Created model " << name << endl;
                     
-                    CloudjectModelPtr cloudjectModel (new CloudjectModel(id, name, m_ModelLeafSize));
+                    CloudjectModel cloudjectModel (id, name, m_ModelLeafSize);
                     m_CloudjectModels.push_back(cloudjectModel);
                 }
                 
                 cout << "Adding view to " << name << " ..." << endl;
                 
-                m_CloudjectModels.back()->addView(pObject);
+                m_CloudjectModels.back().addView(pObject);
             }
 		}
 	}
 
     for (int i = 0; i < m_CloudjectModels.size(); i++)
     {
-        cout << "Describing model " << m_CloudjectModels[i]->getName() << " ..." << endl;
-        m_CloudjectModels[i]->describe(m_NormalRadius, m_FpfhRadius);
+        cout << "Describing model " << m_CloudjectModels[i].getName() << " ..." << endl;
+        m_CloudjectModels[i].describe(m_NormalRadius, m_FpfhRadius);
     }
 }
 
@@ -125,7 +127,7 @@ void CloudjectDetector::setInputClusters(vector<pcl::PointCloud<pcl::PointXYZ>::
 	m_ClustersB = clustersB;
 }
 
-void CloudjectDetector::setCloudjectModels(vector<CloudjectModelPtr> models)
+void CloudjectDetector::setCloudjectModels(vector<CloudjectModel> models)
 {
     m_CloudjectModels = models;
 }
@@ -640,26 +642,59 @@ void CloudjectDetector::detect()
     assert (correspsA.size() == correspsB.size());
     
 	// Create cloudjects from detected clusters in views' pointclouds
-    vector<CloudjectPtr> cloudjects;
+    vector<Cloudject> cloudjects;
     
 	for (int i = 0; i < correspsA.size(); i++)
-		cloudjects.push_back( CloudjectPtr(new Cloudject(correspsA[i], correspsB[i])) );
+		cloudjects.push_back( Cloudject(correspsA[i], correspsB[i]) );
 
 	for (int i = 0; i < leftoversA.size(); i++)
-		cloudjects.push_back( CloudjectPtr(new Cloudject(leftoversA[i], MASTER_VIEWPOINT)) );
+		cloudjects.push_back( Cloudject(leftoversA[i], MASTER_VIEWPOINT) );
 
 	for (int i = 0; i < leftoversB.size(); i++)
-		cloudjects.push_back( CloudjectPtr(new Cloudject(leftoversB[i], SLAVE_VIEWPOINT)) );
+		cloudjects.push_back( Cloudject(leftoversB[i], SLAVE_VIEWPOINT) );
 
     makeSpatiotemporalCorrespondences(cloudjects, m_AppearedCloudjects, m_DisappearedCloudjects, m_CloudjectsHistory);
     
     recognize(m_CloudjectsHistory);
     
-    for (int i = 0; i < m_CloudjectsHistory.size(); i++)
-        cloudjects.push_back(m_CloudjectsHistory[i][0]);
+
+    // Handle predictions/outputs
+    
+//    vector<vector<vector<pcl::PointXYZ> > > positions(2);
+//    for (int i = 0; i < positions.size(); i++)
+//        positions[i].resize(m_CloudjectModels.size());
+//    
+//    for (int i = 0; i < m_CloudjectsHistory.size(); i++)
+//    {
+//        Cloudject pCloudject = m_CloudjectsHistory[i][0];
+//
+//        // Method call output (cloudjects)
+//        cloudjects.push_back(pCloudject);
+//        
+//        // Detector output (xyz positions)
+//        int oid  = pCloudject->getID();
+//        if (oid >= 0)
+//        {
+//            int view = pCloudject->getViewpoint();
+//            if (view != BINOCULAR_VIEWPOINT)
+//            {
+//                pcl::PointXYZ pos = (view == MASTER_VIEWPOINT) ? pCloudject->getPosA()
+//                                                               : pCloudject->getPosB();
+//                positions[view][oid].push_back(pos);
+//            }
+//            else
+//            {
+//                positions[MASTER_VIEWPOINT][oid].push_back(pCloudject->getPosA());
+//                positions[SLAVE_VIEWPOINT][oid].push_back (pCloudject->getPosB());
+//            }
+//        }
+//    }
+//    
+//    m_DetectionOutput.add(positions);
+    
 }
 
-void CloudjectDetector::makeSpatiotemporalCorrespondences(vector<CloudjectPtr> cloudjects, vector<CloudjectPtr>& appeared, vector<CloudjectPtr>& disappeared, vector< vector<CloudjectPtr> >& cloudjectsHistory)
+void CloudjectDetector::makeSpatiotemporalCorrespondences(vector<Cloudject> cloudjects, vector<Cloudject>& appeared, vector<Cloudject>& disappeared, vector< vector<Cloudject> >& cloudjectsHistory)
 {
     // Check if, based in a certain criterion, the detected cloudject represents
     // an object that was already there.
@@ -676,7 +711,7 @@ void CloudjectDetector::makeSpatiotemporalCorrespondences(vector<CloudjectPtr> c
     // won't be appended in the updated history, since no cloudject exists to
     // trigger any of the two previous conditions.
     
-    vector< vector<CloudjectPtr> > cloudjectsHistoryTmp; // updated history (empty)
+    vector< vector<Cloudject> > cloudjectsHistoryTmp; // updated history (empty)
     
     appeared.clear();
     disappeared.clear();
@@ -690,7 +725,7 @@ void CloudjectDetector::makeSpatiotemporalCorrespondences(vector<CloudjectPtr> c
         for (int j = 0; j < cloudjectsHistory.size(); j++)
         {
             float dist1, dist2;
-            cloudjects[i]->distanceTo(*cloudjectsHistory[j][0], &dist1, &dist2);
+            cloudjects[i].distanceTo(cloudjectsHistory[j][0], &dist1, &dist2);
             
             if (dist1 >= 0 && dist1 < minDist)
             {
@@ -704,7 +739,7 @@ void CloudjectDetector::makeSpatiotemporalCorrespondences(vector<CloudjectPtr> c
             }
         }
         
-        vector<CloudjectPtr> cloudjectHistory; // history of a cloudject
+        vector<Cloudject> cloudjectHistory; // history of a cloudject
         if (minDist <= m_MaxCorrespondenceDistance) // apply "being there" crit
         {
             cloudjectHistory = cloudjectsHistory[minIdx];
@@ -727,7 +762,7 @@ void CloudjectDetector::makeSpatiotemporalCorrespondences(vector<CloudjectPtr> c
         bool present = false;
         for (int j = 0; j < cloudjectsHistoryTmp.size() && !present; j++)
         {
-            present = ( &(*cloudjectsHistory[i][0]) == &(*cloudjectsHistoryTmp[j][0]) );
+            present = ( &(cloudjectsHistory[i][0]) == &(cloudjectsHistoryTmp[j][0]) );
         }
         if (!present) disappeared.push_back(cloudjectsHistory[i][0]);
     }
@@ -908,16 +943,16 @@ void CloudjectDetector::recursive_assignation(vector< vector< pair<int,double> >
 }
 
 
-void CloudjectDetector::recognize(vector< vector<CloudjectPtr> >& history)
+void CloudjectDetector::recognize(vector< vector<Cloudject> >& history)
 {
     vector< vector<double> > cloudjectScores (history.size());
     
     for (int i = 0; i < history.size(); i++)
     {
-        history[i][0]->describe(m_NormalRadius, m_FpfhRadius);
+        history[i][0].describe(m_NormalRadius, m_FpfhRadius);
         for (int j = 0; j < m_CloudjectModels.size(); j++)
         {
-            double score = m_CloudjectModels[j]->match(*history[i][0]);
+            double score = m_CloudjectModels[j].match(history[i][0]);
             cloudjectScores[i].push_back(score);
             //cout << score << "\t";
         }
@@ -931,34 +966,28 @@ void CloudjectDetector::recognize(vector< vector<CloudjectPtr> >& history)
     
     for (int i = 0; i < history.size(); i++)
     {
-        history[i][0]->setID(assignations[i]);
+        history[i][0].setID(assignations[i]);
         if (assignations[i] >= 0)
-            history[i][0]->setName(m_CloudjectModels[assignations[i]]->getName());
+            history[i][0].setName(m_CloudjectModels[assignations[i]].getName());
 
     }
-    cout << endl;
 }
 
-void CloudjectDetector::getPresentCloudjects(vector<CloudjectPtr>& cloudjects)
+void CloudjectDetector::getPresentCloudjects(vector<Cloudject>& cloudjects)
 {
     cloudjects.clear();
     for (int i = 0; i < m_CloudjectsHistory.size(); i++)
         cloudjects.push_back(m_CloudjectsHistory[i][0]);
 }
 
-void CloudjectDetector::getAppearedCloudjects(vector<CloudjectPtr>& cloudjects)
+void CloudjectDetector::getAppearedCloudjects(vector<Cloudject>& cloudjects)
 {
     cloudjects.clear();
     cloudjects = m_AppearedCloudjects;
 }
 
-void CloudjectDetector::getDisappearedCloudjects(vector<CloudjectPtr>& cloudjects)
+void CloudjectDetector::getDisappearedCloudjects(vector<Cloudject>& cloudjects)
 {
     cloudjects.clear();
     cloudjects = m_DisappearedCloudjects;
-}
-
-DetectionOutput CloudjectDetector::getDetectionOutput()
-{
-    return m_DetectionOutput;
 }

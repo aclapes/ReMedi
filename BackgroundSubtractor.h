@@ -2,33 +2,40 @@
 
 #include "DepthFrame.h"
 #include "Reader.h"
+#include "Sequence.h"
 
 #include <opencv2/opencv.hpp>
 
 class BackgroundSubtractor
 {
 public:
-	BackgroundSubtractor(int, int);
+    BackgroundSubtractor();
     BackgroundSubtractor(const BackgroundSubtractor& rhs);
 	~BackgroundSubtractor(void);
     
     BackgroundSubtractor& operator=(const BackgroundSubtractor& rhs);
 	void operator()(DepthFrame, float alpha = 0);
 	void operator()(DepthFrame, DepthFrame, float alpha = 0);
+    
+    void setInputSequence(Sequence::Ptr pSeq);
+    void setNumOfMixtureComponents(int k = 5);
+    void setLearningRate(float rate = 0.02);
 
-	bool isReady();
-
+    void model();
+    
 	void subtract(DepthFrame, DepthFrame&);
 	void subtract(DepthFrame, DepthFrame, DepthFrame&, DepthFrame&);
     
     typedef boost::shared_ptr<BackgroundSubtractor> Ptr;
 
 private:
-	void operator()(cv::BackgroundSubtractorMOG2*, DepthFrame&, float alpha = 0);
-	void subtract(cv::BackgroundSubtractorMOG2*, DepthFrame&, DepthFrame&);
+	void operator()(cv::BackgroundSubtractorMOG2&, DepthFrame&, float alpha = 0);
+	void subtract(cv::BackgroundSubtractorMOG2&, DepthFrame&, DepthFrame&);
 
-	cv::BackgroundSubtractorMOG2*	m_pSubtractorA;
-	cv::BackgroundSubtractorMOG2*	m_pSubtractorB;
-	int								m_NFrames;
+    Sequence::Ptr m_pSeq;
+    cv::BackgroundSubtractorMOG2	m_subtractorA;
+	cv::BackgroundSubtractorMOG2	m_subtractorB;
+    int m_NumOfMixtureComponents;
+    float m_LearningRate;
 };
 

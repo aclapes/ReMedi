@@ -16,174 +16,36 @@ Remedi::Remedi(string parentDir)
 	m_ParentDir = parentDir;
 }
 
-void Remedi::Run(bool display)
+Remedi::~Remedi()
 {
-	/*
-	 * Load data
-	 */
-
-	// Create a reader pointing the data streams
-
-    string sequencesPath = m_ParentDir + "Data/Sequences/";
-    vector<string> colorDirs;
-    colorDirs += "Color1/", "Color2/";
-    vector<string> depthDirs;
-    depthDirs += "Depth1/", "Depth2/";
-    string labelsPath = m_ParentDir + "Data/Labels/observer_1/csv/";
-
-    Reader reader( sequencesPath, colorDirs, depthDirs, labelsPath );
-    
-    Sequence::Ptr pSequence (new Sequence);
-    reader.getSequence(0, *pSequence);
-    
-	/*
-	 * REGISTRATION (paired frames)
-	 */
-
-    InteractiveRegisterer::Ptr pRegisterer (new InteractiveRegisterer);
-	interactWithRegisterer(pSequence, *pRegisterer);
-
-	/*
-	 * PLANE SEGMENTATION
-	 */
-
-    TableModeler::Ptr pTableModeler (new TableModeler);
-	modelTablePlanes(pRegisterer->getRegisteredClouds().first,
-                     pRegisterer->getRegisteredClouds().second,
-                     *pTableModeler);
-	
-	/*
-	 * BACKGROUND SUBTRACTION
-	 */
-
-	int nFrames = 400;
-    int nMixtures = 5; // BS parameters
-//	cout << "[BS] <<<< Number of frames: ";
-//	cin >> nFrames;
-//	cout << "[BS] <<<< Number of mixtures: ";
-//	cin >> nMixtures;
-	
-    BackgroundSubtractor::Ptr pBackgroundSubtractor(new BackgroundSubtractor(nFrames, nMixtures));
-    modelBackground(pSequence, *pBackgroundSubtractor);
-    
-    CloudjectDetector::Ptr pCloudjectDetector (new CloudjectDetector);
-    pCloudjectDetector->setModelLeafSize(0.015);
-    pCloudjectDetector->setNormalRadius(0.03);
-    pCloudjectDetector->setFpfhRadius(0.125);
-    pCloudjectDetector->setScoreThreshold(0.5);
-    pCloudjectDetector->setLeafSize(0.0225);
-    pCloudjectDetector->setTemporalWindow(3);
-    pCloudjectDetector->setMaxCorrespondenceDistance(0.07);
-    pCloudjectDetector->loadCloudjectModels(m_ParentDir + "Data/CloudjectModels/");
-    
-//    MonitorizerParams monitorParams;
-//	monitorParams.tmpCoherence = 2;
-//	monitorParams.motionThresh = 5;
-//    //	monitorParams.leafSize = 0.005;
-//	monitorParams.posCorrespThresh = 0.1; // 7 cm
-    
-	Monitorizer monitorizer (pBackgroundSubtractor, pRegisterer, pTableModeler, pCloudjectDetector);
-    monitorizer.setLeafSize(0.005);
-    monitorizer.setClusteringToleranceFactor(3);
-    monitorizer.setVisualization(display);
-
-	/*
-	 * Loop
-	 */
-    
-    while (reader.hasNextSequence())
-    {
-        reader.getNextSequence(*pSequence);
-        
-        DetectionOutput output;
-        monitorizer.setSequence(pSequence);
-        monitorizer.monitor(output);
-    }
-    
-//    monitorizer.clear();
-//    
-//	DepthFrame dFrameA,     ;
-//	while ( reader.nextDepthPairedFrames(dFrameA, dFrameB) )
-//	{
-//		DepthFrame fgDFrameA, fgDFrameB;
-//		bgSubtractor.subtract(dFrameA, dFrameB, fgDFrameA, fgDFrameB);
-//
-//        // Processing
-//		monitorizer.monitor(fgDFrameA, fgDFrameB);
-//        // Visualization
-//        if (display)
-//            monitorizer.display();
-//	}
-//    
-//    monitorizer.getObjectDetectionOutput();
     
 }
 
-
-void Remedi::modelBackground(Sequence::Ptr pSequence, BackgroundSubtractor& bs)
+void Remedi::interactWithRegisterer(Sequence::Ptr pSequence, int fID, InteractiveRegisterer& registerer)
 {
-    DepthFrame dFrameA, dFrameB;
-    vector<DepthFrame> depthFrames = pSequence->nextDepthFrame();
+    vector<DepthFrame> depthFrames = pSequence->getDepthFrame(fID);
+    vector<ColorFrame> colorFrames = pSequence->getColorFrame(fID);
+        
+    // Select the number of points to compute a rigid transformation
+    int nPoints;
     
-	bs(depthFrames[0], depthFrames[1], 1);
+    cout << "-> Select the number of points: ";
+    cin >> nPoints;
 
-	while (!bs.isReady())
-	{
-        bs(depthFrames[0], depthFrames[1], 0.02);
-
-		depthFrames = pSequence->nextDepthFrame();
-	}
-}
-
-
-void Remedi::interactWithRegisterer(Sequence::Ptr pSequence, InteractiveRegisterer& registerer)
-{
-	// Ask wheter re-select a set of points
-	// or use a previously computed transformation
-//	char c;
-//	cout << "[IR] <<<< Re-use alineation [Y/n]?" << endl;
-//	cin >> c;
-    char c = 'y'; // debug
+    registerer.setInputFrames(colorFrames[0], colorFrames[1], depthFrames[0], depthFrames[1]);
+    registerer.setNumPoints(nPoints);
     
-    vector<DepthFrame> depthFrames = pSequence->getDepthFrame(2);
-	if (c != 'n' && c != 'N') // re-use transformation
-	{
-		registerer.loadTransformation(m_ParentDir);
-        
-        // DEBUG
-		registerer.visualizeRegistration(depthFrames[0], depthFrames[1]);
-	}
-	else // re-select points
-	{
-		// Select the paired frames two register
-		int fID;
-		cout << "-> Select a frame ID: ";
-		cin >> fID;
-        
-        vector<ColorFrame> colorFrames = pSequence->getColorFrame(fID);
-        
-		// Select the number of points to compute a rigid transformation
-		int nPoints;
-        
-		cout << "-> Select the number of points: ";
-		cin >> nPoints;
-
-        registerer.setInputFrames(colorFrames[0], colorFrames[1], depthFrames[0], depthFrames[1]);
-		registerer.setNumPoints(nPoints);
-        
-        registerer.interact(); // manual interaction
-        registerer.computeTransformation(); // tranformation computation
-        
-        registerer.visualizeRegistration(depthFrames[0], depthFrames[1]);
-        
-        pcl::PCDWriter writer;
-        writer.write("registeredA.pcd", *registerer.getRegisteredClouds().first);
-        writer.write("registeredB.pcd", *registerer.getRegisteredClouds().second);
-        
-        registerer.saveTransformation(m_ParentDir);
-	}
+    registerer.interact(); // manual interaction
+    registerer.computeTransformation(); // tranformation computation
+    
+    registerer.visualizeRegistration(depthFrames[0], depthFrames[1]);
+    
+    pcl::PCDWriter writer;
+    writer.write("registeredA.pcd", *registerer.getRegisteredClouds().first);
+    writer.write("registeredB.pcd", *registerer.getRegisteredClouds().second);
+    
+    registerer.saveTransformation(m_ParentDir);
 }
-
 
 void Remedi::modelTablePlanes(pcl::PointCloud<pcl::PointXYZ>::Ptr pRegisteredCloudA,
                               pcl::PointCloud<pcl::PointXYZ>::Ptr pRegisteredCloudB,
@@ -200,8 +62,118 @@ void Remedi::modelTablePlanes(pcl::PointCloud<pcl::PointXYZ>::Ptr pRegisteredClo
 	tableModeler.model();
 }
 
-
-Remedi::~Remedi()
+void Remedi::setVisualization(bool enable)
 {
+    m_bVisualization = enable;
+}
 
+void Remedi::setInteractiveRegistration(int frame)
+{
+    m_RegistrationFrameID = frame;
+}
+
+void Remedi::run()
+{
+	/*
+	 * LOAD DATA
+	 */
+    
+	// Create a reader pointing the data streams
+    
+    string sequencesPath = m_ParentDir + "Data/Sequences/";
+    vector<string> colorDirs;
+    colorDirs += "Color1/", "Color2/";
+    vector<string> depthDirs;
+    depthDirs += "Depth1/", "Depth2/";
+    string labelsPath = m_ParentDir + "Data/Labels/observer_1/csv/";
+    
+    Reader reader( sequencesPath, colorDirs, depthDirs, labelsPath );
+    
+    Sequence::Ptr pBackgroundSeq(new Sequence(2));
+    reader.getSequence(0, *pBackgroundSeq);
+    
+    vector<int> delays;
+    delays += 2,0;
+    reader.setDelays(delays);
+    
+	/*
+	 * REGISTRATION (paired frames)
+	 */
+    
+    InteractiveRegisterer::Ptr pRegisterer (new InteractiveRegisterer);// (new InteractiveRegisterer);
+    
+    if (m_RegistrationFrameID < 0)
+        pRegisterer->loadTransformation(m_ParentDir);
+    else
+        interactWithRegisterer(pBackgroundSeq, m_RegistrationFrameID, *pRegisterer);
+    
+	/*
+	 * PLANE SEGMENTATION
+	 */
+    
+    TableModeler::Ptr pTableModeler (new TableModeler);// (new TableModeler);
+	modelTablePlanes(pRegisterer->getRegisteredClouds().first,
+                     pRegisterer->getRegisteredClouds().second,
+                     *pTableModeler);
+	
+	/*
+	 * BACKGROUND SUBTRACTION
+	 */
+    
+    BackgroundSubtractor::Ptr pBackgroundSubtractor (new BackgroundSubtractor);
+    pBackgroundSubtractor->setInputSequence(pBackgroundSeq);
+    pBackgroundSubtractor->setNumOfMixtureComponents(5);
+    pBackgroundSubtractor->model();
+    
+    /*
+	 * OBJECT DETECTION AND RECOGNITION
+	 */
+    
+    CloudjectDetector::Ptr pCloudjectDetector (new CloudjectDetector);
+    pCloudjectDetector->setModelLeafSize(0.015);
+    pCloudjectDetector->setNormalRadius(0.03);
+    pCloudjectDetector->setFpfhRadius(0.125);
+    pCloudjectDetector->setScoreThreshold(0.5);
+    pCloudjectDetector->setLeafSize(0.0225);
+    pCloudjectDetector->setTemporalWindow(3);
+    pCloudjectDetector->setMaxCorrespondenceDistance(0.07);
+    pCloudjectDetector->loadCloudjectModels(m_ParentDir + "Data/CloudjectModels/");
+    
+    //    MonitorizerParams monitorParams;
+    //	monitorParams.tmpCoherence = 2;
+    //	monitorParams.motionThresh = 5;
+    //    //	monitorParams.leafSize = 0.005;
+    //	monitorParams.posCorrespThresh = 0.1; // 7 cm
+    
+    Monitorizer::Ptr pMonitorizer (new Monitorizer);
+    
+    pMonitorizer->setBackgroundSubtractor(pBackgroundSubtractor);
+    pMonitorizer->setRegisterer(pRegisterer);
+    pMonitorizer->setTableModeler(pTableModeler);
+    pMonitorizer->setCloudjectDetector(pCloudjectDetector);
+    
+    pMonitorizer->setLeafSize(0.005);
+    pMonitorizer->setClusteringToleranceFactor(3);
+    pMonitorizer->setVisualization(m_bVisualization);
+    
+	/*
+	 * Loop
+	 */
+    
+    reader.setSequence(1);
+    
+    Sequence::Ptr sequence = reader.getNextSequence();
+    
+//    DetectionOutput gt (m_ParentDir + "Data/ObjectLabels/", sequence.getName(), "csv");
+    
+//    DetectionOutput output;
+    //pMonitorizer->setSequence(sequence);
+    //pMonitorizer->monitor(output);
+    
+//    output.write("", pSequence->getName(), "yml");
+//
+//    int tp, fp, fn;
+//    output.getResults(gt, tp, fp, fn);
+//    cout << "tp: " << tp << "\t fp: " << fp << "\tfn: " << fn << endl;
+    
 }

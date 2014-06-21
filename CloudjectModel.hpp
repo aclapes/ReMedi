@@ -25,8 +25,29 @@ public:
 		: m_ID(ID), m_Name(name), m_LeafSize(leafSize), m_NViews(0)
 	{
 	}
+    
+    CloudjectModelBase(const CloudjectModelBase& rhs)
+	{
+        *this = rhs;
+	}
 
-	~CloudjectModelBase(void) {}
+//	virtual ~CloudjectModelBase(void) {}
+    
+    CloudjectModelBase& operator=(const CloudjectModelBase& rhs)
+	{
+        if (this != &rhs)
+        {
+            m_ID = rhs.m_ID;
+            m_Name = rhs.m_Name;
+            m_LeafSize = rhs.m_LeafSize;
+            m_NViews = rhs.m_NViews;
+            m_ViewClouds = rhs.m_ViewClouds;
+            m_ViewCentroids = rhs.m_ViewCentroids;
+            m_MedianDistsToViewCentroids = rhs.m_MedianDistsToViewCentroids;
+        }
+        
+        return *this;
+	}
 
 	int getID() { return m_ID; }
     
@@ -130,9 +151,9 @@ public:
 
 protected:
 
-	std::vector<PointCloudPtr> m_ViewClouds;
-	std::vector<PointT> m_ViewCentroids;
-	std::vector<float> m_MedianDistsToViewCentroids;
+	vector<PointCloudPtr> m_ViewClouds;
+	vector<PointT> m_ViewCentroids;
+	vector<float> m_MedianDistsToViewCentroids;
 
 	int m_NViews;
 	float m_LeafSize; // in case of downsampling
@@ -164,8 +185,30 @@ protected:
 		  m_PointRejectionThresh(pointRejectionThresh), m_RatioRejectionThresh(ratioRejectionThresh), 
 		  m_SizePenalty(sizePenalty), m_SigmaPenaltyThresh(sigmaPenaltyThresh) 
 	{}
+    
+    LFCloudjectModelBase(const LFCloudjectModelBase& rhs)
+        : CloudjectModelBase<PointT,SignatureT>(rhs)
+    {
+        *this = rhs;
+    }
 
-	virtual ~LFCloudjectModelBase() {}
+//	virtual ~LFCloudjectModelBase() {}
+    
+    LFCloudjectModelBase& operator=(const LFCloudjectModelBase& rhs)
+    {
+        if (this != &rhs)
+        {
+            m_ViewsDescriptors = rhs.m_ViewsDescriptors;
+
+            m_PointRejectionThresh = rhs.m_PointRejectionThresh;
+            m_RatioRejectionThresh = rhs.m_RatioRejectionThresh;
+            m_SigmaPenaltyThresh = rhs.m_SigmaPenaltyThresh;
+            
+            m_SizePenalty = rhs.m_SizePenalty;
+        }
+        
+        return *this;
+    }
 
 	int getID() { return CloudjectModelBase<PointT, SignatureT>::getID(); }
     string getName() { return CloudjectModelBase<PointT, SignatureT>::getName(); }
@@ -175,7 +218,8 @@ protected:
 	void addView(PointCloudPtr pCloud) { CloudjectModelBase<PointT,SignatureT>::addView(pCloud); }
     PointCloudPtr getView(int i) { return CloudjectModelBase<PointT,SignatureT>::getView(i); }
     
-    void addViewDescriptor(DescriptorPtr pDescriptor) { m_ViewsDescriptors.push_back(pDescriptor); }
+    void addViewDescriptor(DescriptorPtr pDescriptor)
+    { m_ViewsDescriptors.push_back(pDescriptor); }
     DescriptorPtr getViewDescriptor(int i) { return m_ViewsDescriptors[i]; }
 
 	float euclideanDistance(PointT p1, PointT p2) { return CloudjectModelBase<PointT,SignatureT>::euclideanDistance(p1,p2); }
@@ -388,7 +432,7 @@ protected:
 	// 
 
 	// The descriptions of the different views
-	std::vector<DescriptorPtr>		m_ViewsDescriptors;
+	vector<DescriptorPtr>		m_ViewsDescriptors;
 	// A valid best correspondence should be a distance below it (experimentally selected)
 	float							m_PointRejectionThresh;
 	float							m_RatioRejectionThresh;
@@ -400,9 +444,7 @@ protected:
 private:
 
 	float penalty(float diff)
-	{
-
-	}
+	{ }
 };
 
 
@@ -435,9 +477,20 @@ public:
 		: LFCloudjectModelBase<PointT,pcl::FPFHSignature33>(ID, name, leafSize,
 		  pointRejectionThresh, ratioRejectionThresh, sizePenalty, sigmaPenaltyThresh)
 	{}
+    
+    LFCloudjectModel(const LFCloudjectModel& rhs)
+        : LFCloudjectModelBase<PointT,pcl::FPFHSignature33>(rhs)
+    {
+        *this = rhs;
+    }
 
-	virtual ~LFCloudjectModel() {}
+//	virtual ~LFCloudjectModel() {}
 
+    LFCloudjectModel& operator=(const LFCloudjectModel& rhs)
+    {
+        return *this;
+    }
+    
 	int getID() { return LFCloudjectModelBase<PointT,pcl::FPFHSignature33>::getID(); }
     string getName() { return LFCloudjectModelBase<PointT,pcl::FPFHSignature33>::getName(); }
 	
@@ -445,7 +498,8 @@ public:
 	void addView(PointCloudPtr pCloud) { LFCloudjectModelBase<PointT,pcl::FPFHSignature33>::addView(pCloud); }
     PointCloudPtr getView(int i) { return CloudjectModelBase<PointT,pcl::FPFHSignature33>::getView(i); }
     
-    void addViewDescriptor(DescriptorPtr pDescriptor) { LFCloudjectModelBase<PointT,pcl::FPFHSignature33>::addViewDescriptor(pDescriptor); }
+    void addViewDescriptor(DescriptorPtr pDescriptor)
+    { LFCloudjectModelBase<PointT,pcl::FPFHSignature33>::addViewDescriptor(pDescriptor); }
     DescriptorPtr getViewDescriptor(int i) { return LFCloudjectModelBase<PointT,pcl::FPFHSignature33>::getViewDescriptor(i); }
     
 	float euclideanDistance(PointT p1, PointT p2) { return LFCloudjectModelBase<PointT,pcl::FPFHSignature33>::euclideanDistance(p1,p2); }
@@ -458,7 +512,12 @@ public:
 	{ return LFCloudjectModelBase<PointT,pcl::FPFHSignature33>::averageMedianDistanceToCentroids(); }
 
 	float match(LFCloudject c)
-	{ return LFCloudjectModelBase<PointT,pcl::FPFHSignature33>::match(c); }
+	{
+        // DEBUG
+        if (c.getDescriptionA()->empty() && c.getDescriptionB()->empty())
+            cout << "null" << endl;
+        return LFCloudjectModelBase<PointT,pcl::FPFHSignature33>::match(c);
+    }
 
 	int getSizePenalty()
 	{ return LFCloudjectModelBase<PointT,pcl::FPFHSignature33>::getSizePenalty(); }
@@ -470,7 +529,8 @@ public:
 		for (int i = 0; i < getNumOfViews(); i++)
 		{
 			DescriptorPtr pDescriptor (new Descriptor);
-			describeView(getView(i), normalRadius, fpfhRadius, *pDescriptor);
+            PointCloudPtr view = getView(i);
+			describeView(view, normalRadius, fpfhRadius, *pDescriptor);
 			addViewDescriptor(pDescriptor);
 		}
 	}

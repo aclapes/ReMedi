@@ -8,9 +8,8 @@
 
 
 TableModeler::TableModeler()
-: m_pViz(new pcl::visualization::PCLVisualizer()), m_bLimitsNegative(false)
+: m_bLimitsNegative(false)
 {
-	m_pViz->addCoordinateSystem();
 }
 
 TableModeler::TableModeler(const TableModeler& other)
@@ -43,7 +42,8 @@ TableModeler::TableModeler(const TableModeler& other)
 
 TableModeler::~TableModeler()
 {
-
+//    if (m_pViz != NULL)
+//        m_pViz->s ->close();
 }
 
 
@@ -276,24 +276,25 @@ void TableModeler::estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud,
             // DEBUG
             // Visualization
             
-            pcl::visualization::PCLVisualizer pViz(pCloud->header.frame_id);
-            pViz.addCoordinateSystem();
-            //pViz.addPointCloud(pCloudF, "filtered");
-            pViz.addPointCloud(pBiggestCluster, "biggestCluster");
-            pViz.addPointCloud(pBiggestClusterT, "biggestClusterT");
-            pViz.addPointCloud(pCloudT, "pCloudT");
-            pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.61, 0.1, 1.0, "biggestCluster");
-            pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.21, 0.1, 1.0, "biggestClusterT");
-            pViz.addCube(min.x, max.x, min.y, max.y + m_OffsetA, min.z, max.z, 1, 0, 0, "cube");
-            pViz.addCube(min.x - m_InteractionBorder, max.x + m_InteractionBorder,
-                         min.y, max.y + 2.0,
-                         min.z - m_InteractionBorder, max.z + m_InteractionBorder, 1, 1, 1, "cube2");
-            
-            int c = 0;
-            while(c++ < 2.5)
-            {
-                pViz.spinOnce(1000);
-            }
+//            pcl::visualization::PCLVisualizer pViz(pCloud->header.frame_id);
+//            pViz.addCoordinateSystem();
+//            //pViz.addPointCloud(pCloudF, "filtered");
+//            pViz.addPointCloud(pBiggestCluster, "biggestCluster");
+//            pViz.addPointCloud(pBiggestClusterT, "biggestClusterT");
+//            pViz.addPointCloud(pCloudT, "pCloudT");
+//            pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.61, 0.1, 1.0, "biggestCluster");
+//            pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.21, 0.1, 1.0, "biggestClusterT");
+//            pViz.addCube(min.x, max.x, min.y, max.y + m_OffsetA, min.z, max.z, 1, 0, 0, "cube");
+//            pViz.addCube(min.x - m_InteractionBorder, max.x + m_InteractionBorder,
+//                         min.y, max.y + 2.0,
+//                         min.z - m_InteractionBorder, max.z + m_InteractionBorder, 1, 1, 1, "cube2");
+//            
+//            int c = 0;
+//            while(c++ < 0.5)
+//            {
+//                pViz.spinOnce(1000);
+//            }
+//            pViz.close();
 
 			return;
 		}

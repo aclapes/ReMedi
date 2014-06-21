@@ -4,9 +4,13 @@
 #include "conversion.h"
 
 
+typedef pcl::PointXYZ PointT;
+typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
+typedef pcl::PointCloud<pcl::PointXYZ>::Ptr PointCloudPtr;
+
 InteractiveRegisterer::InteractiveRegisterer()
 :
-	corresps_ (new pcl::Correspondences), cloud_left_ (new pcl::PointCloud<pcl::PointXYZ>), cloud_right_ (new pcl::PointCloud<pcl::PointXYZ>), lefties_ (new pcl::PointCloud<pcl::PointXYZ>), righties_ (new pcl::PointCloud<pcl::PointXYZ>), aligned_cloud_left_ (new pcl::PointCloud<pcl::PointXYZ>), aligned_cloud_right_ (new pcl::PointCloud<pcl::PointXYZ>)
+	corresps_ (new pcl::Correspondences), cloud_left_ (new PointCloud), cloud_right_ (new PointCloud), lefties_ (new PointCloud), righties_ (new PointCloud), aligned_cloud_left_ (new PointCloud), aligned_cloud_right_ (new PointCloud)
 {
     lefties_->height = 1;
     lefties_->width = 0; // we will increment in width
@@ -22,29 +26,44 @@ InteractiveRegisterer::InteractiveRegisterer()
 
 InteractiveRegisterer::InteractiveRegisterer(const InteractiveRegisterer& other)
 {
-    cloud_left_     = other.cloud_left_;
-    cloud_right_    = other.cloud_right_;
+    *this = other;
+}
+
+InteractiveRegisterer::~InteractiveRegisterer()
+{
     
-    lefties_        = other.lefties_;
-    righties_       = other.righties_;
-    lefties_idx_    = other.lefties_idx_;
-    righties_idx_   = other.righties_idx_;
+}
+
+InteractiveRegisterer& InteractiveRegisterer::operator=(const InteractiveRegisterer& other)
+{
+    if (this != &other)
+    {
+        cloud_left_     = other.cloud_left_;
+        cloud_right_    = other.cloud_right_;
+        
+        lefties_        = other.lefties_;
+        righties_       = other.righties_;
+        lefties_idx_    = other.lefties_idx_;
+        righties_idx_   = other.righties_idx_;
+        
+        reallocate_points_  = other.reallocate_points_;
+        num_points_         = other.num_points_;
+        
+        must_translate_ = other.must_translate_;
+        must_align_     = other.must_align_;
+        
+        corresps_ = other.corresps_;
+        
+        m_tLeft             = other.m_tLeft;
+        m_tRight            = other.m_tRight;
+        m_Transformation    = other.m_Transformation;
+        m_InverseTransformation    = other.m_InverseTransformation;
+        
+        aligned_cloud_left_     = other.aligned_cloud_left_;
+        aligned_cloud_right_    = other.aligned_cloud_right_;
+    }
     
-    reallocate_points_  = other.reallocate_points_;
-    num_points_         = other.num_points_;
-    
-    must_translate_ = other.must_translate_;
-    must_align_     = other.must_align_;
-    
-    corresps_ = other.corresps_;
-    
-	m_tLeft             = other.m_tLeft;
-    m_tRight            = other.m_tRight;
-	m_Transformation    = other.m_Transformation;
-    m_InverseTransformation    = other.m_InverseTransformation;
-    
-    aligned_cloud_left_     = other.aligned_cloud_left_;
-    aligned_cloud_right_    = other.aligned_cloud_right_;
+    return *this;
 }
 
 void InteractiveRegisterer::setInputFrames(ColorFrame cFrameA, ColorFrame cFrameB, DepthFrame dFrameA, DepthFrame dFrameB)
@@ -57,21 +76,21 @@ void InteractiveRegisterer::setInputFrames(ColorFrame cFrameA, ColorFrame cFrame
 
 void InteractiveRegisterer::interact()
 {
-    cloud_viewer_ = pcl::visualization::PCLVisualizer::Ptr(new pcl::visualization::PCLVisualizer ("PCL OpenNI cloud"));
-    cloud_viewer_->registerMouseCallback (&InteractiveRegisterer::mouseCallback, *this);
-    cloud_viewer_->registerKeyboardCallback(&InteractiveRegisterer::keyboardCallback, *this);
-    cloud_viewer_->registerPointPickingCallback (&InteractiveRegisterer::ppCallback, *this);
+    m_pViz = pcl::visualization::PCLVisualizer::Ptr(new pcl::visualization::PCLVisualizer ("PCL OpenNI cloud"));
+    m_pViz->registerMouseCallback (&InteractiveRegisterer::mouseCallback, *this);
+    m_pViz->registerKeyboardCallback(&InteractiveRegisterer::keyboardCallback, *this);
+    m_pViz->registerPointPickingCallback (&InteractiveRegisterer::ppCallback, *this);
     
-    cloud_viewer_->createViewPort(0, 0, 0.5f, 1.0f, viewport_left_);
-    cloud_viewer_->createViewPort(0.5f, 0, 1.f, 1.0f, viewport_right_);
+    m_pViz->createViewPort(0, 0, 0.5f, 1.0f, viewport_left_);
+    m_pViz->createViewPort(0.5f, 0, 1.f, 1.0f, viewport_right_);
     
-    //cloud_viewer_->addCoordinateSystem(0.1, 0, 0, 0, "cs1", viewport_left_);
-    //cloud_viewer_->addCoordinateSystem(0.1, 0, 0, 0, "cs2", viewport_right_);
+    //m_pViz->addCoordinateSystem(0.1, 0, 0, 0, "cs1", viewport_left_);
+    //m_pViz->addCoordinateSystem(0.1, 0, 0, 0, "cs2", viewport_right_);
     
-    cloud_viewer_->setSize(1280, 480);
+    m_pViz->setSize(1280, 480);
     
-    setDefaultCamera(cloud_viewer_, viewport_left_);
-    setDefaultCamera(cloud_viewer_, viewport_right_);
+    setDefaultCamera(m_pViz, viewport_left_);
+    setDefaultCamera(m_pViz, viewport_right_);
     
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_left	(new pcl::PointCloud<pcl::PointXYZRGB>);
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_right (new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -82,14 +101,14 @@ void InteractiveRegisterer::interact()
     pcl::copyPointCloud(*cloud_left, *cloud_left_);
     pcl::copyPointCloud(*cloud_right, *cloud_right_);
 
-    cloud_viewer_->addPointCloud (cloud_left, "Left cloud", viewport_left_);
-    cloud_viewer_->addPointCloud (cloud_right, "Right cloud", viewport_right_);
+    m_pViz->addPointCloud (cloud_left, "Left cloud", viewport_left_);
+    m_pViz->addPointCloud (cloud_right, "Right cloud", viewport_right_);
 
-    while (!must_translate_)
-    {
-        cloud_viewer_->spinOnce(100);
-    }
-    stop(*cloud_viewer_);
+//    while (!must_translate_)
+//    {
+//        m_pViz->spinOnce(100);
+//    }
+//    stop(*m_pViz);
     
     //find_transformation(ref_points_src, ref_points_tgt, m_Transformation);
 }
@@ -104,20 +123,24 @@ void InteractiveRegisterer::computeTransformation()
                  *aligned_cloud_left_, *aligned_cloud_right_);
 }
 
+void InteractiveRegisterer::computeFineTransformation()
+{
+    PointCloud downsampled_aligned_cloud_left, downsampled_aligned_cloud_right;
+    // TODO: implementation
+}
 
 void InteractiveRegisterer::setNumPoints(int num_points)
 {
 	num_points_ = num_points;
 }
 
-pair<pcl::PointCloud<pcl::PointXYZ>::Ptr,pcl::PointCloud<pcl::PointXYZ>::Ptr> InteractiveRegisterer::getRegisteredClouds()
+pair<PointCloudPtr,PointCloudPtr> InteractiveRegisterer::getRegisteredClouds()
 {
-    return pair<pcl::PointCloud<pcl::PointXYZ>::Ptr
-    , pcl::PointCloud<pcl::PointXYZ>::Ptr>(aligned_cloud_left_, aligned_cloud_right_);
+    return pair<PointCloudPtr,PointCloudPtr>(aligned_cloud_left_, aligned_cloud_right_);
 }
 
-void InteractiveRegisterer::translate(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::PointXYZ t, 
-	pcl::PointCloud<pcl::PointXYZ>& cloud_ctr)
+void InteractiveRegisterer::translate(const PointCloudPtr cloud, PointT t, 
+	PointCloud& cloud_ctr)
 {
     cloud_ctr.width  = cloud->width;
     cloud_ctr.height = cloud->height;
@@ -132,8 +155,8 @@ void InteractiveRegisterer::translate(const pcl::PointCloud<pcl::PointXYZ>::Ptr 
 }
 
 
-void InteractiveRegisterer::translate(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, Eigen::Vector4f t, 
-	pcl::PointCloud<pcl::PointXYZ>& cloud_ctr)
+void InteractiveRegisterer::translate(const PointCloudPtr cloud, Eigen::Vector4f t, 
+	PointCloud& cloud_ctr)
 {
     cloud_ctr.width  = cloud->width;
     cloud_ctr.height = cloud->height;
@@ -164,15 +187,70 @@ void InteractiveRegisterer::keyboardCallback(const pcl::visualization::KeyboardE
 
 void InteractiveRegisterer::mouseCallback(const pcl::visualization::MouseEvent& mouse_event, void*)
 {
-    if (mouse_event.getType() == pcl::visualization::MouseEvent::MouseButtonPress && mouse_event.getButton() == pcl::visualization::MouseEvent::LeftButton)
+    m_MouseX = mouse_event.getX();
+    m_MouseY = mouse_event.getY();
+    
+//    if (mouse_event.getType() == pcl::visualization::MouseEvent::MouseButtonPress && mouse_event.getButton() == pcl::visualization::MouseEvent::LeftButton)
+//    {
+//    }
+    
+    if (mouse_event.getType() == pcl::visualization::MouseEvent::MouseButtonPress && mouse_event.getButton() == pcl::visualization::MouseEvent::RightButton)
     {
-        cout << "left button pressed @ " << mouse_event.getX () << " , " << mouse_event.getY () << endl;
-    }
-        
-    if (mouse_event.getType() == pcl::visualization::MouseEvent::MouseButtonPress && mouse_event.getButton() == pcl::visualization::MouseEvent::RightButton && must_translate_)
-    {
-        cout << "right button pressed" << std::endl;
-        must_align_ = true;
+        int x, y, z;
+        int view = (m_MouseX < 640) ? 0 : 1;
+        std::stringstream ss_sphere, ss_line;
+
+        if (view == 0 && lefties_->points.size() > 0)
+        {
+            x = m_MouseX;
+            y = m_MouseY;
+            z = cloud_left_->at(x,y).z;
+            
+            float distance;
+            int idx = -1;
+            for (int i = 0; i < lefties_->points.size() && idx < 0; i++)
+            {
+                distance = sqrtf(pow(x - lefties_->points[i].x, 2)
+                                 + pow(y - lefties_->points[i].y, 2)
+                                 + pow(z - lefties_->points[i].z, 2));
+                if (distance < 0.1) idx = i;
+            }
+            ss_sphere << "left sphere " << idx;
+            m_pViz->removeShape(ss_sphere.str());
+            
+            lefties_->points.erase(lefties_->points.begin() + idx);
+            lefties_->width--; // add a point in a row
+            
+            lefties_idx_.erase(lefties_idx_.begin() + idx);
+            
+            std::cout << "removed left" << std::endl;
+            
+        }
+        else if (view == 1 && righties_->points.size() > 0)
+        {
+            x = m_MouseX - 640;
+            y = m_MouseY;
+            z = cloud_left_->at(x,y).z;
+            
+            float distance;
+            int idx = -1;
+            for (int i = 0; i < righties_->points.size() && idx < 0; i++)
+            {
+                distance = sqrtf(pow(x - righties_->points[i].x, 2)
+                                 + pow(y - righties_->points[i].y, 2)
+                                 + pow(z - righties_->points[i].z, 2));
+                if (distance < 0.1) idx = i;
+            }
+            ss_sphere << "right sphere " << idx;
+            m_pViz->removeShape(ss_sphere.str());
+            
+            righties_->points.erase(righties_->points.begin() + idx);
+            righties_->width--; // add a point in a row
+            
+            righties_idx_.erase(righties_idx_.begin() + idx);
+            
+            std::cout << "removed right" << std::endl;
+        }
     }
 }
 
@@ -186,46 +264,95 @@ void InteractiveRegisterer::ppCallback(const pcl::visualization::PointPickingEve
     pointpicking_event.getPoint(x,y,z);
         
     cout << "left + shift button pressed @ " << x << " , " << y << " , " << z << endl;
-        
-        
-    // If not all points picked up in both sides, continue.
-    if (righties_->points.size() < num_points_)
-    {
-        std::stringstream ss_sphere, ss_line;
-            
-        if (lefties_->points.size() <= righties_->points.size())
-        {
-            std::cout << "added left" << std::endl;
+    
+    int view = (m_MouseX < 640) ? 0 : 1;
 
-			if (lefties_->empty()) m_tLeft << x, y, z, 1;	
-                
-            ss_sphere << "sphere " << lefties_->points.size() << " left";
-                
+    // If not all points picked up in both sides, continue
+    std::stringstream ss_sphere, ss_line;
+
+    if (view == 0)
+    {
+        float distance;
+        int idx = -1;
+        for (int i = 0; i < lefties_->points.size() && idx < 0; i++)
+        {
+            distance = sqrtf(pow(x - lefties_->points[i].x, 2)
+                             + pow(y - lefties_->points[i].y, 2)
+                             + pow(z - lefties_->points[i].z, 2));
+            if (distance < 0.1) idx = i;
+        }
+        
+        if (idx >=0)
+        {
+            ss_sphere << "left sphere " << idx;
+            m_pViz->removeShape(ss_sphere.str());
+            
+            lefties_->points.erase(lefties_->points.begin() + idx);
+            lefties_->width--; // add a point in a row
+            
+            lefties_idx_.erase(lefties_idx_.begin() + idx);
+            
+            std::cout << "removed left" << std::endl;
+        }
+        else if (lefties_->points.size() < num_points_)
+        {
+            ss_sphere << "left sphere " << lefties_->points.size();
+        
+            if (lefties_->empty()) m_tLeft << x, y, z, 1;
+            
             int idx = lefties_->points.size();
-            cloud_viewer_->addSphere(pcl::PointXYZ(x,y,z), 0.03, colors[idx][0], colors[idx][1], colors[idx][2], ss_sphere.str(), viewport_left_);
+            m_pViz->addSphere(PointT(x,y,z), 0.03, colors[idx][0], colors[idx][1], colors[idx][2], ss_sphere.str(), viewport_left_);
                 
-            lefties_->points.push_back(pcl::PointXYZ(x,y,z));
-            lefties_->width ++; // add a point in a row
+            lefties_->points.push_back(PointT(x,y,z));
+            lefties_->width++; // add a point in a row
                 
             lefties_idx_.push_back(pointpicking_event.getPointIndex());
-        }
-        else
-        {
-            std::cout << "added right" << std::endl;
-
-			if (righties_->empty()) m_tRight << x, y, z, 1;                
-            ss_sphere << "sphere " << lefties_->points.size() << " right";
-                
-            int idx = righties_->points.size();
-            cloud_viewer_->addSphere(pcl::PointXYZ(x,y,z), 0.03, colors[idx][0], colors[idx][1], colors[idx][2], ss_sphere.str(), viewport_right_);
-                
-            righties_->points.push_back(pcl::PointXYZ(x,y,z));
-            righties_->width ++;
-                
-            righties_idx_.push_back(pointpicking_event.getPointIndex());
+            
+            std::cout << "added left" << std::endl;
         }
     }
+    else if (view == 1)
+    {
+        float distance;
+        int idx = -1;
+        for (int i = 0; i < righties_->points.size() && idx < 0; i++)
+        {
+            distance = sqrtf(pow(x - righties_->points[i].x, 2)
+                             + pow(y - righties_->points[i].y, 2)
+                             + pow(z - righties_->points[i].z, 2));
+            if (distance < 0.1) idx = i;
+        }
         
+        if (idx >= 0)
+        {
+            ss_sphere << "right sphere " << idx;
+            m_pViz->removeShape(ss_sphere.str());
+            
+            righties_->points.erase(righties_->points.begin() + idx);
+            righties_->width--; // add a point in a row
+            
+            righties_idx_.erase(righties_idx_.begin() + idx);
+            
+            std::cout << "removed right" << std::endl;
+        }
+        else if (righties_->points.size() < num_points_)
+        {
+            ss_sphere << "right sphere " << righties_->points.size();
+            
+            if (righties_->empty()) m_tRight << x, y, z, 1;                
+            
+            int idx = righties_->points.size();
+            m_pViz->addSphere(PointT(x,y,z), 0.03, colors[idx][0], colors[idx][1], colors[idx][2], ss_sphere.str(), viewport_right_);
+                
+            righties_->points.push_back(PointT(x,y,z));
+            righties_->width++;
+                
+            righties_idx_.push_back(pointpicking_event.getPointIndex());
+            
+            std::cout << "added right" << std::endl;
+        }
+    }
+    
     if (!must_translate_ && lefties_->points.size() == num_points_ && righties_->points.size() == num_points_)
     {
         //pcl::PCDWriter writer;
@@ -248,12 +375,12 @@ void InteractiveRegisterer::setDefaultCamera(pcl::visualization::PCLVisualizer::
     viewer->getCameras(cameras);
         
     // Default parameters
-    cameras[viewport].pos[2] = -1.0;
+    cameras[viewport].pos[2] = 2.0;
     cameras[viewport].focal[2] = 1.0;
     cameras[viewport_right_].view[1] = -1;
         
-    cloud_viewer_->setCameraParameters(cameras[viewport],viewport);
-    cloud_viewer_->updateCamera();
+    m_pViz->setCameraParameters(cameras[viewport],viewport);
+    m_pViz->updateCamera();
 }
 
 
@@ -271,14 +398,14 @@ void InteractiveRegisterer::stop(pcl::visualization::PCLVisualizer & viewer)
 * \param tgt the target points
 * \param transformation the resultant transform between source and target
 */
-void InteractiveRegisterer::find_transformation(const pcl::PointCloud<pcl::PointXYZ>::Ptr ref_points_src, const pcl::PointCloud<pcl::PointXYZ>::Ptr ref_points_tgt, Eigen::Matrix4f & transformation)
+void InteractiveRegisterer::find_transformation(const PointCloudPtr ref_points_src, const PointCloudPtr ref_points_tgt, Eigen::Matrix4f & transformation)
 {
     Eigen::Vector4f centroid_src, centroid_tgt;
     pcl::compute3DCentroid(*ref_points_src, centroid_src);
     pcl::compute3DCentroid(*ref_points_tgt, centroid_tgt);
         
-    pcl::PointCloud<pcl::PointXYZ>::Ptr centered_points_src (new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr centered_points_tgt (new pcl::PointCloud<pcl::PointXYZ>);
+    PointCloudPtr centered_points_src (new PointCloud);
+    PointCloudPtr centered_points_tgt (new PointCloud);
         
     translate(ref_points_src, centroid_src, *centered_points_src);
     translate(ref_points_tgt, centroid_tgt, *centered_points_tgt);
@@ -372,15 +499,15 @@ void InteractiveRegisterer::find_transformation(const pcl::PointCloud<pcl::Point
 
 //
 //void InteractiveRegisterer::align(
-//    const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_src, const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_tgt,
-//	pcl::PointCloud<pcl::PointXYZ>::Ptr ref_points_src, pcl::PointCloud<pcl::PointXYZ>::Ptr ref_points_tgt, 
-//	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_src_aligned, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_tgt_aligned)
+//    const PointCloudPtr cloud_src, const PointCloudPtr cloud_tgt,
+//	PointCloudPtr ref_points_src, PointCloudPtr ref_points_tgt, 
+//	PointCloudPtr cloud_src_aligned, PointCloudPtr cloud_tgt_aligned)
 //{
 //    Eigen::Vector4f centroid_cloud_src, centroid_cloud_tgt;
 //    pcl::compute3DCentroid(*ref_points_src, centroid_cloud_src);
 //    pcl::compute3DCentroid(*ref_points_tgt, centroid_cloud_tgt);
 //        
-//    pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudSrcCentered (new pcl::PointCloud<pcl::PointXYZ>);
+//    PointCloudPtr pCloudSrcCentered (new PointCloud);
 //    translate(cloud_src, centroid_cloud_src, *pCloudSrcCentered);
 //    translate(cloud_tgt, centroid_cloud_tgt, *cloud_tgt_aligned);
 //        
@@ -389,22 +516,22 @@ void InteractiveRegisterer::find_transformation(const pcl::PointCloud<pcl::Point
 
 //void InteractiveRegisterer::align(DepthFrame dFrameA, DepthFrame dFrameB) // public
 //{        
-//	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_left_	(new pcl::PointCloud<pcl::PointXYZ>);
-//	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_right_ (new pcl::PointCloud<pcl::PointXYZ>);
+//	PointCloudPtr cloud_left_	(new PointCloud);
+//	PointCloudPtr cloud_right_ (new PointCloud);
 //
 //	dFrameA.getPointCloud(*cloud_left_);
 //	dFrameB.getPointCloud(*cloud_right_);
 ////
-////    cloud_viewer_->addPointCloud (cloud_left_, "Left cloud", viewport_left_);
-////    cloud_viewer_->addPointCloud (cloud_right_, "Right cloud", viewport_right_);
+////    m_pViz->addPointCloud (cloud_left_, "Left cloud", viewport_left_);
+////    m_pViz->addPointCloud (cloud_right_, "Right cloud", viewport_right_);
 ////        
 ////    while (!must_translate_)
 ////    {
-////        cloud_viewer_->spinOnce(100);
+////        m_pViz->spinOnce(100);
 ////    }
-////    stop(*cloud_viewer_);
+////    stop(*m_pViz);
 ////
-//    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_src_aligned (new pcl::PointCloud<pcl::PointXYZ>), cloud_tgt_aligned (new pcl::PointCloud<pcl::PointXYZ>);
+//    PointCloudPtr cloud_src_aligned (new PointCloud), cloud_tgt_aligned (new PointCloud);
 //    align(cloud_left_, cloud_right_, lefties_, righties_, cloud_src_aligned, cloud_tgt_aligned);
 //        
 //    // Visualize and that shit
@@ -465,22 +592,143 @@ bool InteractiveRegisterer::loadTransformation(std::string filePath)
 	}
 }
 
-void InteractiveRegisterer::registration(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB, pcl::PointCloud<pcl::PointXYZ>& regCloudA, pcl::PointCloud<pcl::PointXYZ>& regCloudB)
+PointT InteractiveRegisterer::registration(PointT point, int viewpoint)
 {
-    pcl::PointCloud<pcl::PointXYZ>::Ptr pCtrCloudA (new pcl::PointCloud<pcl::PointXYZ>);
-    translate(pCloudA, m_tLeft, *pCtrCloudA);
-    translate(pCloudB, m_tRight, regCloudB);
+    PointT regPoint;
     
-    pcl::transformPointCloud(*pCtrCloudA, regCloudA, m_Transformation);
+    deregistration(point, regPoint, viewpoint);
+    
+    return regPoint;
 }
 
-void InteractiveRegisterer::deregistration(pcl::PointCloud<pcl::PointXYZ>::Ptr pRegCloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr pRegCloudB, pcl::PointCloud<pcl::PointXYZ>& cloudA, pcl::PointCloud<pcl::PointXYZ>& cloudB)
+void InteractiveRegisterer::registration(PointT point, PointT& regPoint, int viewpoint)
 {
-    pcl::PointCloud<pcl::PointXYZ>::Ptr pCtrCloudA (new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::transformPointCloud(*pRegCloudA, *pCtrCloudA, m_InverseTransformation);
+    PointCloudPtr pCloud (new PointCloud);
+    PointCloudPtr pRegCloud (new PointCloud);
     
-    translate(pCtrCloudA, -m_tLeft,  cloudA);
-    translate(pRegCloudB, -m_tRight, cloudB);
+    pCloud->push_back(point);
+    pCloud->height = pCloud->width = 1;
+    
+    registration(pCloud, *pRegCloud, viewpoint);
+    
+    regPoint = pRegCloud->points[0];
+}
+
+void InteractiveRegisterer::registration(PointT pointA, PointT pointB, PointT& regPointA, PointT& regPointB)
+{
+    PointCloudPtr pCloudA (new PointCloud);
+    PointCloudPtr pCloudB (new PointCloud);
+    PointCloudPtr pRegCloudA (new PointCloud);
+    PointCloudPtr pRegCloudB (new PointCloud);
+    
+    pCloudA->push_back(pointA);
+    pCloudA->height = pCloudA->width = 1;
+    pCloudB->push_back(pointB);
+    pCloudB->height = pCloudB->width = 1;
+
+    registration(pCloudA, pCloudB, *pRegCloudA, *pRegCloudB);
+    
+    regPointA = pRegCloudA->points[0];
+    regPointB = pRegCloudB->points[0];
+}
+
+void InteractiveRegisterer::registration(PointCloudPtr pCloudA, PointCloudPtr pCloudB, PointCloud& regCloudA, PointCloud& regCloudB)
+{
+    registration(pCloudA, regCloudA, 0);
+    registration(pCloudB, regCloudB, 1);
+}
+
+void InteractiveRegisterer::registration(PointCloudPtr pCloud, PointCloud& regCloud, int viewpoint)
+{
+    if (viewpoint == 0)
+    {
+        PointCloudPtr pCtrCloud (new PointCloud);
+        translate(pCloud, m_tLeft, *pCtrCloud);
+        pcl::transformPointCloud(*pCtrCloud, regCloud, m_Transformation);
+    }
+    else
+    {
+        translate(pCloud, m_tRight, regCloud);
+    }
+}
+
+void InteractiveRegisterer::registration(vector<PointCloudPtr> pCloudsA, vector<PointCloudPtr> pCloudsB, vector<PointCloudPtr>& pRegCloudsA, vector<PointCloudPtr>& pRegCloudsB)
+{
+    for (int i = 0; i < pRegCloudsA.size(); i++)
+    {
+        PointCloudPtr pRegCloudA (new PointCloud);
+        registration(pCloudsA[i], *pRegCloudA, 0);
+        
+        pCloudsA.push_back(pRegCloudA);
+    }
+    
+    for (int i = 0; i < pRegCloudsB.size(); i++)
+    {
+        PointCloudPtr pRegCloudB (new PointCloud);
+        registration(pCloudsB[i], *pRegCloudB, 0);
+        
+        pCloudsA.push_back(pRegCloudB);
+    }
+}
+
+PointT InteractiveRegisterer::deregistration(PointT regPoint, int viewpoint)
+{
+    PointT point;
+    
+    deregistration(regPoint, point, viewpoint);
+    
+    return point;
+}
+
+void InteractiveRegisterer::deregistration(PointT regPoint, PointT& point, int viewpoint)
+{
+    PointCloudPtr pRegCloud (new PointCloud);
+    PointCloudPtr pCloud (new PointCloud);
+    
+    pRegCloud->push_back(regPoint);
+    pRegCloud->height = pRegCloud->width = 1;
+    
+    deregistration(pRegCloud, *pCloud, viewpoint);
+    
+    point = pCloud->points[0];
+}
+
+void InteractiveRegisterer::deregistration(PointT regPointA, PointT regPointB, PointT& pointA, PointT& pointB)
+{
+    PointCloudPtr pRegCloudA (new PointCloud);
+    PointCloudPtr pRegCloudB (new PointCloud);
+    PointCloudPtr pCloudA (new PointCloud);
+    PointCloudPtr pCloudB (new PointCloud);
+    
+    pRegCloudA->push_back(regPointA);
+    pRegCloudA->height = pRegCloudA->width = 1;
+    pRegCloudB->push_back(regPointB);
+    pRegCloudB->height = pRegCloudB->width = 1;
+
+    deregistration(pRegCloudA, pRegCloudB, *pCloudA, *pCloudB);
+    
+    pointA = pCloudA->points[0];
+    pointB = pCloudB->points[0];
+}
+
+void InteractiveRegisterer::deregistration(PointCloudPtr pRegCloudA, PointCloudPtr pRegCloudB, PointCloud& cloudA, PointCloud& cloudB)
+{
+    if (!pRegCloudA->empty()) deregistration(pRegCloudA, cloudA, 0);
+    if (!pRegCloudB->empty()) deregistration(pRegCloudB, cloudB, 1);
+}
+
+void InteractiveRegisterer::deregistration(PointCloudPtr pRegCloud, PointCloud& cloud, int viewpoint)
+{
+    if (viewpoint == 0)
+    {
+        PointCloudPtr pCtrCloud (new PointCloud);
+        pcl::transformPointCloud(*pRegCloud, *pCtrCloud, m_InverseTransformation);
+        translate(pCtrCloud, -m_tLeft,  cloud);
+    }
+    else
+    {
+        translate(pRegCloud, -m_tRight, cloud);
+    }
 }
 
 void InteractiveRegisterer::deregistration(vector<PointCloudPtr> pRegCloudsA, vector<PointCloudPtr> pRegCloudsB, vector<PointCloudPtr>& pCloudsA, vector<PointCloudPtr>& pCloudsB)
@@ -488,10 +736,7 @@ void InteractiveRegisterer::deregistration(vector<PointCloudPtr> pRegCloudsA, ve
     for (int i = 0; i < pRegCloudsA.size(); i++)
     {
         PointCloudPtr pCloudA (new PointCloud);
-        PointCloudPtr pCtrCloudA (new PointCloud);
-        
-        pcl::transformPointCloud(*pRegCloudsA[i], *pCtrCloudA, m_InverseTransformation);
-        translate(pCtrCloudA, -m_tLeft, *pCloudA);
+        deregistration(pRegCloudsA[i], *pCloudA, 0);
         
         pCloudsA.push_back(pCloudA);
     }
@@ -499,17 +744,18 @@ void InteractiveRegisterer::deregistration(vector<PointCloudPtr> pRegCloudsA, ve
     for (int i = 0; i < pRegCloudsB.size(); i++)
     {
         PointCloudPtr pCloudB (new PointCloud);
-        translate(pRegCloudsB[i], -m_tRight, *pCloudB);
+        deregistration(pRegCloudsB[i], *pCloudB, 1);
+        
         pCloudsB.push_back(pCloudB);
     }
 }
 
 void InteractiveRegisterer::registration(DepthFrame frameA, DepthFrame frameB,
-	pcl::PointCloud<pcl::PointXYZ>& regCloudA, pcl::PointCloud<pcl::PointXYZ>& regCloudB, 
+	PointCloud& regCloudA, PointCloud& regCloudB, 
 	bool bBackgroundPoints, bool bUserPoints)
 {    
-	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA (new pcl::PointCloud<pcl::PointXYZ>);
-	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB (new pcl::PointCloud<pcl::PointXYZ>);
+	PointCloudPtr pCloudA (new PointCloud);
+	PointCloudPtr pCloudB (new PointCloud);
 
 	if (bBackgroundPoints && bUserPoints)
 	{
@@ -532,7 +778,7 @@ void InteractiveRegisterer::registration(DepthFrame frameA, DepthFrame frameB,
 		frameB.getForegroundUserFreePointCloud(*pCloudB);
 	}
 
-//    pcl::PointCloud<pcl::PointXYZ>::Ptr pCtrCloudA (new pcl::PointCloud<pcl::PointXYZ>);
+//    PointCloudPtr pCtrCloudA (new PointCloud);
 //    translate(pCloudA, m_tLeft, *pCtrCloudA);
 //    translate(pCloudB, m_tRight, regCloudB);
 //        
@@ -542,28 +788,13 @@ void InteractiveRegisterer::registration(DepthFrame frameA, DepthFrame frameB,
 }
 
 
-void InteractiveRegisterer::visualizeRegistration(pcl::PointCloud<pcl::PointXYZ>::Ptr cloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr cloudB)
+void InteractiveRegisterer::visualizeRegistration(PointCloudPtr cloudA, PointCloudPtr cloudB)
 {
-	pcl::visualization::PCLVisualizer::Ptr pViz (new pcl::visualization::PCLVisualizer);
-    pViz->setWindowName("Fusion viewer");
-        
-    pViz->addCoordinateSystem();
-        
-    pViz->addPointCloud (cloudA, "cloud left");
-    pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "cloud left");
-    pViz->addPointCloud (cloudB, "cloud right");
-    pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "cloud right");
-        
-    while (!pViz->wasStopped())
-    {
-        pViz->spinOnce(200);
-    }
-    pViz->close();
+    pcl::visualization::PCLVisualizer::Ptr pViz (new pcl::visualization::PCLVisualizer);
+	visualizeRegistration(pViz, cloudA, cloudB);
 }
 
-
-void InteractiveRegisterer::visualizeRegistration(pcl::visualization::PCLVisualizer::Ptr pViz,
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr cloudB)
+void InteractiveRegisterer::visualizeRegistration(pcl::visualization::PCLVisualizer::Ptr pViz, PointCloudPtr cloudA, PointCloudPtr cloudB)
 {
 	pViz->removePointCloud("cloud left");
     pViz->removePointCloud("cloud right");
@@ -572,39 +803,26 @@ void InteractiveRegisterer::visualizeRegistration(pcl::visualization::PCLVisuali
     pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.5, 0, 0, "cloud left");
     pViz->addPointCloud (cloudB, "cloud right");
     pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 0.5, 0, "cloud right");
+    
+    pViz->spin();
 }
-
 
 void InteractiveRegisterer::visualizeRegistration(DepthFrame dFrameA, DepthFrame dFrameB)
 {
-	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA (new pcl::PointCloud<pcl::PointXYZ>);
-	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB (new pcl::PointCloud<pcl::PointXYZ>);
-
-	registration(dFrameA, dFrameB, *pCloudA, *pCloudB);
-
-	pcl::visualization::PCLVisualizer::Ptr pViz (new pcl::visualization::PCLVisualizer);
-    pViz->setWindowName("Fusion viewer");
-        
-    pViz->addCoordinateSystem();
-        
-    pViz->addPointCloud (pCloudA, "cloud left");
-    pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "cloud left");
-    pViz->addPointCloud (pCloudB, "cloud right");
-    pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "cloud right");
+	PointCloudPtr pCloudA (new PointCloud);
+	PointCloudPtr pCloudB (new PointCloud);
     
-    int secs = 0;
-    while (secs++ < 2.5)
-    {
-        pViz->spinOnce(1000);
-    }
+	registration(dFrameA, dFrameB, *pCloudA, *pCloudB);
+    
+    visualizeRegistration(pCloudA, pCloudB);
 }
 
-pcl::PointXYZ InteractiveRegisterer::getLeftRefPoint()
+PointT InteractiveRegisterer::getLeftRefPoint()
 {
     return EigenToPointXYZ(m_tLeft);
 }
 
-pcl::PointXYZ InteractiveRegisterer::getRightRefPoint()
+PointT InteractiveRegisterer::getRightRefPoint()
 {
     return EigenToPointXYZ(m_tRight);
 }

@@ -36,8 +36,15 @@
 # Xcode
 *.pbxproj
 *.xcuserstate
+*.plist
+*.dep
+*.xcscheme
 
 # Directories
 build/
 xbuild/
 Data/
+
+# CMake
+*.make
+*.cmake

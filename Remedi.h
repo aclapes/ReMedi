@@ -17,7 +17,9 @@ public:
 	~Remedi();
 
 	// Public methods
-	void Run(bool display = false);
+    void setVisualization(bool enable = false);
+    void setInteractiveRegistration(int frameID);
+	void run();
 
     // Public enums
     
@@ -25,8 +27,7 @@ public:
     enum Action { TAKINGPILL = 0, EATING = 1, READING = 2, DRINKING = 3 };
     
 private:
-	void modelBackground(Sequence::Ptr pSequence, BackgroundSubtractor& bs);
-	void interactWithRegisterer(Sequence::Ptr pSequence, InteractiveRegisterer& registerer);
+	void interactWithRegisterer(Sequence::Ptr pSequence, int fID, InteractiveRegisterer& registerer);
 	void modelTablePlanes(pcl::PointCloud<pcl::PointXYZ>::Ptr pRegisteredCloudA,
                           pcl::PointCloud<pcl::PointXYZ>::Ptr pRegisteredCloudB,
                           TableModeler& tableModeler);
@@ -36,4 +37,6 @@ private:
     
     // Attributes
     string m_ParentDir;
+    bool m_bVisualization;
+    int m_RegistrationFrameID;
 };

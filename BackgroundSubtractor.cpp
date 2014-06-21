@@ -1,16 +1,12 @@
 #include "BackgroundSubtractor.h"
 
+#include "DepthFrame.h"
+#include "ColorFrame.h"
+
 int type = CV_16UC1;
 
-
-BackgroundSubtractor::BackgroundSubtractor(int nFrames, int nmixtures) : m_NFrames(nFrames)
-{
-	m_pSubtractorA = new cv::BackgroundSubtractorMOG2(m_NFrames, nmixtures, false);
-	m_pSubtractorB = new cv::BackgroundSubtractorMOG2(m_NFrames, nmixtures, false);
-
-	m_pSubtractorA->set("backgroundRatio", 0.999);
-	m_pSubtractorB->set("backgroundRatio", 0.999);
-}
+BackgroundSubtractor::BackgroundSubtractor()
+{ }
 
 BackgroundSubtractor::BackgroundSubtractor(const BackgroundSubtractor& rhs)
 {
@@ -19,77 +15,82 @@ BackgroundSubtractor::BackgroundSubtractor(const BackgroundSubtractor& rhs)
 
 BackgroundSubtractor::~BackgroundSubtractor(void)
 {
-    delete m_pSubtractorA;
-    delete m_pSubtractorB;
-}
 
+}
 
 BackgroundSubtractor& BackgroundSubtractor::operator=(const BackgroundSubtractor& rhs)
 {
     if (this != &rhs)
     {
-        m_pSubtractorA = rhs.m_pSubtractorA;
-        m_pSubtractorB = rhs.m_pSubtractorB;
-        
-        m_NFrames = rhs.m_NFrames;
+        m_pSeq = rhs.m_pSeq;
+        m_subtractorA = rhs.m_subtractorA;
+        m_subtractorB = rhs.m_subtractorB;
+        m_NumOfMixtureComponents = rhs.m_NumOfMixtureComponents;
+        m_LearningRate = rhs.m_LearningRate;
     }
     
     return *this;
 }
 
-
-bool BackgroundSubtractor::isReady()
+void BackgroundSubtractor::setInputSequence(Sequence::Ptr pSeq)
 {
-	return m_NFrames == 0;
+    m_pSeq = pSeq;
 }
 
-
-void BackgroundSubtractor::operator()(DepthFrame frame, float alpha)
+void BackgroundSubtractor::setNumOfMixtureComponents(int k)
 {
-	(*this)(m_pSubtractorA, frame, alpha);
-
-	m_NFrames--;
+    m_NumOfMixtureComponents = k;
 }
 
-
-void BackgroundSubtractor::operator()(DepthFrame frameA, DepthFrame frameB, float alpha)
+void BackgroundSubtractor::setLearningRate(float rate)
 {
-	(*this)(m_pSubtractorA, frameA, alpha);
-	(*this)(m_pSubtractorB, frameB, alpha);
-
-	m_NFrames--;
+    m_LearningRate = rate;
 }
 
-
-void BackgroundSubtractor::operator()(cv::BackgroundSubtractorMOG2* pSubtractor, DepthFrame& frame, float alpha)
+void BackgroundSubtractor::model()
 {
-	cv::Mat frameMatF;
-	frame.getDepthMap().convertTo(frameMatF, type);
-	
-	cv::Mat maskMat;
-	(*pSubtractor)(frameMatF, maskMat, alpha);
+    m_subtractorA = cv::BackgroundSubtractorMOG2(m_pSeq->getNumOfFrames()[0], m_NumOfMixtureComponents, false);
+	m_subtractorB = cv::BackgroundSubtractorMOG2(m_pSeq->getNumOfFrames()[1], m_NumOfMixtureComponents, false);
+    
+	m_subtractorA.set("backgroundRatio", 0.999);
+	m_subtractorB.set("backgroundRatio", 0.999);
+    
+    vector<DepthFrame> depthFrames = m_pSeq->nextDepthFrame();
+    
+    cv::Mat depthMap, depthMask;
+    depthFrames[0].getDepthMap().convertTo(depthMap, type);
+    m_subtractorA(depthMap, depthMask, 1);
+    depthFrames[1].getDepthMap().convertTo(depthMap, type);
+    m_subtractorB(depthMap, depthMask, 1);
+    
+	while (m_pSeq->hasNextDepthFrame())
+	{
+        depthFrames[0].getDepthMap().convertTo(depthMap, type);
+        m_subtractorA(depthMap, depthMask, m_LearningRate);
+        depthFrames[1].getDepthMap().convertTo(depthMap, type);
+        m_subtractorB(depthMap, depthMask, m_LearningRate);
+        
+		depthFrames = m_pSeq->nextDepthFrame();
+	}
 }
-
 
 void BackgroundSubtractor::subtract(DepthFrame frame, DepthFrame& foreground)
 {
-	subtract(m_pSubtractorA, frame, foreground);
+	subtract(m_subtractorA, frame, foreground);
 }
-
 
 void BackgroundSubtractor::subtract(DepthFrame frameA, DepthFrame frameB, DepthFrame& foregroundA, DepthFrame& foregroundB)
 {
-	subtract(m_pSubtractorA, frameA, foregroundA);
-	subtract(m_pSubtractorB, frameB, foregroundB);
+	subtract(m_subtractorA, frameA, foregroundA);
+	subtract(m_subtractorB, frameB, foregroundB);
 }
 
-
-void BackgroundSubtractor::subtract(cv::BackgroundSubtractorMOG2* pSubtractor, DepthFrame& frame, DepthFrame& foreground)
+void BackgroundSubtractor::subtract(cv::BackgroundSubtractorMOG2& subtractor, DepthFrame& frame, DepthFrame& foreground)
 {
 	cv::Mat maskMat;
 	cv::Mat frameMatF;
 	frame.getDepthMap().convertTo(frameMatF, type);
-	(*pSubtractor)(frameMatF, maskMat, 0); // learning rate = 0
+	subtractor(frameMatF, maskMat, 0); // learning rate = 0
 
 	// Erode and dilate mask
 	int erosion_size = 2;

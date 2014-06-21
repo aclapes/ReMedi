@@ -35,6 +35,7 @@ class Monitorizer
     typedef boost::shared_ptr<Cloudject> CloudjectPtr;
 
 public:
+    Monitorizer();
 	Monitorizer(BackgroundSubtractor::Ptr pBS, InteractiveRegisterer::Ptr pIR,
                 TableModeler::Ptr pTM, CloudjectDetector::Ptr pCD);
 	Monitorizer(const Monitorizer& rhs);
@@ -42,7 +43,13 @@ public:
     Monitorizer& operator=(const Monitorizer& rhs);
     void clear();
     
-    void setSequence(Sequence::Ptr pSequence);
+    void setInputSequence(Sequence::Ptr pSequence);
+    
+    void setBackgroundSubtractor(BackgroundSubtractor::Ptr bs);
+    void setRegisterer(InteractiveRegisterer::Ptr ir);
+    void setTableModeler(TableModeler::Ptr tm);
+    void setCloudjectDetector(CloudjectDetector::Ptr cd);
+    
     void setParams(MonitorizerParams params);
     void setLeafSize(float leafSize);
     void setClusteringToleranceFactor(int factor);
@@ -58,6 +65,8 @@ public:
 	bool isBufferFilled(std::vector<DepthFrame>);
     
     DetectionOutput getObjectDetectionOutput();
+    
+    typedef boost::shared_ptr<Monitorizer> Ptr;
     
 private:
 	void segmentMotion(float, cv::Mat&, cv::Mat&); // threshold and motion mask
@@ -90,16 +99,16 @@ private:
                        float leafSize = .005f);
     
 	// Members
-    Sequence::Ptr m_pSequence;
+    Sequence::Ptr m_pSeq;
 	MonitorizerParams m_Params;
 
     BackgroundSubtractor::Ptr m_pBS;
     InteractiveRegisterer::Ptr m_pIR;
     TableModeler::Ptr m_pTM;
-    CloudjectDetector::Ptr m_pCloudjectDetector;
+    CloudjectDetector::Ptr m_pCD;
     //	MotionSegmentator m_MotionSegmentator;
     
-    pcl::visualization::PCLVisualizer::Ptr m_pViz;
+//    pcl::visualization::PCLVisualizer::Ptr m_pViz;
     bool m_bVisualize;
 
 	int m_SceneVp;
@@ -117,8 +126,8 @@ private:
     int m_ClusterTolFactor;
 	float m_PosCorrespThresh; // dist thres to state wheter two cloudjects are the same based on pos criterion
     
-	std::vector<std::vector<Eigen::Vector4f> > m_centroidsA;
-	std::vector<std::vector<Eigen::Vector4f> > m_centroidsB;
+	vector<vector<Eigen::Vector4f> > m_centroidsA;
+	vector<vector<Eigen::Vector4f> > m_centroidsB;
     
     float m_TextSize;
     vector<string> m_TextsVpA, m_TextsVpB;
@@ -126,6 +135,8 @@ private:
     PointCloudPtr m_pInteractionCloudA, m_pInteractionCloudB;
     vector<PointCloudPtr> m_InteractorClustersA, m_InteractorClustersB; // tabletop outliers
     
-    vector<CloudjectPtr> m_PresentCloudjects, m_AppearedCloudjects, m_DisappearedCloudjects;
+    vector<Cloudject> m_PresentCloudjects, m_AppearedCloudjects, m_DisappearedCloudjects;
+    
+    DetectionOutput m_DetectionOutput;
 };
 

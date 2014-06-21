@@ -24,8 +24,12 @@ Reader::Reader(string sequencesPath,
                vector<string> depthDirs)
 : m_SequencesPath(sequencesPath),
 m_ColorDirs(colorDirs), m_DepthDirs(depthDirs),
-m_SequenceCounter(-1), m_LabelsPath("")
+m_SequenceCounter(-1), m_LabelsPath(""),
+m_bPreAllocation(false)
 {
+    assert(m_ColorDirs.size() == m_DepthDirs.size());
+    
+    
     loadDirectories(m_SequencesPath, m_SequencesDirs);
 }
 
@@ -35,7 +39,8 @@ Reader::Reader(string sequencesPath,
                string labelsPath)
 : m_SequencesPath(sequencesPath),
   m_ColorDirs(colorDirs), m_DepthDirs(depthDirs),
-  m_SequenceCounter(-1), m_LabelsPath(labelsPath)
+m_SequenceCounter(-1), m_LabelsPath(labelsPath),
+m_bPreAllocation(false)
 {
     loadDirectories(m_SequencesPath, m_SequencesDirs);
 }
@@ -51,13 +56,15 @@ Reader::~Reader(void)
 
 void Reader::setData(string sequencesPath,
                      vector<string> colorDirs,
-                     vector<string> depthDirs)
+                     vector<string> depthDirs,
+                     bool bPreAllocation)
 {
     m_SequencesPath = sequencesPath;
     m_ColorDirs = colorDirs;
     m_DepthDirs = depthDirs;
     m_SequenceCounter = -1;
     m_LabelsPath = "";
+    m_bPreAllocation = bPreAllocation;
     
     loadDirectories(m_SequencesPath, m_SequencesDirs);
 }
@@ -65,13 +72,15 @@ void Reader::setData(string sequencesPath,
 void Reader::setData(string sequencesPath,
                      vector<string> colorDirs,
                      vector<string> depthDirs,
-                     string labelsPath)
+                     string labelsPath,
+                     bool bPreAllocation)
 {
     m_SequencesPath = sequencesPath;
     m_ColorDirs = colorDirs;
     m_DepthDirs = depthDirs;
     m_SequenceCounter = -1;
     m_LabelsPath = labelsPath;
+    m_bPreAllocation = bPreAllocation;
     
     loadDirectories(m_SequencesPath, m_SequencesDirs);
 }
@@ -89,6 +98,11 @@ Reader& Reader::operator=(const Reader& rhs)
         m_DepthDirs = rhs.m_DepthDirs;
         
         m_SequenceCounter = rhs.m_SequenceCounter;
+        
+        m_ColorFilesPaths = rhs.m_ColorFilesPaths;
+        m_DepthFilesPaths = rhs.m_DepthFilesPaths;
+        
+        m_bPreAllocation = rhs.m_bPreAllocation;
         
 //        m_ColorFrameCounter = rhs.m_ColorFrameCounter;
 //        m_DepthFrameCounter = rhs.m_DepthFrameCounter;
@@ -125,55 +139,57 @@ Sequence::Ptr Reader::getSequence(int s)
 
 void Reader::getSequence(int s, Sequence& sequence)
 {
-    if (s != m_SequenceCounter && hasSequence(s))
-        m_SequenceCounter = s;
-    
     sequence.setName(m_SequencesDirs[s]);
     
-    // Stream
+    // Read streams
 
-    vector<vector<string> > colorFilesPaths(m_ColorDirs.size());
+    assert (m_ColorDirs.size() == m_DepthDirs.size());
+    
+    m_ColorFilesPaths.resize(m_ColorDirs.size());
     for (int v = 0; v < m_ColorDirs.size(); v++)
     {
-        loadFilesPaths(m_SequencesPath + m_SequencesDirs[s] + "/Kinects/" + m_ColorDirs[v], "png", colorFilesPaths[v]);
+        loadFilesPaths(m_SequencesPath + m_SequencesDirs[s] + "/Kinects/" + m_ColorDirs[v], "png", m_ColorFilesPaths[v]);
         
-        vector<ColorFrame> colorFrames;
-        for (int f = 0; f < colorFilesPaths[v].size(); f++)
+        for (int f = 0; f < m_ColorFilesPaths[v].size(); f++)
         {
-            ColorFrame frame;
-            readColorFrame(colorFilesPaths[v], f, frame);
-            colorFrames.push_back(frame);
+            sequence.addColorFramePath(m_ColorFilesPaths[v][f], v);
+            if (m_bPreAllocation)
+            {
+                ColorFrame frame;
+                readColorFrame(m_ColorFilesPaths[v], f, frame);
+                sequence.addColorFrame(frame, v);
+            }
         }
-        sequence.addColorStreamView(colorFrames);
     }
     
-    vector<vector<string> > depthFilesPaths(m_DepthDirs.size());
+    m_DepthFilesPaths.resize(m_DepthDirs.size());
     for (int v = 0; v < m_DepthDirs.size(); v++)
     {
-        vector<string> filenames;
-        loadFilesPaths(m_SequencesPath + m_SequencesDirs[s] + "/Kinects/" + m_DepthDirs[v], "png", depthFilesPaths[v]);
+        loadFilesPaths(m_SequencesPath + m_SequencesDirs[s] + "/Kinects/" + m_DepthDirs[v], "png", m_DepthFilesPaths[v]);
         
-        vector<DepthFrame> depthFrames;
-        for (int f = 0; f < depthFilesPaths[v].size(); f++)
+        for (int f = 0; f < m_DepthFilesPaths[v].size(); f++)
         {
-            DepthFrame frame;
-            readDepthFrame(depthFilesPaths[v], f, frame);
-            depthFrames.push_back(frame);
+            sequence.addDepthFramePath(m_DepthFilesPaths[v][f], v);
+            if (m_bPreAllocation)
+            {
+                DepthFrame frame;
+                readDepthFrame(m_DepthFilesPaths[v], f, frame);
+                sequence.addDepthFrame(frame, v);
+            }
         }
-        sequence.addDepthStreamView(depthFrames);
     }
     
     sequence.setDelays(m_Delays);
     
-    // Labels
+    // Read labels
     
-    vector<unsigned char> interactions, actions;
-    loadSequenceLabels(sequence.getNumOfFrames()[0], interactions, actions);
+    vector<unsigned short> interactions;
+    vector<unsigned short> actions;
+    loadSequenceLabels(m_SequencesDirs[s], sequence.getNumOfFrames()[0],
+                       interactions, actions);
     
-    if (interactions.size() > 0)
-        sequence.setInteractionLabels(interactions);
-    if (actions.size() > 0)
-        sequence.setActionLabels(actions);
+    sequence.setInteractionLabels(interactions);
+    sequence.setActionLabels(actions);
 }
 
 Sequence::Ptr Reader::getNextSequence()
@@ -187,7 +203,7 @@ Sequence::Ptr Reader::getNextSequence()
 
 void Reader::getNextSequence(Sequence& sequence)
 {
-    getSequence(++m_SequenceCounter, sequence);
+    getSequence(m_SequenceCounter++, sequence);
 }
 
 void Reader::setDelays(vector<int> delays)
@@ -205,21 +221,21 @@ bool Reader::hasSequence(int i)
     return i >= 0 && i < m_SequencesDirs.size();
 }
 
-void Reader::loadSequenceLabels(int length, vector<unsigned char>& interactions, vector<unsigned char>& actions)
+void Reader::loadSequenceLabels(string sequenceDir, int length, vector<unsigned short>& interactions, vector<unsigned short>& actions)
 {
     if (m_LabelsPath.compare("") == 0)
         return;
 
-    string sequenceDir = m_SequencesDirs[m_SequenceCounter];
-    std::ifstream infile(m_LabelsPath + sequenceDir + ".csv");
+    std::string filename(m_LabelsPath + sequenceDir + ".csv");
+    std::ifstream infile(filename);
     if (!infile.is_open())
     {
-        cerr << "ERROR: file doesn't exist." << endl;
+        cerr << filename << " doesn't exist." << endl;
         return;
     }
     
-    interactions = vector<unsigned char>(length, 0);
-    actions = vector<unsigned char>(length, 0);
+    vector<unsigned short> interactionsTmp;
+    vector<unsigned short> actionsTmp;
     
     string cat, subcat;
     int vFrame, wFrameIni, wFrameEnd, val;
@@ -227,67 +243,46 @@ void Reader::loadSequenceLabels(int length, vector<unsigned char>& interactions,
     {
         if (cat.compare("interaction") == 0)
         {
+            unsigned short interacts = 0;
+            
             if (subcat.compare("pillbox") == 0)
-                interactions[vFrame] |= (unsigned char) pow(2, (int) Remedi::PILLBOX);
+                interacts |= (unsigned short) pow(2, (int) Remedi::PILLBOX);
             else if (subcat.compare("dish") == 0)
-                interactions[vFrame] |= (unsigned char) pow(2, (int) Remedi::DISH);
+                interacts |= (unsigned short) pow(2, (int) Remedi::DISH);
             else if (subcat.compare("book") == 0)
-                interactions[vFrame] |= (unsigned char) pow(2, (int) Remedi::BOOK);
+                interacts |= (unsigned short) pow(2, (int) Remedi::BOOK);
             else if (subcat.compare("glass") == 0)
-                interactions[vFrame] |= (unsigned char) pow(2, (int) Remedi::GLASS);
+                interacts |= (unsigned short) pow(2, (int) Remedi::GLASS);
+            
+            interactionsTmp.push_back(interacts);
         }
         else if (cat.compare("action") == 0)
         {
+            unsigned short acts = 0;
+            
             if (subcat.compare("takingpill") == 0)
-                actions[vFrame] |= (unsigned char) pow(2, (int) Remedi::TAKINGPILL);
+                acts |= (unsigned short) pow(2, (int) Remedi::TAKINGPILL);
             else if (subcat.compare("eating") == 0)
-                actions[vFrame] |= (unsigned char) pow(2, (int) Remedi::EATING);
+                acts |= (unsigned short) pow(2, (int) Remedi::EATING);
             else if (subcat.compare("reading") == 0)
-                actions[vFrame] |= (unsigned char) pow(2, (int) Remedi::READING);
+                acts |= (unsigned short) pow(2, (int) Remedi::READING);
             else if (subcat.compare("drinking") == 0)
-                actions[vFrame] |= (unsigned char) pow(2, (int) Remedi::DRINKING);
+                acts |= (unsigned short) pow(2, (int) Remedi::DRINKING);
+            
+            actionsTmp.push_back(acts);
         }
     }
+    
+    infile.close();
+    
+    interactions = interactionsTmp;
+    actions = actionsTmp;
 }
-
-//bool Reader::setSequence(int i)
-//{
-//    if (i < 0 || i >= m_SequencesDirs.size())
-//        return false;
-//    
-//    m_SequenceCounter = i;
-//    
-//    readSequenceFrames();
-//    readSequenceLabels();
-//}
-//
-//string Reader::getSequencePath()
-//{
-//    return m_SequencesPath + m_SequencesDirs[m_SequenceCounter] + "/";
-//}
-//
-//string Reader::getSequenceDirName()
-//{
-//    return m_SequencesDirs[m_SequenceCounter];
-//}
-//
-//bool Reader::nextSequence()
-//{
-//    if (m_SequenceCounter == m_SequencesDirs.size() - 1)
-//    {
-//        return false;
-//    }
-//    
-//    m_SequenceCounter++;
-//    
-//    readSequenceFrames();
-//    readSequenceLabels();
-//}
 
 void Reader::loadFilesPaths(string dir, const char* filetype, vector<string>& filenames)
 {
  	filenames.clear();
-   
+    
     string extension = "." + string(filetype);
     const char* path = dir.c_str();
 	if( exists( path ) )
@@ -321,173 +316,20 @@ void Reader::loadDirectories(string parent, vector<string>& directories)
 	}
 }
 
-//bool Reader::readNextColorFrame(string sequencesPath, string colorDir, vector<string> filenames, ColorFrame& cframe)
-//{
-//	string filePath = sequencesPath + m_SequencesDirs[m_SequenceCounter] + "Kinects/" + colorDir + filenames[m_ColorFrameCounter];
-//
-//	cframe = ColorFrame( cv::imread(filePath.c_str(), CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR) );
-//    
-//    return cframe.isValid();
-//}
-//
-//
-//bool Reader::readNextDepthFrame(string sequencesPath, string depthDir, vector<string> filenames, DepthFrame& dframe)
-//{
-//	string filePath = sequencesPath + m_SequencesDirs[m_SequenceCounter] + "Kinects/" + depthDir + filenames[m_DepthFrameCounter];
-//
-//	dframe = DepthFrame( cv::imread(filePath.c_str(), CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR) );
-//
-//    return dframe.isValid();
-//}
-
-
 bool Reader::readColorFrame(vector<string> filesPaths, int f, ColorFrame& cframe)
 {
     assert (f < filesPaths.size());
     
 	cframe = ColorFrame( cv::imread(filesPaths[f].c_str(), CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR) );
-
+    
     return cframe.isValid();
 }
-
 
 bool Reader::readDepthFrame(vector<string> filesPaths, int f, DepthFrame& dframe)
 {
     assert (f < filesPaths.size());
     
 	dframe = DepthFrame( cv::imread(filesPaths[f].c_str(), CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR) );
-
+    
     return dframe.isValid();
 }
-
-/*
-bool Reader::readColorFrame(string sequencesPath, string colorDir, string filename, ColorFrame& cframe)
-{
-	string filePath = sequencesPath + m_SequencesDirs[m_SequenceCounter] + "/Kinects/" + colorDir + filename;
-    
-	cframe = ColorFrame( cv::imread(filePath.c_str(), CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR) );
-
-    return cframe.isValid();
-}
-
-
-bool Reader::readDepthFrame(string sequencesPath, string depthDir, string filename, DepthFrame& dframe)
-{
-	string filePath = sequencesPath + m_SequencesDirs[m_SequenceCounter] + "/Kinects/" + depthDir + filename;
-    
-	dframe = DepthFrame( cv::imread(filePath.c_str(), CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR) );
-
-    return dframe.isValid();
-}
-
-int Reader::getNumOfFrames()
-{
-    return m_ColorFilesPaths1.size(); // master stream and master modality
-}
-
-int Reader::getColorFrameCounter()
-{
-    return m_ColorFrameCounter;
-}
-
-int Reader::getDepthFrameCounter()
-{
-    return m_DepthFrameCounter;
-}
-
-bool Reader::nextColorFrame(string colorDir, vector<string> filenames, ColorFrame& frame, int step)
-{
-    if (m_ColorFrameCounter + step < filenames.size() - 1)
-        m_ColorFrameCounter += step;
-
-	return readColorFrame(m_SequencesPath, colorDir, filenames[m_ColorFrameCounter], frame);
-}
-
-
-bool Reader::nextDepthFrame(string colorDir, vector<string> filenames, DepthFrame& frame, int step)
-{
-    if (m_DepthFrameCounter + step < filenames.size() - 1)
-        m_DepthFrameCounter += step;
-
-	return readDepthFrame(m_SequencesPath, colorDir, filenames[m_DepthFrameCounter], frame);
-}
-
-
-bool Reader::getColorFrame(string colorDir, vector<string> filenames, int i, ColorFrame& frame)
-{
-    // TODO: range check
-	return readColorFrame(m_SequencesPath, colorDir, filenames, i, frame);
-}
-
-
-bool Reader::getDepthFrame(string depthDir, vector<string> filenames, int i, DepthFrame& frame)
-{
-    // TODO: range check
-	return readDepthFrame(m_SequencesPath, depthDir, filenames, i, frame);
-}
-
-
-bool Reader::nextColorPairedFrames(ColorFrame& frameA, ColorFrame& frameB, int step)
-{
-    if (m_ColorFrameCounter + step < m_ColorFilesPaths1.size() - 1)
-        m_ColorFrameCounter += step;
-
-	bool validA = readColorFrame(m_SequencesPath, m_ColorDir1, m_ColorFilesPaths1[m_ColorFrameCounter], frameA);
-	bool validB = readColorFrame(m_SequencesPath, m_ColorDir2, m_ColorFilesPaths2[m_ColorFrameCounter], frameB);
-    
-	return validA && validB;
-}
-
-
-bool Reader::nextDepthPairedFrames(DepthFrame& frameA, DepthFrame& frameB, int step)
-{
-    if (m_DepthFrameCounter + step < m_DepthFilesPaths1.size() - 1)
-        m_DepthFrameCounter += step;
-
-	bool validA = readDepthFrame(m_SequencesPath, m_DepthDir1, m_DepthFilesPaths1[m_DepthFrameCounter], frameA);
-	bool validB = readDepthFrame(m_SequencesPath, m_DepthDir2, m_DepthFilesPaths2[m_DepthFrameCounter], frameB);
-	
-	return validA && validB;
-}
-
-bool Reader::previousColorPairedFrames(ColorFrame& frameA, ColorFrame& frameB, int step)
-{
-    if (m_ColorFrameCounter >= step)
-        m_ColorFrameCounter -= step;
-
-	bool validA = readColorFrame(m_SequencesPath, m_ColorDir1, m_ColorFilesPaths1[m_ColorFrameCounter], frameA);
-	bool validB = readColorFrame(m_SequencesPath, m_ColorDir2, m_ColorFilesPaths2[m_ColorFrameCounter], frameB);
-    
-	return validA && validB;
-}
-
-
-bool Reader::previousDepthPairedFrames(DepthFrame& frameA, DepthFrame& frameB, int step)
-{
-    if (m_DepthFrameCounter >= step)
-        m_DepthFrameCounter -= step;
-
-	bool validA = readDepthFrame(m_SequencesPath, m_DepthDir1, m_DepthFilesPaths1[m_DepthFrameCounter], frameA);
-	bool validB = readDepthFrame(m_SequencesPath, m_DepthDir2, m_DepthFilesPaths2[m_DepthFrameCounter], frameB);
-	
-	return validA && validB;
-}
-
-
-bool Reader::getColorPairedFrames(int i, ColorFrame& frameA, ColorFrame& frameB)
-{
-	bool validA = getColorFrame(m_ColorDir1, m_ColorFilesPaths1, i, frameA);
-	bool validB = getColorFrame(m_ColorDir2, m_ColorFilesPaths2, i, frameB);
-
-	return validA && validB;
-}
-
-
-bool Reader::getDepthPairedFrames(int i, DepthFrame& frameA, DepthFrame& frameB)
-{
-	bool validA = getDepthFrame(m_DepthDir1, m_DepthFilesPaths1, i, frameA);
-	bool validB = getDepthFrame(m_DepthDir2, m_DepthFilesPaths2, i, frameB);
-
-	return validA && validB;
-}
-*/

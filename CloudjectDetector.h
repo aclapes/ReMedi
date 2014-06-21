@@ -19,7 +19,6 @@
 
 #include "Cloudject.hpp"
 #include "CloudjectModel.hpp"
-#include "DetectionOutput.h"
 
 using namespace std;
 
@@ -34,9 +33,9 @@ class CloudjectDetector
     typedef boost::shared_ptr<CloudjectModel> CloudjectModelPtr;
     
 public:
-	CloudjectDetector(void);
+	CloudjectDetector();
     CloudjectDetector(const CloudjectDetector& rhs);
-	~CloudjectDetector(void);
+	~CloudjectDetector();
     void clear();
 	
     CloudjectDetector& operator=(const CloudjectDetector& rhs);
@@ -49,7 +48,7 @@ public:
     void setInputClusters(vector<PointCloudPtr> clustersA, vector<PointCloudPtr> clustersB);
     
     void loadCloudjectModels(string dir);
-    void setCloudjectModels(vector<CloudjectModelPtr> models);
+    void setCloudjectModels(vector<CloudjectModel> models);
     int getNumCloudjectModels();
 	
     void setModelLeafSize(float);
@@ -61,12 +60,10 @@ public:
     void setScoreThreshold(float score);
 
 	void detect();
-    void getPresentCloudjects(vector<CloudjectPtr>& cloudjects);
-    void getAppearedCloudjects(vector<CloudjectPtr>& cloudjects);
-    void getDisappearedCloudjects(vector<CloudjectPtr>& cloudjects);
-    
-    DetectionOutput getDetectionOutput();
-    
+    void getPresentCloudjects(vector<Cloudject>& cloudjects);
+    void getAppearedCloudjects(vector<Cloudject>& cloudjects);
+    void getDisappearedCloudjects(vector<Cloudject>& cloudjects);
+        
     typedef boost::shared_ptr<CloudjectDetector> Ptr;
     
 private:
@@ -94,7 +91,7 @@ private:
 		vector<PointCloudPtr>& leftoversA,
 		vector<PointCloudPtr>& leftoversB);
 
-    void makeSpatiotemporalCorrespondences(vector<CloudjectPtr> cloudjects, vector<CloudjectPtr>& appeared, vector<CloudjectPtr>& disappeared, vector< vector<CloudjectPtr> >& cloudjectsHistory);
+    void makeSpatiotemporalCorrespondences(vector<Cloudject> cloudjects, vector<Cloudject>& appeared, vector<Cloudject>& disappeared, vector< vector<Cloudject> >& cloudjectsHistory);
     
 	float clustersBoxDistance(PointCloudPtr, PointCloudPtr);
 	
@@ -133,7 +130,7 @@ private:
     
     bool match(Cloudject src, Cloudject tgt);
     
-    void recognize(vector< vector<CloudjectPtr> >& history);
+    void recognize(vector< vector<Cloudject> >& history);
     
     void greedyAssign(vector< vector<double> > scores, vector<int>& assignations, vector<double>& assigned_scores);
 
@@ -150,7 +147,7 @@ private:
 
     vector<PointCloudPtr> m_ClustersA, m_ClustersB;
     
-    vector<CloudjectModelPtr> m_CloudjectModels;
+    vector<CloudjectModel> m_CloudjectModels;
     
     float m_ModelLeafSize;
 	float m_LeafSize;
@@ -160,12 +157,10 @@ private:
     float m_FpfhRadius;
     float m_ScoreThreshold;
     
-	vector< vector<CloudjectPtr> > m_CloudjectsHistory; // history
+	vector< vector<Cloudject> > m_CloudjectsHistory; // history
     
-    vector<CloudjectPtr> m_AppearedCloudjects; // appered in frame
+    vector<Cloudject> m_AppearedCloudjects; // appered in frame
     //vector<CloudjectPtr> m_PresentCloudjects; // present in frame
-    vector<CloudjectPtr> m_DisappearedCloudjects; // disappeared in frame
-    
-    DetectionOutput m_DetectionOutput;
+    vector<Cloudject> m_DisappearedCloudjects; // disappeared in frame
 };
 

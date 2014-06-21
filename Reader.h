@@ -26,11 +26,13 @@ public:
     
     void setData(string sequencesPath,
                  vector<string> colorDirs,
-                 vector<string> depthDirs);
+                 vector<string> depthDirs,
+                 bool bPreAllocation = false);
     void setData(string sequencesPath,
                  vector<string> colorDirs,
                  vector<string> depthDirs,
-                 string labelsPath);
+                 string labelsPath,
+                 bool bPreAllocation = false);
 
 	// Public methods
     Reader& operator=(const Reader& rhs);
@@ -78,7 +80,7 @@ private:
 	// Private methods
     void loadDirectories(string parent, vector<string>& directories);
     void loadFilesPaths(string dir, const char* filetype, vector<string>& filenames);
-    void loadSequenceLabels(int length, vector<unsigned char>& interactions, vector<unsigned char>& actions);
+    void loadSequenceLabels(string sequenceDir, int length, vector<unsigned short>& interactions, vector<unsigned short>& actions);
     
 //	bool readNextColorFrame(string dataPath, string colorDir, vector<string> filenames, ColorFrame& cframe);
 //	bool readNextDepthFrame(string dataPath, string depthDir, vector<string> filenames, DepthFrame& dframe);
@@ -103,6 +105,8 @@ private:
     vector<vector<string> > m_ColorFilesPaths, m_DepthFilesPaths;
     
     vector<int> m_Delays;
+    
+    bool m_bPreAllocation;
     
 //    int m_ColorFrameCounter, m_DepthFrameCounter;
     

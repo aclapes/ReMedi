@@ -56,8 +56,10 @@ class InteractiveRegisterer
     
 public:    
 	InteractiveRegisterer();
-    
     InteractiveRegisterer(const InteractiveRegisterer& other);
+    ~InteractiveRegisterer();
+    
+    InteractiveRegisterer& operator=(const InteractiveRegisterer& other);
 
 	void setNumPoints(int);
 
@@ -79,6 +81,7 @@ public:
 //    void align(DepthFrame&, DepthFrame&);
 
     void computeTransformation();
+    void computeFineTransformation();
     
 	bool loadTransformation(string filePath);
 	void saveTransformation(string filePath);
@@ -87,8 +90,18 @@ public:
                       PointCloud&, PointCloud&,
                       bool backgroundPoints = true, bool userPoints = true);
     
-	void registration(PointCloudPtr, PointCloudPtr, PointCloud&, PointCloud&);
+    PointT registration(PointT point, int viewpoint);
+    void registration(PointT point, PointT& regPoint, int viewpoint);
+    void registration(PointT pointA, PointT pointB, PointT& regPointA, PointT& regPointB);
+	void registration(PointCloudPtr pCloudA, PointCloudPtr pCloudB, PointCloud& regCloudA, PointCloud& regCloudB);
+    void registration(PointCloudPtr pCloud, PointCloud& regCloud, int viewpoint);
+    void registration(vector<PointCloudPtr> pCloudsA, vector<PointCloudPtr> pCloudsB, vector<PointCloudPtr>& pRegCloudsA, vector<PointCloudPtr>& pRegCloudsB);
+    
+    PointT deregistration(PointT regPoint, int viewpoint);
+    void deregistration(PointT regPoint, PointT& point, int viewpoint);
+    void deregistration(PointT regPointA, PointT regPointB, PointT& pointA, PointT& pointB);
     void deregistration(PointCloudPtr pRegCloudA, PointCloudPtr pRegCloudB, PointCloud& cloudA, PointCloud& cloudB);
+    void deregistration(PointCloudPtr pRegCloud, PointCloud& cloud, int viewpoint);
     void deregistration(vector<PointCloudPtr> pRegCloudsA, vector<PointCloudPtr> pRegCloudsB, vector<PointCloudPtr>& pCloudsA, vector<PointCloudPtr>& pCloudsB);
 
     pair<PointCloudPtr,PointCloudPtr> getRegisteredClouds();
@@ -111,7 +124,7 @@ private:
     
     // Members
     
-    boost::shared_ptr<pcl::visualization::PCLVisualizer> cloud_viewer_;
+    boost::shared_ptr<pcl::visualization::PCLVisualizer> m_pViz;
     int viewport_left_, viewport_right_;
     
     ColorFrame m_ColorFrameA, m_ColorFrameB;
@@ -132,4 +145,7 @@ private:
 
 	Eigen::Vector4f m_tLeft, m_tRight;
 	Eigen::Matrix4f m_Transformation, m_InverseTransformation;
+    
+    int m_MouseX, m_MouseY;
+    int m_MouseButton;
 };

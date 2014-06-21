@@ -66,7 +66,7 @@ private:
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr m_pCloudA, m_pCloudB;
 //    pcl::PointXYZ m_originA, m_originB;
-	pcl::visualization::PCLVisualizer::Ptr m_pViz;
+    
 	float m_LeafSize;
 	float m_NormalRadius;
 	float m_SACIters;

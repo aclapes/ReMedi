@@ -14,6 +14,7 @@
 #include <boost/algorithm/string.hpp>
 
 DetectionOutput::DetectionOutput()
+: m_NumOfViews(0), m_NumOfObjects(0), m_Tol(0.07)
 {
     
 }
@@ -34,8 +35,18 @@ DetectionOutput::DetectionOutput(int nviews, vector<int> nframes, int nobjects, 
 }
 
 DetectionOutput::DetectionOutput(vector< vector< vector< vector< pcl::PointXYZ > > > > positions)
+: m_Tol(0.07)
 {
     setPositions(positions);
+}
+
+DetectionOutput::DetectionOutput(string path, string filename, string extension)
+: m_NumOfObjects(0), m_Tol(0.07)
+{
+    string pathaux = path;
+    string filenameaux = filename;
+    string extensionaux = extension;
+    read(path, filename, extension);
 }
 
 DetectionOutput::DetectionOutput(const DetectionOutput& rhs)
@@ -45,7 +56,7 @@ DetectionOutput::DetectionOutput(const DetectionOutput& rhs)
 
 DetectionOutput::~DetectionOutput()
 {
-    
+    cout << "~DetectionOutput" << endl;
 }
 
 DetectionOutput& DetectionOutput::operator=(const DetectionOutput& rhs)
@@ -126,6 +137,17 @@ float DetectionOutput::distance(pcl::PointXYZ p1, pcl::PointXYZ p2)
     return sqrtf(powf(p1.x - p2.x, 2) + powf(p1.y - p2.y, 2) + powf(p1.z - p2.z, 2));
 }
 
+void DetectionOutput::add(vector<vector<vector<pcl::PointXYZ> > > positions)
+{
+    if (m_Positions.size() != positions.size())
+        m_Positions.resize(positions.size());
+    
+    for (int v = 0; v < positions.size(); v++)
+    {
+        m_Positions[v].push_back(positions[v]);
+    }
+}
+
 void DetectionOutput::add(int view, int frame, int object, pcl::PointXYZ position)
 {
     bool collision = false;
@@ -200,33 +222,94 @@ void DetectionOutput::write(string path, string filename, string extension)
     cout << "DetectionOutput written successfully to " << path << "." << endl;
 }
 
+//void DetectionOutput::read(string path, string filename, string extension)
+//{
+//    m_Positions.resize(m_NumOfViews);
+//    
+//    for (int i = 0; i < m_NumOfViews; i++)
+//    {
+//        m_Positions[i].resize(m_NumOfFrames[i]);
+//        for (int j = 0; j < m_NumOfFrames[i]; j++)
+//        {
+//            m_Positions[i][j].resize(m_NumOfObjects);
+//        }
+//    }
+//    
+//    for (int v = 0; v < m_NumOfViews; v++)
+//    {
+//        ifstream inFile;
+//        inFile.open(path + filename + "_" + to_string(v) + "." + extension, ios::in);
+//
+//        string line;
+//        int f = 0; // number of lines, i.e. [f]rames
+//        while( getline(inFile, line) )
+//        {
+//            vector<string> objects_sublines; // ex: 1:202,22;104,123;
+//            boost::split(objects_sublines, line, boost::is_any_of("\t"));
+//            
+//            for (int o = 0; o < objects_sublines.size() - 1; o++)
+//            {
+//                vector<string> object_struct;
+//                boost::split(object_struct, objects_sublines[o], boost::is_any_of(":"));
+//                
+//                int oid = stoi(object_struct[0]); // object id
+//                if (object_struct[1].size() <= 2)
+//                    continue;
+//                
+//                vector<string> positions;
+//                boost::split(positions, object_struct[1], boost::is_any_of(";")); // object id's positions
+//                
+//                for (int p = 0; p < positions.size() - 1; p++)
+//                {
+//                    vector<string> coordinates;
+//                    boost::split(coordinates, positions[p], boost::is_any_of(","));
+//                    
+//                    string::size_type sz;
+//                    float x = stof(coordinates[0], &sz);
+//                    float y = stof(coordinates[1], &sz);
+//                    float z = stof(coordinates[2], &sz);
+//                    m_Positions[v][f][oid].push_back( pcl::PointXYZ(x,y,z) );
+//                }
+//            }
+//            f++;
+//        }
+//        
+//        inFile.close();
+//    }
+//    
+//    cout << "DetectionOutput read successfully from " << path << "." << endl;
+//}
+
 void DetectionOutput::read(string path, string filename, string extension)
 {
-    m_Positions.resize(m_NumOfViews);
+    m_NumOfViews = 0;
     
-    for (int i = 0; i < m_NumOfViews; i++)
-    {
-        m_Positions[i].resize(m_NumOfFrames[i]);
-        for (int j = 0; j < m_NumOfFrames[i]; j++)
-        {
-            m_Positions[i][j].resize(m_NumOfObjects);
-        }
-    }
+    ifstream inFile;
+    string inFilePath = path + filename + "_" + to_string(m_NumOfViews) + "." + extension;
+    inFile.open(inFilePath, ios::in);
     
-    // Draw set points
-    for (int v = 0; v < m_NumOfViews; v++)
+    while (inFile.is_open())
     {
-        ifstream inFile;
-        inFile.open(path + filename + "_" + to_string(v) + "." + extension, ios::in);
+        vector< vector< vector<pcl::PointXYZ> > > positionsView;
+
+        int f = 0; // number of lines, i.e. [f]rames
 
         string line;
-        int f = 0; // number of lines, i.e. [f]rames
         while( getline(inFile, line) )
         {
+            vector< vector<pcl::PointXYZ> > positionsViewFrame;
+            
             vector<string> objects_sublines; // ex: 1:202,22;104,123;
             boost::split(objects_sublines, line, boost::is_any_of("\t"));
             
-            for (int o = 0; o < objects_sublines.size() - 1; o++)
+            if (m_NumOfObjects == 0)
+                m_NumOfObjects = objects_sublines.size() - 1;
+            else
+                assert ((objects_sublines.size() - 1) == m_NumOfObjects);
+            
+            positionsViewFrame.resize(m_NumOfObjects);
+            
+            for (int o = 0; o < m_NumOfObjects; o++)
             {
                 vector<string> object_struct;
                 boost::split(object_struct, objects_sublines[o], boost::is_any_of(":"));
@@ -247,17 +330,86 @@ void DetectionOutput::read(string path, string filename, string extension)
                     float x = stof(coordinates[0], &sz);
                     float y = stof(coordinates[1], &sz);
                     float z = stof(coordinates[2], &sz);
-                    m_Positions[v][f][oid].push_back( pcl::PointXYZ(x,y,z) );
+                    positionsViewFrame[oid].push_back( pcl::PointXYZ(x,y,z) );
                 }
             }
+            cout << f << " : outer for (o)" << endl;
+            positionsView.push_back(positionsViewFrame);
+            
             f++;
         }
+        m_NumOfFrames.push_back(f);
+        
+        if (m_NumOfViews < m_Positions.size())
+            m_Positions[m_NumOfViews] = positionsView;
+        else
+            m_Positions.push_back(positionsView);
+            
         
         inFile.close();
+        inFile.open(path + filename + "_" + to_string(++m_NumOfViews) + "." + extension, ios::in);
     }
     
     cout << "DetectionOutput read successfully from " << path << "." << endl;
 }
 
+void DetectionOutput::getResults(DetectionOutput groundtruth, int& tp, int& fn, int& fp)
+{
+    assert( m_NumOfViews == m_Positions.size() );
+    int gtsize = groundtruth.m_Positions.size();
+    assert( m_NumOfViews == gtsize );
+    //for (int i = 0; i < m_Positions.size(); i++)
+    //    assert( m_NumOfFrames[i] == m_Positions[i].size() == groundtruth.m_Positions[i].size() );
+    
+    tp = 0;
+    fn = 0;
+    fp = 0;
+    
+    for (int v = 0; v < m_NumOfViews; v++)
+    {
+        for (int f = 0; f < groundtruth.m_Positions[v].size() || f < m_Positions[v].size(); f++)
+        {
+            if (f >= groundtruth.m_Positions[v].size())
+                getFrameResults(vector<vector<pcl::PointXYZ> >(m_NumOfObjects), m_Positions[v][f], tp, fn, fp);
+            else if (f >= m_Positions[v].size())
+                getFrameResults(groundtruth.m_Positions[v][f], vector<vector<pcl::PointXYZ> >(m_NumOfObjects), tp, fn, fp);
+            else
+                getFrameResults(groundtruth.m_Positions[v][f], m_Positions[v][f], tp, fn, fp);
+        }
+    }
+}
+
+void DetectionOutput::getFrameResults(vector<vector<pcl::PointXYZ> > groundtruth, vector<vector<pcl::PointXYZ> > predictions, int& tp, int& fn, int& fp)
+{
+    for (int o = 0; o < m_NumOfObjects; o++)
+    {
+        bool found;
+        for (int i = 0; i < groundtruth[o].size(); i++)
+        {
+            found = false;
+            for (int j = 0; j < predictions[o].size() && !found; j++)
+            {
+                pcl::PointXYZ p1 = groundtruth[o][i];
+                pcl::PointXYZ p2 = predictions[o][j];
+                float d = distance(p1, p2);
+                found = d  < m_Tol;
+            }
+            
+            found ? tp++ : fn++;
+        }
+        
+        for (int i = 0; i < predictions[o].size(); i++)
+        {
+            found = false;
+            for (int j = 0; j < groundtruth[o].size() && !found; j++)
+            {
+                float d = distance(predictions[o][i], groundtruth[o][j]);
+                found = d < m_Tol;
+            }
+            
+            if (!found) fp++;
+        }
+    }
+}
 
 
