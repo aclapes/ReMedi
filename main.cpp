@@ -17,6 +17,12 @@ int main (int argc, char** argv)
     // -----Parse Command Line Arguments-----
     // --------------------------------------
     
+    string dataPath;
+    cout << "Set data relative path ";
+    if ( pcl::console::parse (argc, argv, "-D", dataPath) < 0 )
+        dataPath += g_ParentDir + "Data/";
+    cout << "[" << dataPath << "]" << endl;
+    
     bool visualization = false;
     cout << "Processing visualization ";
     if ( (visualization = (pcl::console::find_argument (argc, argv, "-v") >= 0)) )
@@ -24,16 +30,26 @@ int main (int argc, char** argv)
     else
         cout << "[NO]" << endl;
     
+    bool registration = false;
     int registrationFrameID = -1;
+    int numOfPoints = 0;
     cout << "Views landmarks interactive selection for registration ";
-    if ( pcl::console::parse (argc, argv, "-r", registrationFrameID) >= 0 )
+    if ( (registration = pcl::console::parse (argc, argv, "-r", registrationFrameID) >= 0) )
+    {
         cout << "[YES]" << endl;
+        if ( pcl::console::parse (argc, argv, "-p", numOfPoints) < 0 )
+            numOfPoints = 3;
+    }
     else
+    {
         cout << "[NO]" << endl;
+    }
     
-    Remedi app(g_ParentDir);
+    Remedi app;
+    app.setInputDataPath(dataPath);
     app.setVisualization(visualization);
-    app.setInteractiveRegistration(registrationFrameID);
+    app.setInteractiveRegistration(registration);
+    app.setInteractiveRegistrationParameters(registrationFrameID, numOfPoints);
     
 	app.run();
 

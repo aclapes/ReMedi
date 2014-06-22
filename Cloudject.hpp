@@ -27,6 +27,7 @@ public:
 	CloudjectBase(PointCloudPtr view, int viewpoint, float leafSize = 0.0)
 	{
 		m_ID = -1;
+        m_Name = "";
         
         m_Viewpoint = viewpoint;
         
@@ -48,6 +49,7 @@ public:
 	CloudjectBase(PointCloudPtr viewA, PointCloudPtr viewB, float leafSize = 0.0)
 	{
 		m_ID = -1;
+        m_Name = "";
         
         m_Viewpoint = BINOCULAR_VIEWPOINT;
         
@@ -67,6 +69,7 @@ public:
 	CloudjectBase(const char* viewPath, int viewpoint, float leafSize = 0.0)
 	{
 		m_ID = -1;
+        m_Name = "";
         
         m_Viewpoint = viewpoint;
         
@@ -88,6 +91,7 @@ public:
 	CloudjectBase(const char* viewPathA, const char* viewPathB, float leafSize = 0.0)
 	{
 		m_ID = -1;
+        m_Name = "";
         
         m_Viewpoint = BINOCULAR_VIEWPOINT;
     
@@ -116,6 +120,7 @@ public:
         if (this != &cloudject)
         {
             m_ID	= cloudject.m_ID;
+            m_Name = cloudject.m_Name;
             m_OriginalViewA = cloudject.m_OriginalViewA;
             m_OriginalViewB = cloudject.m_OriginalViewB;
             m_Viewpoint = cloudject.m_Viewpoint;

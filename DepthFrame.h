@@ -18,11 +18,11 @@ class DepthFrame : public Frame
 {
 public:
 	// Constructors
-	DepthFrame(void);
+	DepthFrame();
 	DepthFrame(cv::Mat);
 	DepthFrame(cv::Mat, cv::Mat);
 	DepthFrame(const DepthFrame&);
-	~DepthFrame(void);
+	~DepthFrame();
 
 	// Operators
 	DepthFrame& operator=(const DepthFrame& other);

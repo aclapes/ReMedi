@@ -89,7 +89,7 @@ private:
 
 	void extractClustersFromView(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clusters, float leafSize = .005f);
     
-    void classifyTabletop(vector<PointCloudPtr> tableTopRegionClusters,
+    void segmentTabletop(vector<PointCloudPtr> tableTopRegionClusters,
                           vector<PointCloudPtr> interactionRegionClusters,
                           vector<PointCloudPtr>& actorClusters,
                           vector<PointCloudPtr>& interactorClusters,
@@ -108,7 +108,7 @@ private:
     CloudjectDetector::Ptr m_pCD;
     //	MotionSegmentator m_MotionSegmentator;
     
-//    pcl::visualization::PCLVisualizer::Ptr m_pViz;
+    pcl::visualization::PCLVisualizer::Ptr m_pViz;
     bool m_bVisualize;
 
 	int m_SceneVp;

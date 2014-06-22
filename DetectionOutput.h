@@ -48,6 +48,7 @@ public:
     void read(string path, string filename, string extension);
     void write(string path, string filename, string extension);
     
+    int  getNumOfDetections();
     void getResults(DetectionOutput groundtruth, int& tp, int& fn, int& fp);
     
 private:

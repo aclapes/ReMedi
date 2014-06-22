@@ -546,23 +546,19 @@ void InteractiveRegisterer::saveTransformation(std::string filePath)
 	cv::eigen2cv(m_tRight, tRightMat);
 	cv::eigen2cv(m_Transformation, transfMat);
 
-	cv::FileStorage fs (filePath + "transformation.yml", cv::FileStorage::WRITE);
+	cv::FileStorage fs (filePath, cv::FileStorage::WRITE);
 	fs << "tLeftMat" << tLeftMat;
 	fs << "tRightMat" << tRightMat;
 	fs << "transfMat" << transfMat;
 
 	fs.release();
-    
-    pcl::PCDWriter pcdwriter;
-    pcdwriter.write(filePath + "registeredA.pcd", *aligned_cloud_left_);
-    pcdwriter.write(filePath + "registeredB.pcd", *aligned_cloud_right_);
 }
 
 
 bool InteractiveRegisterer::loadTransformation(std::string filePath)
 {
 	cv::Mat tLeftMat, tRightMat, transfMat;
-	cv::FileStorage fs (filePath + "transformation.yml", cv::FileStorage::READ);
+	cv::FileStorage fs (filePath, cv::FileStorage::READ);
     
     if (!fs.isOpened())
         return false;
@@ -579,10 +575,6 @@ bool InteractiveRegisterer::loadTransformation(std::string filePath)
         m_InverseTransformation = m_Transformation.inverse();
 		cv::cv2eigen(tLeftMat, m_tLeft);
 		cv::cv2eigen(tRightMat, m_tRight);
-        
-        pcl::PCDReader pcdreader;
-        pcdreader.read(filePath + "registeredA.pcd", *aligned_cloud_left_);
-        pcdreader.read(filePath + "registeredB.pcd", *aligned_cloud_right_);
         
 		return true;
 	}
@@ -777,6 +769,10 @@ void InteractiveRegisterer::registration(DepthFrame frameA, DepthFrame frameB,
 		frameA.getForegroundUserFreePointCloud(*pCloudA);
 		frameB.getForegroundUserFreePointCloud(*pCloudB);
 	}
+    
+//    pcl::visualization::PCLVisualizer::Ptr viz (new pcl::visualization::PCLVisualizer);
+//    viz->addPointCloud(pCloudA, "A");
+//    viz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 1, 1, "A");
 
 //    PointCloudPtr pCtrCloudA (new PointCloud);
 //    translate(pCloudA, m_tLeft, *pCtrCloudA);
@@ -785,6 +781,10 @@ void InteractiveRegisterer::registration(DepthFrame frameA, DepthFrame frameB,
 //    pcl::transformPointCloud(*pCtrCloudA, regCloudA, m_Transformation);
     
     registration(pCloudA, pCloudB, regCloudA, regCloudB);
+//    
+//    viz->addPointCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr(&regCloudA), "rA");
+//    viz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 1, "rA");
+//    viz->spin();
 }
 
 

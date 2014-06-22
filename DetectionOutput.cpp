@@ -333,7 +333,6 @@ void DetectionOutput::read(string path, string filename, string extension)
                     positionsViewFrame[oid].push_back( pcl::PointXYZ(x,y,z) );
                 }
             }
-            cout << f << " : outer for (o)" << endl;
             positionsView.push_back(positionsViewFrame);
             
             f++;
@@ -351,6 +350,18 @@ void DetectionOutput::read(string path, string filename, string extension)
     }
     
     cout << "DetectionOutput read successfully from " << path << "." << endl;
+}
+
+int DetectionOutput::getNumOfDetections()
+{
+    int count = 0;
+    
+    for (int v = 0; v < m_NumOfViews; v++)
+        for (int f = 0; f < m_Positions[v].size(); f++)
+            for (int o = 0; o < m_NumOfObjects; o++)
+                count += m_Positions[v][f][o].size();
+    
+    return count;
 }
 
 void DetectionOutput::getResults(DetectionOutput groundtruth, int& tp, int& fn, int& fp)
@@ -372,7 +383,9 @@ void DetectionOutput::getResults(DetectionOutput groundtruth, int& tp, int& fn, 
             if (f >= groundtruth.m_Positions[v].size())
                 getFrameResults(vector<vector<pcl::PointXYZ> >(m_NumOfObjects), m_Positions[v][f], tp, fn, fp);
             else if (f >= m_Positions[v].size())
-                getFrameResults(groundtruth.m_Positions[v][f], vector<vector<pcl::PointXYZ> >(m_NumOfObjects), tp, fn, fp);
+            {
+            //    getFrameResults(groundtruth.m_Positions[v][f], vector<vector<pcl::PointXYZ> >(m_NumOfObjects), tp, fn, fp);
+            }
             else
                 getFrameResults(groundtruth.m_Positions[v][f], m_Positions[v][f], tp, fn, fp);
         }
@@ -386,9 +399,11 @@ void DetectionOutput::getFrameResults(vector<vector<pcl::PointXYZ> > groundtruth
         bool found;
         for (int i = 0; i < groundtruth[o].size(); i++)
         {
+            vector<pcl::PointXYZ> gtObjPositions = groundtruth[o]; // debug
             found = false;
             for (int j = 0; j < predictions[o].size() && !found; j++)
             {
+                vector<pcl::PointXYZ> prObjPositions = predictions[o]; // debug
                 pcl::PointXYZ p1 = groundtruth[o][i];
                 pcl::PointXYZ p2 = predictions[o][j];
                 float d = distance(p1, p2);

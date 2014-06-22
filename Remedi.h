@@ -10,15 +10,20 @@ using namespace std;
 
 class Remedi
 {
+    typedef pcl::PointXYZ PointT;
+	typedef pcl::PointCloud<PointT> PointCloud;
+	typedef PointCloud::Ptr PointCloudPtr;
+    
 public:
-
 	// Constructors
-	Remedi(string parentDir);
+	Remedi();
 	~Remedi();
 
 	// Public methods
-    void setVisualization(bool enable = false);
-    void setInteractiveRegistration(int frameID);
+    void setInputDataPath(string dataPath);
+    void setVisualization(bool enable = true);
+    void setInteractiveRegistration(bool enable = true);
+    void setInteractiveRegistrationParameters(int frameID, int numOfPoints);
 	void run();
 
     // Public enums
@@ -36,7 +41,10 @@ private:
                              vector< LFCloudjectModel<pcl::PointXYZ,pcl::FPFHSignature33> >& cloudjectModels);
     
     // Attributes
-    string m_ParentDir;
+    string m_DataPath;
     bool m_bVisualization;
+    
+    bool m_bRegistration;
     int m_RegistrationFrameID;
+    int m_NumOfRegistrationPoints;
 };

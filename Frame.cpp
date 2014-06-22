@@ -23,11 +23,11 @@ Frame::Frame(const Frame& other)
 }
 
 
-Frame& Frame::operator=(const Frame& other)
+Frame& Frame::operator=(const Frame& rhs)
 {
-	if (this != &other)
+	if (this != &rhs)
     {
-        m_Mat = other.m_Mat;
+        m_Mat = rhs.m_Mat;
     }
 
 	return *this;

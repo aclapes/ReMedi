@@ -1,9 +1,8 @@
 #include "DepthFrame.h"
 
-DepthFrame::DepthFrame(void) : Frame()
+DepthFrame::DepthFrame() : Frame()
 {
 }
-
 
 DepthFrame::DepthFrame(cv::Mat mat) : Frame(mat)
 {
@@ -15,7 +14,6 @@ DepthFrame::DepthFrame(cv::Mat mat) : Frame(mat)
 	m_UIDMat.convertTo(m_UIDMat, CV_8UC1);
 }
 
-
 DepthFrame::DepthFrame(cv::Mat fg, cv::Mat mask) : Frame(fg), m_Mask(mask)
 {
 	// Projective depth
@@ -26,29 +24,24 @@ DepthFrame::DepthFrame(cv::Mat fg, cv::Mat mask) : Frame(fg), m_Mask(mask)
 	m_UIDMat.convertTo(m_UIDMat, CV_8UC1);
 }
 
-
-DepthFrame::DepthFrame(const DepthFrame& other) : Frame(other)
+DepthFrame::DepthFrame(const DepthFrame& rhs) : Frame(rhs)
 {
-	other.m_Mask.copyTo(m_Mask);
-	other.m_projDepthMat.copyTo(m_projDepthMat);
-	other.m_UIDMat.copyTo(m_UIDMat);
+    *this = rhs;
 }
 
-
-DepthFrame::~DepthFrame(void)
+DepthFrame::~DepthFrame()
 {
-	Frame::~Frame();
 }
 
-
-DepthFrame& DepthFrame::operator=(const DepthFrame& other)
+DepthFrame& DepthFrame::operator=(const DepthFrame& rhs)
 {
-	other.m_Mask.copyTo(m_Mask);
-	other.m_projDepthMat.copyTo(m_projDepthMat);
-	other.m_UIDMat.copyTo(m_UIDMat);
-
-	Frame::operator=(other);
-
+    if (this != &rhs)
+    {
+        m_Mask = rhs.m_Mask;
+        m_projDepthMat = rhs.m_projDepthMat;
+        m_UIDMat = rhs.m_UIDMat;
+    }
+    
 	return *this;
 }
 

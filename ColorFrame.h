@@ -10,13 +10,13 @@ class ColorFrame : public Frame
 {
 public:
 	// Constructors
-	ColorFrame(void);
+	ColorFrame();
 	ColorFrame(cv::Mat mat);
 	ColorFrame(const ColorFrame&);
-	~ColorFrame(void);
+	~ColorFrame();
 
 	// Operators
-	ColorFrame& operator=(const ColorFrame& other);
+	ColorFrame& operator=(const ColorFrame& rhs);
 
 	// Methods
 	bool isValid();

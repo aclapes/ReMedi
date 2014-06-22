@@ -92,7 +92,9 @@ void MatToPointCloud(cv::Mat& mat, pcl::PointCloud<pcl::PointXYZ>& cloud)
     for (unsigned int y = 0; y < cloud.height; y++) for (unsigned int x = 0; x < cloud.width; x++)
     {
 		//z_us = mat.at<unsigned short>(y,x) >> 3;
-		z = (float) mat.at<unsigned short>(y,x) /*z_us*/;
+		z = (float) mat.at<unsigned short>(y,x);
+        if (z == 0)
+            continue;
         
 		rwx = (x - 320.0) * invfocal * z;
 		rwy = (y - 240.0) * invfocal * z;

@@ -12,7 +12,7 @@ public:
 	~Frame(void);
 
 	// Operators
-	Frame& operator=(const Frame& other);
+	Frame& operator=(const Frame& rhs);
 
 	// Methods
 	bool isValid();

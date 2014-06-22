@@ -75,6 +75,10 @@ public:
     void getColorFrame(vector<cv::Mat>& colorMat, int i); // multi-view
     void getDepthFrame(vector<cv::Mat>& depthMat, int i);
     
+    vector<int> getCurrentColorFramesID();
+    vector<int> getCurrentDepthFramesID();
+    vector<float> getColorProgress();
+    vector<float> getDepthProgress();
     int getNumOfViews();
     vector<int> getNumOfFrames();
     vector<int> colorAt();

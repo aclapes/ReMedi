@@ -47,8 +47,7 @@ TableModeler::~TableModeler()
 }
 
 
-void TableModeler::setInputClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA,
-                                            pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB)
+void TableModeler::setInputClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB)
 {
 	m_pCloudA = pCloudA;
 	m_pCloudB = pCloudB;
@@ -288,13 +287,8 @@ void TableModeler::estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud,
 //            pViz.addCube(min.x - m_InteractionBorder, max.x + m_InteractionBorder,
 //                         min.y, max.y + 2.0,
 //                         min.z - m_InteractionBorder, max.z + m_InteractionBorder, 1, 1, 1, "cube2");
-//            
-//            int c = 0;
-//            while(c++ < 0.5)
-//            {
-//                pViz.spinOnce(1000);
-//            }
-//            pViz.close();
+//
+//            pViz.spin();
 
 			return;
 		}

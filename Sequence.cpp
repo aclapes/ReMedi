@@ -495,6 +495,42 @@ vector<int> Sequence::getNumOfFrames()
     return numOfFrames;
 }
 
+vector<int> Sequence::getCurrentColorFramesID()
+{
+    vector<int> counters;
+    for (int i = 0; i < m_ColorPaths.size(); i++)
+        counters.push_back(m_ColorFrameCounter[i] + m_Delays[i]);
+    
+    return counters;
+}
+
+vector<int> Sequence::getCurrentDepthFramesID()
+{
+    vector<int> counters;
+    for (int i = 0; i < m_DepthPaths.size(); i++)
+        counters.push_back(m_DepthFrameCounter[i] + m_Delays[i]);
+    
+    return counters;
+}
+
+vector<float> Sequence::getColorProgress()
+{
+    vector<float> progresses;
+    for (int i = 0; i < m_ColorPaths.size(); i++)
+        progresses.push_back(((float) (m_ColorFrameCounter[i] + m_Delays[i])) / m_ColorPaths[i].size());
+    
+    return progresses;
+}
+
+vector<float> Sequence::getDepthProgress()
+{
+    vector<float> progresses;
+    for (int i = 0; i < m_DepthPaths.size(); i++)
+        progresses.push_back(((float) (m_DepthFrameCounter[i] + m_Delays[i])) / m_DepthPaths[i].size());
+    
+    return progresses;
+}
+
 vector<int> Sequence::colorAt()
 {
     vector<int> colorFrameDelayedCounter(m_ColorStreams.size());

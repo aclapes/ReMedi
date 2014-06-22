@@ -103,14 +103,44 @@ void Monitorizer::setParams(MonitorizerParams params)
 
 void Monitorizer::monitor(DetectionOutput& output)
 {
+    if (m_bVisualize)
+    {
+        m_pViz = pcl::visualization::PCLVisualizer::Ptr(new pcl::visualization::PCLVisualizer);
+        //    m_SceneVp = 1;
+        //    m_ObjectsVpA = 2;
+        //    m_ObjectsVpB = 3;
+        
+        //	m_pViz->createViewPort(0, 0, 0.5, 1, m_SceneVp);
+        //	m_pViz->createViewPort(0.5, 0.5, 1, 1, m_ObjectsVpA);
+        //	m_pViz->createViewPort(0.5, 0, 1, 0.5, m_ObjectsVpB);
+        
+        m_pViz->setPosition(0,0);
+        m_pViz->setSize(1280,480);
+        
+        m_pViz->createViewPort(0.0, 0.0, 0.5, 1.0, m_ObjectsVpA);
+        m_pViz->createViewPort(0.5, 0.0, 1.0, 1.0, m_ObjectsVpB);
+        
+        //	m_pViz->addCoordinateSystem(0.5, "SceneVp", m_SceneVp);
+        m_pViz->addCoordinateSystem(0.5, "ObjectsA", m_ObjectsVpA);
+        m_pViz->addCoordinateSystem(0.5, "ObjectsB", m_ObjectsVpB);
+        
+        m_pViz->setCameraPosition(0, 0, 3, 0, 0, 0);
+        
+        m_TextSize = 0.05;
+    }
+    
+    cout << "Processing sequence " << m_pSeq->getName() << "... " << endl;
     while (m_pSeq->hasNextDepthFrame())
     {
+        cout << m_pSeq->getDepthProgress()[0] * 100 << "%" << endl;
+        
         DepthFrame fgDepthFrameA, fgDepthFrameB;
         vector<DepthFrame> frames = m_pSeq->nextDepthFrame();
         m_pBS->subtract(frames[0], frames[1], fgDepthFrameA, fgDepthFrameB);
         
         process(fgDepthFrameA, fgDepthFrameB);
     }
+    cout << endl;
     
     output = m_DetectionOutput;
 }
@@ -122,7 +152,7 @@ void Monitorizer::process(DepthFrame dFrameA, DepthFrame dFrameB)
 	PointCloudPtr pRCloudB (new PointCloud);
     
 	m_pIR->registration(dFrameA, dFrameB, *pRCloudA, *pRCloudB, false, false);
-
+    
 	// Segment table top
 
     PointCloudPtr pRDownCloudA (new PointCloud);
@@ -154,10 +184,10 @@ void Monitorizer::process(DepthFrame dFrameA, DepthFrame dFrameB)
     extractClustersFromView(m_pInteractionCloudB, interactionClustersB, m_LeafSize);
     
     vector<PointCloudPtr> actorClustersA, actorClustersB; // tabletop inliers
-    classifyTabletop(tabletopClustersA, interactionClustersA,
+    segmentTabletop(tabletopClustersA, interactionClustersA,
                      actorClustersA, m_InteractorClustersA,
                      1.5 * m_LeafSize);
-    classifyTabletop(tabletopClustersB, interactionClustersB,
+    segmentTabletop(tabletopClustersB, interactionClustersB,
                      actorClustersB, m_InteractorClustersB,
                      1.5 * m_LeafSize);
     
@@ -208,17 +238,17 @@ void Monitorizer::process(DepthFrame dFrameA, DepthFrame dFrameB)
     
     // ...
     
-    m_pCD->getAppearedCloudjects(m_AppearedCloudjects);
-    m_pCD->getDisappearedCloudjects(m_DisappearedCloudjects);
-    
-    for (int i = 0; i < m_DisappearedCloudjects.size(); i++)
-    {
-        bool grabInA = isInteractive(m_DisappearedCloudjects[i].getViewA(), m_InteractorClustersA, 1.5 * m_LeafSize);
-        bool grabInB = isInteractive(m_DisappearedCloudjects[i].getViewB(), m_InteractorClustersB, 1.5 * m_LeafSize);
-        
-        if (m_bVisualize && (grabInA || grabInB))
-            cout << m_DisappearedCloudjects[i].getName() << endl;
-    }
+//    m_pCD->getAppearedCloudjects(m_AppearedCloudjects);
+//    m_pCD->getDisappearedCloudjects(m_DisappearedCloudjects);
+//    
+//    for (int i = 0; i < m_DisappearedCloudjects.size(); i++)
+//    {
+//        bool grabInA = isInteractive(m_DisappearedCloudjects[i].getViewA(), m_InteractorClustersA, 1.5 * m_LeafSize);
+//        bool grabInB = isInteractive(m_DisappearedCloudjects[i].getViewB(), m_InteractorClustersB, 1.5 * m_LeafSize);
+//        
+//        //if (m_bVisualize && (grabInA || grabInB))
+//        //    cout << m_DisappearedCloudjects[i].getName() << endl;
+//    }
     
     if (m_bVisualize)
         visualize();
@@ -226,75 +256,75 @@ void Monitorizer::process(DepthFrame dFrameA, DepthFrame dFrameB)
 
 void Monitorizer::visualize()
 {
-//    // Visualization
-//    
-//	m_pViz->removeAllPointClouds();
-//    m_pViz->removeAllShapes();
-//    
-//    //	m_pViz->addPointCloud (pRCloudA, "cloud left", m_SceneVp);
-//    //    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 1, 0, "cloud left");
-//    //    m_pViz->addPointCloud (pRCloudB, "cloud right", m_SceneVp);
-//    //    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 1, "cloud right");
-//    
-//    stringstream ss;
-//    m_pViz->addPointCloud (m_pInteractionCloudA, "interaction left", m_ObjectsVpA);
-//    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 1, 1, "interaction left");
-//    for (int i = 0; i < m_InteractorClustersA.size(); i++)
-//    {
-//        ss.str("");
-//        ss << "interactors left " << i;
-//        m_pViz->addPointCloud (m_InteractorClustersA[i], ss.str(), m_ObjectsVpA);
-//        m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0.35, 1, ss.str());
-//    }
-//    
-//    
-//    m_pViz->addPointCloud (m_pInteractionCloudB, "interaction right", m_ObjectsVpB);
-//    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 1, 1, "interaction left");
-//    for (int i = 0; i < m_InteractorClustersB.size(); i++)
-//    {
-//        ss.str("");
-//        ss << "interactors righties " << i;
-//        m_pViz->addPointCloud (m_InteractorClustersB[i], ss.str(), m_ObjectsVpB);
-//        m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0.35, 1, ss.str());
-//    }
-//    
-//    for (int i = 0; i < m_TextsVpA.size(); i++)
-//        m_pViz->removeText3D("a" + m_TextsVpA[i], m_ObjectsVpA + 1);
-//    
-//    for (int i = 0; i < m_TextsVpB.size(); i++)
-//        m_pViz->removeText3D("b" + m_TextsVpB[i], m_ObjectsVpB + 1);
-//    
-//    
-//    for (int i = 0; i < m_PresentCloudjects.size(); i++)
-//    {
-//        size_t pid = ((size_t) &(m_PresentCloudjects[i]));// pointer-based id
-//        
-//        if (!m_PresentCloudjects[i].getViewA()->empty())
-//        {
-//            m_pViz->addPointCloud (m_PresentCloudjects[i].getViewA(), "a" + to_string(pid), m_ObjectsVpA);
-//            m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.8, 0.1, 0.1, "a" + to_string(pid));
-//            
-//            //            if (cloudjects[i].getID() >= 0)
-//            //            {
-//            m_pViz->addText3D(m_PresentCloudjects[i].getName(), m_PresentCloudjects[i].getPosA(), m_TextSize, 1.0, 1.0, 1.0, "a" + to_string(pid), m_ObjectsVpA + 1);
-//            m_TextsVpA.push_back( to_string(pid) );
-//            //            }
-//        }
-//    
-//        if (!m_PresentCloudjects[i].getViewB()->empty())
-//        {
-//            m_pViz->addPointCloud (m_PresentCloudjects[i].getViewB(), "b" + to_string(pid), m_ObjectsVpB);
-//            m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.8, 0.1, 0.1, "b" + to_string(pid));
-//            
-//            //            if (cloudjects[i].getID() >= 0)
-//            //            {
-//            m_pViz->addText3D(m_PresentCloudjects[i].getName(), m_PresentCloudjects[i].getPosB(), m_TextSize, 1.0, 1.0, 1.0, "b" + to_string(pid), m_ObjectsVpB + 1);
-//            m_TextsVpB.push_back( "b" + to_string(pid) );
-//            //            }
-//        }
-//    }
-//    
-//	m_pViz->spinOnce(10);
+    // Visualization
+    
+	m_pViz->removeAllPointClouds();
+    m_pViz->removeAllShapes();
+    
+    //	m_pViz->addPointCloud (pRCloudA, "cloud left", m_SceneVp);
+    //    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 1, 0, "cloud left");
+    //    m_pViz->addPointCloud (pRCloudB, "cloud right", m_SceneVp);
+    //    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 1, "cloud right");
+    
+    stringstream ss;
+    m_pViz->addPointCloud (m_pInteractionCloudA, "interaction left", m_ObjectsVpA);
+    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 1, 1, "interaction left");
+    for (int i = 0; i < m_InteractorClustersA.size(); i++)
+    {
+        ss.str("");
+        ss << "interactors left " << i;
+        m_pViz->addPointCloud (m_InteractorClustersA[i], ss.str(), m_ObjectsVpA);
+        m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0.35, 1, ss.str());
+    }
+    
+    
+    m_pViz->addPointCloud (m_pInteractionCloudB, "interaction right", m_ObjectsVpB);
+    m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 1, 1, "interaction left");
+    for (int i = 0; i < m_InteractorClustersB.size(); i++)
+    {
+        ss.str("");
+        ss << "interactors righties " << i;
+        m_pViz->addPointCloud (m_InteractorClustersB[i], ss.str(), m_ObjectsVpB);
+        m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0.35, 1, ss.str());
+    }
+    
+    for (int i = 0; i < m_TextsVpA.size(); i++)
+        m_pViz->removeText3D("a" + m_TextsVpA[i], m_ObjectsVpA + 1);
+    
+    for (int i = 0; i < m_TextsVpB.size(); i++)
+        m_pViz->removeText3D("b" + m_TextsVpB[i], m_ObjectsVpB + 1);
+    
+    
+    for (int i = 0; i < m_PresentCloudjects.size(); i++)
+    {
+        size_t pid = ((size_t) &(m_PresentCloudjects[i]));// pointer-based id
+        
+        if (!m_PresentCloudjects[i].getViewA()->empty())
+        {
+            m_pViz->addPointCloud (m_PresentCloudjects[i].getViewA(), "a" + to_string(pid), m_ObjectsVpA);
+            m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.8, 0.1, 0.1, "a" + to_string(pid));
+            
+            //            if (cloudjects[i].getID() >= 0)
+            //            {
+            m_pViz->addText3D(m_PresentCloudjects[i].getName(), m_PresentCloudjects[i].getPosA(), m_TextSize, 1.0, 1.0, 1.0, "a" + to_string(pid), m_ObjectsVpA + 1);
+            m_TextsVpA.push_back( to_string(pid) );
+            //            }
+        }
+    
+        if (!m_PresentCloudjects[i].getViewB()->empty())
+        {
+            m_pViz->addPointCloud (m_PresentCloudjects[i].getViewB(), "b" + to_string(pid), m_ObjectsVpB);
+            m_pViz->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.8, 0.1, 0.1, "b" + to_string(pid));
+            
+            //            if (cloudjects[i].getID() >= 0)
+            //            {
+            m_pViz->addText3D(m_PresentCloudjects[i].getName(), m_PresentCloudjects[i].getPosB(), m_TextSize, 1.0, 1.0, 1.0, "b" + to_string(pid), m_ObjectsVpB + 1);
+            m_TextsVpB.push_back( "b" + to_string(pid) );
+            //            }
+        }
+    }
+    
+	m_pViz->spinOnce(50);
 }
 
 //void Monitorizer::segmentMotion(float thresh, cv::Mat& motionA, cv::Mat& motionB)
@@ -458,7 +488,7 @@ void Monitorizer::extractClustersFromView(pcl::PointCloud<PointT>::Ptr pCloud, v
     }
 }
 
-void Monitorizer::classifyTabletop(vector<PointCloudPtr> tabletopRegionClusters,
+void Monitorizer::segmentTabletop(vector<PointCloudPtr> tabletopRegionClusters,
                                    vector<PointCloudPtr> interactionRegionClusters,
                                    vector<PointCloudPtr>& actorClusters,
                                    vector<PointCloudPtr>& interactorClusters,
@@ -524,32 +554,6 @@ void Monitorizer::setClusteringToleranceFactor(int factor)
 void Monitorizer::setVisualization(bool visualize)
 {
     m_bVisualize = visualize;
-    
-//    if (m_bVisualize)
-//    {
-//        m_pViz = pcl::visualization::PCLVisualizer::Ptr(new pcl::visualization::PCLVisualizer);
-//        //    m_SceneVp = 1;
-//        //    m_ObjectsVpA = 2;
-//        //    m_ObjectsVpB = 3;
-//        
-//        //	m_pViz->createViewPort(0, 0, 0.5, 1, m_SceneVp);
-//        //	m_pViz->createViewPort(0.5, 0.5, 1, 1, m_ObjectsVpA);
-//        //	m_pViz->createViewPort(0.5, 0, 1, 0.5, m_ObjectsVpB);
-//        
-//        m_pViz->setPosition(0,0);
-//        m_pViz->setSize(1280,480);
-//        
-//        m_pViz->createViewPort(0.0, 0.0, 0.5, 1.0, m_ObjectsVpA);
-//        m_pViz->createViewPort(0.5, 0.0, 1.0, 1.0, m_ObjectsVpB);
-//        
-//        //	m_pViz->addCoordinateSystem(0.5, "SceneVp", m_SceneVp);
-//        m_pViz->addCoordinateSystem(0.5, "ObjectsA", m_ObjectsVpA);
-//        m_pViz->addCoordinateSystem(0.5, "ObjectsB", m_ObjectsVpB);
-//        
-//        m_pViz->setCameraPosition(0, 0, 3, 0, 0, 0);
-//        
-//        m_TextSize = 0.05;
-//    }
 }
 
 DetectionOutput Monitorizer::getObjectDetectionOutput()

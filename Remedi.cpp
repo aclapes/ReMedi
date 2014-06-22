@@ -11,9 +11,12 @@
 
 using namespace boost::assign;
 
-Remedi::Remedi(string parentDir)
+#define DEFAULT_FRAME 2
+
+Remedi::Remedi()
+: m_RegistrationFrameID(2)
 {
-	m_ParentDir = parentDir;
+	
 }
 
 Remedi::~Remedi()
@@ -21,19 +24,34 @@ Remedi::~Remedi()
     
 }
 
+void Remedi::setInputDataPath(string dataPath)
+{
+    m_DataPath = dataPath;
+}
+
+void Remedi::setVisualization(bool enable)
+{
+    m_bVisualization = enable;
+}
+
+void Remedi::setInteractiveRegistration(bool enable)
+{
+    m_bRegistration = enable;
+}
+
+void Remedi::setInteractiveRegistrationParameters(int frame, int numOfPoints)
+{
+    m_RegistrationFrameID = frame;
+    m_NumOfRegistrationPoints = numOfPoints;
+}
+
 void Remedi::interactWithRegisterer(Sequence::Ptr pSequence, int fID, InteractiveRegisterer& registerer)
 {
     vector<DepthFrame> depthFrames = pSequence->getDepthFrame(fID);
     vector<ColorFrame> colorFrames = pSequence->getColorFrame(fID);
-        
-    // Select the number of points to compute a rigid transformation
-    int nPoints;
-    
-    cout << "-> Select the number of points: ";
-    cin >> nPoints;
 
     registerer.setInputFrames(colorFrames[0], colorFrames[1], depthFrames[0], depthFrames[1]);
-    registerer.setNumPoints(nPoints);
+    registerer.setNumPoints(m_NumOfRegistrationPoints);
     
     registerer.interact(); // manual interaction
     registerer.computeTransformation(); // tranformation computation
@@ -44,7 +62,7 @@ void Remedi::interactWithRegisterer(Sequence::Ptr pSequence, int fID, Interactiv
     writer.write("registeredA.pcd", *registerer.getRegisteredClouds().first);
     writer.write("registeredB.pcd", *registerer.getRegisteredClouds().second);
     
-    registerer.saveTransformation(m_ParentDir);
+    registerer.saveTransformation(m_DataPath + "transformation.yml");
 }
 
 void Remedi::modelTablePlanes(pcl::PointCloud<pcl::PointXYZ>::Ptr pRegisteredCloudA,
@@ -62,16 +80,6 @@ void Remedi::modelTablePlanes(pcl::PointCloud<pcl::PointXYZ>::Ptr pRegisteredClo
 	tableModeler.model();
 }
 
-void Remedi::setVisualization(bool enable)
-{
-    m_bVisualization = enable;
-}
-
-void Remedi::setInteractiveRegistration(int frame)
-{
-    m_RegistrationFrameID = frame;
-}
-
 void Remedi::run()
 {
 	/*
@@ -80,12 +88,12 @@ void Remedi::run()
     
 	// Create a reader pointing the data streams
     
-    string sequencesPath = m_ParentDir + "Data/Sequences/";
+    string sequencesPath = m_DataPath + "Sequences/";
     vector<string> colorDirs;
     colorDirs += "Color1/", "Color2/";
     vector<string> depthDirs;
     depthDirs += "Depth1/", "Depth2/";
-    string labelsPath = m_ParentDir + "Data/Labels/observer_1/csv/";
+    string labelsPath = m_DataPath + "Labels/observer_1/csv/";
     
     Reader reader( sequencesPath, colorDirs, depthDirs, labelsPath );
     
@@ -96,25 +104,36 @@ void Remedi::run()
     delays += 2,0;
     reader.setDelays(delays);
     
+    vector<ColorFrame> colorFrames = pBackgroundSeq->getColorFrame(m_bRegistration ? m_RegistrationFrameID : DEFAULT_FRAME);
+    vector<DepthFrame> depthFrames = pBackgroundSeq->getDepthFrame(m_bRegistration ? m_RegistrationFrameID : DEFAULT_FRAME);
+    
 	/*
 	 * REGISTRATION (paired frames)
 	 */
     
-    InteractiveRegisterer::Ptr pRegisterer (new InteractiveRegisterer);// (new InteractiveRegisterer);
+    InteractiveRegisterer::Ptr pRegisterer (new InteractiveRegisterer);
     
     if (m_RegistrationFrameID < 0)
-        pRegisterer->loadTransformation(m_ParentDir);
+        pRegisterer->loadTransformation(m_DataPath + "transformation.yml");
     else
-        interactWithRegisterer(pBackgroundSeq, m_RegistrationFrameID, *pRegisterer);
+    {
+        pRegisterer->setInputFrames(colorFrames[0], colorFrames[1],
+                                    depthFrames[0], depthFrames[1]);
+        pRegisterer->setNumPoints(m_NumOfRegistrationPoints);
+        pRegisterer->interact(); // manual interaction
+        pRegisterer->computeTransformation(); // tranformation computation
+        pRegisterer->saveTransformation(m_DataPath + "transformation.yml");
+    }
     
 	/*
 	 * PLANE SEGMENTATION
 	 */
-    
+
     TableModeler::Ptr pTableModeler (new TableModeler);// (new TableModeler);
-	modelTablePlanes(pRegisterer->getRegisteredClouds().first,
-                     pRegisterer->getRegisteredClouds().second,
-                     *pTableModeler);
+    
+    PointCloudPtr pCloudRegA (new PointCloud), pCloudRegB (new PointCloud);
+    pRegisterer->registration(depthFrames[0], depthFrames[1], *pCloudRegA, *pCloudRegB);
+	modelTablePlanes(pCloudRegA, pCloudRegB, *pTableModeler);
 	
 	/*
 	 * BACKGROUND SUBTRACTION
@@ -137,7 +156,7 @@ void Remedi::run()
     pCloudjectDetector->setLeafSize(0.0225);
     pCloudjectDetector->setTemporalWindow(3);
     pCloudjectDetector->setMaxCorrespondenceDistance(0.07);
-    pCloudjectDetector->loadCloudjectModels(m_ParentDir + "Data/CloudjectModels/");
+    pCloudjectDetector->loadCloudjectModels(m_DataPath + "CloudjectModels/");
     
     //    MonitorizerParams monitorParams;
     //	monitorParams.tmpCoherence = 2;
@@ -162,18 +181,20 @@ void Remedi::run()
     
     reader.setSequence(1);
     
-    Sequence::Ptr sequence = reader.getNextSequence();
+    Sequence::Ptr pMonitorSeq = reader.getNextSequence();
+    DetectionOutput output;
     
-//    DetectionOutput gt (m_ParentDir + "Data/ObjectLabels/", sequence.getName(), "csv");
+    pMonitorizer->setInputSequence(pMonitorSeq);
+    pMonitorizer->monitor(output);
+    output.write("", pMonitorSeq->getName(), "yml");
     
-//    DetectionOutput output;
-    //pMonitorizer->setSequence(sequence);
-    //pMonitorizer->monitor(output);
+//    DetectionOutput prediction ("", pMonitorSeq->getName(), "csv");
+    DetectionOutput groundtruth (m_DataPath + "ObjectLabels/", pMonitorSeq->getName(), "csv");
     
-//    output.write("", pSequence->getName(), "yml");
-//
-//    int tp, fp, fn;
-//    output.getResults(gt, tp, fp, fn);
-//    cout << "tp: " << tp << "\t fp: " << fp << "\tfn: " << fn << endl;
+    cout << output.getNumOfDetections() << "/" << groundtruth.getNumOfDetections() << endl;
+
+    int tp, fp, fn;
+    output.getResults(groundtruth, tp, fp, fn);
+    cout << "tp: " << tp << "\t fp: " << fp << "\tfn: " << fn << endl;
     
 }

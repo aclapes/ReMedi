@@ -1,6 +1,6 @@
 #include "ColorFrame.h"
 
-ColorFrame::ColorFrame(void) : Frame()
+ColorFrame::ColorFrame() : Frame()
 {
 }
 
@@ -10,20 +10,23 @@ ColorFrame::ColorFrame(cv::Mat mat) : Frame(mat)
 }
 
 
-ColorFrame::ColorFrame(const ColorFrame& other) : Frame(other)
+ColorFrame::ColorFrame(const ColorFrame& rhs) : Frame(rhs)
+{
+    *this = rhs;
+}
+
+
+ColorFrame::~ColorFrame()
 {
 }
 
 
-ColorFrame::~ColorFrame(void)
+ColorFrame& ColorFrame::operator=(const ColorFrame& rhs)
 {
-	Frame::~Frame();
-}
-
-
-ColorFrame& ColorFrame::operator=(const ColorFrame& other)
-{
-	Frame::operator=(other);
+    if (this != &rhs)
+    {
+        // -
+    }
 
 	return *this;
 }
