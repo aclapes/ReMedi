@@ -954,11 +954,12 @@ void CloudjectDetector::recognize(vector< vector<Cloudject> >& history)
         {
             double score = m_CloudjectModels[j].match(history[i][0]);
             cloudjectScores[i].push_back(score);
+            cout << "\t";
             //cout << score << "\t";
         }
-        //cout << endl;
+        cout << endl;
     }
-    //cout << endl;
+    cout << endl;
     
     vector<int> assignations;
     vector<double> assignscores;

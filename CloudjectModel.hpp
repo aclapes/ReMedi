@@ -235,7 +235,7 @@ protected:
 	{
 		float sigma = m_SigmaPenaltyThresh;
 
-		if (c.getViewA()->empty() || c.getViewB()->empty())
+        if (c.getViewA()->empty() || c.getViewB()->empty())
 		{
 			float score = c.getViewB()->empty() ?
                 matchView(c.getDescriptionA()) : matchView(c.getDescriptionB());
@@ -243,19 +243,20 @@ protected:
 			
 			if (getSizePenalty() == 0 /*SizePenalty::NumOfPoints*/)
 			{
-				float ratio = ((float) c.getNumOfPointsInViewA()) / averageNumOfPointsInModels();
+				float ratio = c.getViewB()->empty() ? (((float) c.getNumOfPointsInViewA()) / averageNumOfPointsInModels()) : (((float) c.getNumOfPointsInViewB()) / averageNumOfPointsInModels());
 				
-				float x;
-				ratio <= 1 ? (x = ratio) : ( x = 1 + (1 - (1 / ratio)) );
+				float x = (ratio <= 1) ? ratio : 1 + (1 - (1 / ratio));
+//				(ratio <= 1) ? (x = ratio) : ( x = 1 + (1 - (1 / ratio)) );
 
-				penalty = (1.0 / sigma * std::sqrtf(2 * 3.14159)) * std::expf(-0.5 * powf((x-1)/sigma, 2));
+				penalty = (1.0 / (sigma * std::sqrtf(2 * 3.14159))) * std::expf(-0.5 * powf((x-1)/sigma, 2));
 			}
 			else // SizePenalty::MeanDistToCentroid
 			{
-				float diff = c.medianDistToCentroidInViewA() - averageMedianDistanceToCentroids();
-				penalty = (1.0 / sigma * std::sqrtf(2 * 3.14159)) * std::expf(-0.5 * powf(diff/sigma, 2));
+				float diff = c.getViewB()->empty() ? (c.medianDistToCentroidInViewA() - averageMedianDistanceToCentroids()) : (c.medianDistToCentroidInViewB() - averageMedianDistanceToCentroids());
+				penalty = (1.0 / (sigma * std::sqrtf(2 * 3.14159))) * std::expf(-0.5 * powf(diff/sigma, 2));
 			}
 
+            c.getViewB()->empty() ? cout << "(" << score << "*" << penalty << ",)": cout << "(," << score << "*" << penalty << ")";
 			return score * penalty;
 		}
 		else
@@ -271,26 +272,28 @@ protected:
 				float ratioB = ((float) c.getNumOfPointsInViewB()) / averageNumOfPointsInModels();
 				float xA, xB;
 				
-				ratioA <= 1 ? (xA = ratioA) : ( xA = 1 + (1 - (1 / ratioA)) );
-				ratioB <= 1 ? (xB = ratioB) : ( xB = 1 + (1 - (1 / ratioB)) );
+				xA = (ratioA <= 1) ? ratioA : 1 + (1 - (1 / ratioA));
+				xB = (ratioB <= 1) ? ratioB : 1 + (1 - (1 / ratioB));
 
-				penaltyA = (1.0 / sigma * std::sqrtf(2 * 3.14159)) * std::expf(-0.5 * powf((xA-1)/sigma, 2));
-				penaltyB = (1.0 / sigma * std::sqrtf(2 * 3.14159)) * std::expf(-0.5 * powf((xB-1)/sigma, 2));
+				penaltyA = (1.0 / (sigma * std::sqrtf(2 * 3.14159))) * std::expf(-0.5 * powf((xA-1)/sigma, 2));
+				penaltyB = (1.0 / (sigma * std::sqrtf(2 * 3.14159))) * std::expf(-0.5 * powf((xB-1)/sigma, 2));
 			}
 			else // SizePenalty::MeanDistToCentroid
 			{
 				float diffA = c.medianDistToCentroidInViewA() - averageMedianDistanceToCentroids();
 				float diffB = c.medianDistToCentroidInViewB() - averageMedianDistanceToCentroids();
 
-				penaltyA = (1.0 / sigma * std::sqrtf(2 * 3.14159)) * std::expf(-0.5 * powf(diffA/sigma, 2));
-				penaltyB = (1.0 / sigma * std::sqrtf(2 * 3.14159)) * std::expf(-0.5 * powf(diffB/sigma, 2));
+				penaltyA = (1.0 / (sigma * std::sqrtf(2 * 3.14159))) * std::expf(-0.5 * powf(diffA/sigma, 2));
+				penaltyB = (1.0 / (sigma * std::sqrtf(2 * 3.14159))) * std::expf(-0.5 * powf(diffB/sigma, 2));
 			}
-
+            
 			// TODO: more sophisticated fusion
             float penalizedScoreA = scoreA * penaltyA;
             float penalizedScoreB = scoreB * penaltyB;
 //            float distanceWeightA = 1.0 / c.getPosA();
 //            float distanceWeightB = c.getPosB();
+            
+            cout << "(" << scoreA << "*" << penaltyA << "," << scoreB << "*" << penaltyB << ")";
 			return (penalizedScoreA + penalizedScoreB) / 2.0;
 		}
 	}
