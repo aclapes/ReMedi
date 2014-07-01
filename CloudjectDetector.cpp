@@ -657,7 +657,7 @@ void CloudjectDetector::detect()
 
     makeSpatiotemporalCorrespondences(cloudjects, m_AppearedCloudjects, m_DisappearedCloudjects, m_CloudjectsHistory);
     
-//    recognize(m_CloudjectsHistory);
+    recognize(m_CloudjectsHistory);
     
 
 //    // Handle predictions/outputs
@@ -794,14 +794,14 @@ bool gt_cmp(const std::pair<int,double>& left, const std::pair<int,double>& righ
  */
 void CloudjectDetector::greedyAssign(vector< vector<double> > scores, vector<int>& assignations, vector<double>& assigned_scores)
 {
-    vector<int> assignations_tmp (scores.size(), -1);
+    vector<int> assignations_tmp (scores.size(), 0);
     vector<double> assigned_scores_tmp (scores.size(), 0);
     
     for (int i = 0; i < scores.size(); i++)
     {
         for (int j = 0; j < scores[i].size(); j++)
         {
-            if (scores[i][j] > assigned_scores_tmp[j])
+            if (scores[i][j] >= assigned_scores_tmp[j])
             {
                 assignations_tmp[i] = j;
                 assigned_scores_tmp[i] = scores[i][j];
@@ -969,7 +969,8 @@ void CloudjectDetector::recognize(vector< vector<Cloudject> >& history)
     
     for (int i = 0; i < history.size(); i++)
     {
-        history[i][0].setID(assignations[i]);
+        cout << assignations[i] << " ";
+        history[i][0].setID(assignations[i] + 1);
         if (assignations[i] >= 0)
             history[i][0].setName(m_CloudjectModels[assignations[i]].getName());
     }

@@ -420,7 +420,7 @@ void DetectionOutput::getSegmentationFrameResults(vector<vector<pcl::PointXYZ> >
     for (int o = 0; o < m_NumOfObjects; o++)
         assignations.push_back(vector<bool>(predictions[o].size(), false));
     
-    for (int o = 0; o < m_NumOfObjects - 1; o++)
+    for (int o = 0; o < m_NumOfObjects; o++)
     {
         for (int i = 0; i < groundtruth[o].size(); i++)
         {
@@ -454,42 +454,35 @@ void DetectionOutput::getRecognitionFrameResults(vector<vector<pcl::PointXYZ> > 
 {
     int ftp = 0, ffn = 0, ffp = 0;
     
-    for (int o = 1; o < m_NumOfObjects + 1; o++)
+    vector<vector<bool> > assignations;
+    for (int o = 0; o < m_NumOfObjects; o++)
+        assignations.push_back(vector<bool>(predictions[o].size(), false));
+    
+    for (int o = 1; o < m_NumOfObjects; o++) // there is not the 0 class in the groundtruth
     {
-        vector<bool> assignations (predictions[o].size(), false); // to predictions
         for (int i = 0; i < groundtruth[o].size(); i++)
         {
             bool found = false;
+
             for (int j = 0; j < predictions[o].size() && !found; j++)
             {
                 pcl::PointXYZ p1 = groundtruth[o][i];
                 pcl::PointXYZ p2 = predictions[o][j];
                 
-                if (!assignations[j] && distance(p1, p2) < m_Tol)
-                    found = assignations[j] = true;
+                if (!assignations[o][j] && distance(p1, p2) < m_Tol)
+                    found = assignations[o][j] = true;
             }
-            
             found ? ftp++ : ffn++;
         }
-        
-        ffp = predictions[o].size() - ftp;
-        
-//        for (int i = 0; i < predictions[o].size(); i++)
-//        {
-//            found = false;
-//            for (int j = 0; j < groundtruth[o].size() && !found; j++)
-//            {
-//                float d = distance(predictions[o][i], groundtruth[o][j]);
-//                found = d < m_Tol;
-//            }
-//            
-//            if (!found) ffp++;
-//        }
     }
     
+    for (int o = 1; o < m_NumOfObjects; o++)
+        for (int i = 0; i < assignations[o].size(); i++)
+            if (!assignations[o][i]) ffp++;
+    
     tp += ftp;
-    fp += ffp;
     fn += ffn;
+    fp += ffp;
 }
 
 

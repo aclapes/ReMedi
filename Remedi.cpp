@@ -203,10 +203,10 @@ void Remedi::run()
     
     cout << output.getNumOfDetections() << "/" << groundtruth.getNumOfDetections() << endl;
 
-    int segtp, segfp, segfn;
+    int segtp, segfn, segfp;
     output.getSegmentationResults(groundtruth, segtp, segfn, segfp);
-    cout << "segmenentation,\t tp: " << segtp << "\t fn: " << segfn << "\tfp: " << segfp << endl;
-    int rectp, recfp, recfn;
+    cout << "segmenentation,\t tp: " << segtp << "\t fn: " << segfn << "\t fp: " << segfp << endl;
+    int rectp, recfn, recfp;
     output.getRecognitionResults(groundtruth, rectp, recfn, recfp);
-    cout << "recognition,\t tp: " << rectp << "\t fn: " << recfn << "\tfp: " << recfp << endl;
+    cout << "recognition,\t tp: " << rectp << "\t fn: " << recfn << "\t fp: " << recfp << endl;
 }
