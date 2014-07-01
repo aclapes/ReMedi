@@ -56,7 +56,6 @@ DetectionOutput::DetectionOutput(const DetectionOutput& rhs)
 
 DetectionOutput::~DetectionOutput()
 {
-    cout << "~DetectionOutput" << endl;
 }
 
 DetectionOutput& DetectionOutput::operator=(const DetectionOutput& rhs)
@@ -143,9 +142,7 @@ void DetectionOutput::add(vector<vector<vector<pcl::PointXYZ> > > positions)
         m_Positions.resize(positions.size());
     
     for (int v = 0; v < positions.size(); v++)
-    {
         m_Positions[v].push_back(positions[v]);
-    }
 }
 
 void DetectionOutput::add(int view, int frame, int object, pcl::PointXYZ position)
@@ -282,33 +279,38 @@ void DetectionOutput::write(string path, string filename, string extension)
 
 void DetectionOutput::read(string path, string filename, string extension)
 {
-    m_NumOfViews = 0;
+    clear();
     
     ifstream inFile;
-    string inFilePath = path + filename + "_" + to_string(m_NumOfViews) + "." + extension;
+    string inFilePath = path + filename + "_" + to_string(m_NumOfViews) + "." + extension; // num of views is already set to 0 in clear() calling
     inFile.open(inFilePath, ios::in);
     
     while (inFile.is_open())
     {
-        vector< vector< vector<pcl::PointXYZ> > > positionsView;
-
+        vector< vector< vector<pcl::PointXYZ> > > positionsView; // all positions in a view
+        
         int f = 0; // number of lines, i.e. [f]rames
-
         string line;
         while( getline(inFile, line) )
         {
-            vector< vector<pcl::PointXYZ> > positionsViewFrame;
+            vector< vector<pcl::PointXYZ> > positionsViewFrame; // all positions in view's frame
             
-            vector<string> objects_sublines; // ex: 1:202,22;104,123;
+            // parsing stuff reads objects' positions in a file line representing
+            // the objects' appearences in a frame, in this format:
+            //      idobject:x_{idobject,idinstance}
+            //  ex:
+            // 0:x_{0,0},y_{0,0},z_{0,0};x_{0,1},y_{0,1},z_{0,1};\t1:x_{1,0},y_{1,0},z_{1,0};x_{1,1},y_{1,1},z_{1,1};\t...
+            //
+            vector<string> objects_sublines;
             boost::split(objects_sublines, line, boost::is_any_of("\t"));
             
+            // If not done, set the number of objects
             if (m_NumOfObjects == 0)
                 m_NumOfObjects = objects_sublines.size() - 1;
-            else
+            else // Must be consistent thorughtout views and frames
                 assert ((objects_sublines.size() - 1) == m_NumOfObjects);
             
-            positionsViewFrame.resize(m_NumOfObjects);
-            
+            positionsViewFrame.resize(m_NumOfObjects); // store that read positions in the proper structures
             for (int o = 0; o < m_NumOfObjects; o++)
             {
                 vector<string> object_struct;
@@ -364,7 +366,29 @@ int DetectionOutput::getNumOfDetections()
     return count;
 }
 
-void DetectionOutput::getResults(DetectionOutput groundtruth, int& tp, int& fn, int& fp)
+void DetectionOutput::getSegmentationResults(DetectionOutput groundtruth, int& tp, int& fn, int& fp)
+{
+    assert( m_NumOfViews == m_Positions.size() );
+    int gtsize = groundtruth.m_Positions.size();
+    assert( m_NumOfViews == gtsize );
+    
+    tp = fn = fp = 0;
+    
+    for (int v = 0; v < m_NumOfViews; v++)
+    {
+        for (int f = 0; f < groundtruth.m_Positions[v].size() && f < m_Positions[v].size(); f++)
+        {
+            if (f >= groundtruth.m_Positions[v].size())
+                getSegmentationFrameResults(vector<vector<pcl::PointXYZ> >(), m_Positions[v][f], tp, fn, fp);
+            else if (f >= m_Positions[v].size())
+                getSegmentationFrameResults(groundtruth.m_Positions[v][f], vector<vector<pcl::PointXYZ> >(), tp, fn, fp);
+            else
+                getSegmentationFrameResults(groundtruth.m_Positions[v][f], m_Positions[v][f], tp, fn, fp);
+        }
+    }
+}
+
+void DetectionOutput::getRecognitionResults(DetectionOutput groundtruth, int& tp, int& fn, int& fp)
 {
     assert( m_NumOfViews == m_Positions.size() );
     int gtsize = groundtruth.m_Positions.size();
@@ -372,59 +396,100 @@ void DetectionOutput::getResults(DetectionOutput groundtruth, int& tp, int& fn, 
     //for (int i = 0; i < m_Positions.size(); i++)
     //    assert( m_NumOfFrames[i] == m_Positions[i].size() == groundtruth.m_Positions[i].size() );
     
-    tp = 0;
-    fn = 0;
-    fp = 0;
+    tp = fn = fp = 0;
     
     for (int v = 0; v < m_NumOfViews; v++)
     {
-        for (int f = 0; f < groundtruth.m_Positions[v].size() || f < m_Positions[v].size(); f++)
+        for (int f = 0; f < groundtruth.m_Positions[v].size() && f < m_Positions[v].size(); f++)
         {
             if (f >= groundtruth.m_Positions[v].size())
-                getFrameResults(vector<vector<pcl::PointXYZ> >(m_NumOfObjects), m_Positions[v][f], tp, fn, fp);
+                getRecognitionFrameResults(vector<vector<pcl::PointXYZ> >(), m_Positions[v][f], tp, fn, fp);
             else if (f >= m_Positions[v].size())
-            {
-            //    getFrameResults(groundtruth.m_Positions[v][f], vector<vector<pcl::PointXYZ> >(m_NumOfObjects), tp, fn, fp);
-            }
+                getRecognitionFrameResults(groundtruth.m_Positions[v][f], vector<vector<pcl::PointXYZ> >(), tp, fn, fp);
             else
-                getFrameResults(groundtruth.m_Positions[v][f], m_Positions[v][f], tp, fn, fp);
+                getRecognitionFrameResults(groundtruth.m_Positions[v][f], m_Positions[v][f], tp, fn, fp);
         }
     }
 }
 
-void DetectionOutput::getFrameResults(vector<vector<pcl::PointXYZ> > groundtruth, vector<vector<pcl::PointXYZ> > predictions, int& tp, int& fn, int& fp)
+void DetectionOutput::getSegmentationFrameResults(vector<vector<pcl::PointXYZ> > groundtruth, vector<vector<pcl::PointXYZ> > predictions, int& tp, int& fn, int& fp)
 {
+    int ftp = 0, ffn = 0, ffp = 0;
+    
+    vector<vector<bool> > assignations;
     for (int o = 0; o < m_NumOfObjects; o++)
+        assignations.push_back(vector<bool>(predictions[o].size(), false));
+    
+    for (int o = 0; o < m_NumOfObjects - 1; o++)
     {
-        bool found;
         for (int i = 0; i < groundtruth[o].size(); i++)
         {
-            vector<pcl::PointXYZ> gtObjPositions = groundtruth[o]; // debug
-            found = false;
-            for (int j = 0; j < predictions[o].size() && !found; j++)
-            {
-                vector<pcl::PointXYZ> prObjPositions = predictions[o]; // debug
-                pcl::PointXYZ p1 = groundtruth[o][i];
-                pcl::PointXYZ p2 = predictions[o][j];
-                float d = distance(p1, p2);
-                found = d  < m_Tol;
-            }
+            bool found = false;
             
-            found ? tp++ : fn++;
-        }
-        
-        for (int i = 0; i < predictions[o].size(); i++)
-        {
-            found = false;
-            for (int j = 0; j < groundtruth[o].size() && !found; j++)
+            for (int k = 0; k < m_NumOfObjects && !found; k++)
             {
-                float d = distance(predictions[o][i], groundtruth[o][j]);
-                found = d < m_Tol;
+                for (int j = 0; j < predictions[k].size() && !found; j++)
+                {
+                    pcl::PointXYZ p1 = groundtruth[o][i];
+                    pcl::PointXYZ p2 = predictions[k][j];
+                    
+                    if (!assignations[k][j] && distance(p1, p2) < m_Tol)
+                        found = assignations[k][j] = true;
+                }
             }
-            
-            if (!found) fp++;
+            found ? ftp++ : ffn++;
         }
     }
+    
+    for (int o = 0; o < m_NumOfObjects; o++)
+        for (int i = 0; i < assignations[o].size(); i++)
+            if (!assignations[o][i]) ffp++;
+    
+    tp += ftp;
+    fn += ffn;
+    fp += ffp;
+}
+
+void DetectionOutput::getRecognitionFrameResults(vector<vector<pcl::PointXYZ> > groundtruth, vector<vector<pcl::PointXYZ> > predictions, int& tp, int& fn, int& fp)
+{
+    int ftp = 0, ffn = 0, ffp = 0;
+    
+    for (int o = 1; o < m_NumOfObjects + 1; o++)
+    {
+        vector<bool> assignations (predictions[o].size(), false); // to predictions
+        for (int i = 0; i < groundtruth[o].size(); i++)
+        {
+            bool found = false;
+            for (int j = 0; j < predictions[o].size() && !found; j++)
+            {
+                pcl::PointXYZ p1 = groundtruth[o][i];
+                pcl::PointXYZ p2 = predictions[o][j];
+                
+                if (!assignations[j] && distance(p1, p2) < m_Tol)
+                    found = assignations[j] = true;
+            }
+            
+            found ? ftp++ : ffn++;
+        }
+        
+        ffp = predictions[o].size() - ftp;
+        
+//        for (int i = 0; i < predictions[o].size(); i++)
+//        {
+//            found = false;
+//            for (int j = 0; j < groundtruth[o].size() && !found; j++)
+//            {
+//                float d = distance(predictions[o][i], groundtruth[o][j]);
+//                found = d < m_Tol;
+//            }
+//            
+//            if (!found) ffp++;
+//        }
+    }
+    
+    tp += ftp;
+    fp += ffp;
+    fn += ffn;
 }
 
 

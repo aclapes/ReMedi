@@ -8,7 +8,7 @@
 
 
 TableModeler::TableModeler()
-: m_bLimitsNegative(false)
+: m_bLimitsNegative(false), m_pPlaneCoeffsA(new pcl::ModelCoefficients), m_pPlaneCoeffsB(new pcl::ModelCoefficients)
 {
 }
 
@@ -21,31 +21,31 @@ TableModeler::TableModeler(const TableModeler& other)
 	m_NormalRadius = other.m_NormalRadius;
 	m_SACIters = other.m_SACIters;
 	m_SACDistThresh = other.m_SACDistThresh;
+    m_bLimitsNegative = other.m_bLimitsNegative;
+    m_InteractionBorder = other.m_InteractionBorder;
+    m_ConfidenceLevel = other.m_ConfidenceLevel;
+    
+    m_pPlaneCoeffsA = other.m_pPlaneCoeffsA;
+    m_pPlaneCoeffsB = other.m_pPlaneCoeffsB;
+    
+    m_ytonA = other.m_ytonA;
+    m_ytonB = other.m_ytonB;
     
 	m_MinA = other.m_MinA;
     m_MaxA = other.m_MaxA;
     m_MinB = other.m_MinB;
     m_MaxB = other.m_MaxB;
     
-	m_OffsetA = other.m_OffsetA;
+    m_OffsetA = other.m_OffsetA;
     m_OffsetB = other.m_OffsetB;
-    
-    m_ytonA = other.m_ytonA;
-    m_ytonB = other.m_ytonB;
     
     m_ytonAInv = other.m_ytonAInv;
     m_ytonBInv = other.m_ytonBInv;
-    
-    m_bLimitsNegative = other.m_bLimitsNegative;
-    m_InteractionBorder = other.m_InteractionBorder;
 }
 
 TableModeler::~TableModeler()
 {
-//    if (m_pViz != NULL)
-//        m_pViz->s ->close();
 }
-
 
 void TableModeler::setInputClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB)
 {
@@ -53,30 +53,25 @@ void TableModeler::setInputClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, p
 	m_pCloudB = pCloudB;
 }
 
-
 void TableModeler::setLeafSize(float leafSize)
 {
 	m_LeafSize = leafSize;
 }
-
 
 void TableModeler::setNormalRadius(float normalRadius)
 {
 	m_NormalRadius = normalRadius;
 }
 
-
 void TableModeler::setSACIters(int iters)
 {
 	m_SACIters = iters;
 }
 
-
 void TableModeler::setSACDistThresh(float distThresh)
 {
 	m_SACDistThresh = distThresh;
 }
-
 
 void TableModeler::setYOffset(float yOffset)
 {
@@ -89,90 +84,167 @@ void TableModeler::setInteractionBorder(float border)
 	m_InteractionBorder = border;
 }
 
+void TableModeler::setConfidenceLevel(int level)
+{
+    m_ConfidenceLevel = level;
+}
 
 void TableModeler::model()
 {
     std::cout << "Estimating plane in A ..." << std::endl;
-	estimate(m_pCloudA, m_MinA, m_MaxA, m_ytonA);
+    
+    pcl::PointCloud<pcl::PointXYZ>::Ptr m_pSceneA (new pcl::PointCloud<pcl::PointXYZ>), m_pPlaneA (new pcl::PointCloud<pcl::PointXYZ>);
+    
+	if (m_pPlaneCoeffsA->values.empty())
+        estimate(m_pCloudA, *m_pPlaneA, *m_pSceneA, *m_pPlaneCoeffsA);
+    
+    computeTransformation(m_pPlaneCoeffsA, m_ytonA);
     m_ytonAInv = m_ytonA.inverse();
     
+    pcl::PointCloud<pcl::PointXYZ>::Ptr m_pPlaneTransformedA (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::transformPointCloud(*m_pPlaneA, *m_pPlaneTransformedA, m_ytonA);
+    getMinMax3D(m_pPlaneTransformedA, 1, m_ConfidenceLevel, m_MinA, m_MaxA);
+    
+    cout << "minA : " << m_MinA << endl;
+    cout << "maxA : " << m_MaxA << endl;
+//    visualizePlaneEstimation(m_pSceneA, m_pPlaneA, m_ytonA, m_MinA, m_MaxA);
+    
     std::cout << "Esitmating plane in B ..." << std::endl;
-	estimate(m_pCloudB, m_MinB, m_MaxB, m_ytonB);
+    
+    pcl::PointCloud<pcl::PointXYZ>::Ptr m_pSceneB (new pcl::PointCloud<pcl::PointXYZ>), m_pPlaneB (new pcl::PointCloud<pcl::PointXYZ>);
+    
+    if (m_pPlaneCoeffsB->values.empty())
+        estimate(m_pCloudB, *m_pPlaneB, *m_pSceneB, *m_pPlaneCoeffsB);
+    
+    computeTransformation(m_pPlaneCoeffsB, m_ytonB);
     m_ytonBInv = m_ytonB.inverse();
-
-//    m_pViz->addPointCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr(&planeA), "planeA");
-//    m_pViz->addPointCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr(&planeB), "planeB");
-//    m_pViz->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.6, 0.2, 0.2, "biggestCluster");
-//    m_pViz->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.2, 0.6, 0.2, "biggestCluster");
-//    
-//    m_pViz->spin();
-//    
-//    m_pViz->removeAllPointClouds();
+    
+    pcl::PointCloud<pcl::PointXYZ>::Ptr m_pPlaneTransformedB (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::transformPointCloud(*m_pPlaneB, *m_pPlaneTransformedB, m_ytonB);
+    getMinMax3D(m_pPlaneTransformedB, 1, m_ConfidenceLevel, m_MinB, m_MaxB);
+    
+//    cout << "minB : " << m_MinB << endl;
+//    cout << "maxB : " << m_MaxB << endl;
+//    visualizePlaneEstimation(m_pSceneA, m_pPlaneA, m_ytonB, m_MinB, m_MaxB);
 }
 
-void TableModeler::getPointsDimensionCI(pcl::PointCloud<pcl::PointXYZ>& plane, int dim, float alpha, float& min, float& max)
+float getPVal(int confidence)
 {
-    cv::Mat values (plane.size(), 1, cv::DataType<float>::type);
-    for (int i = 0; i < plane.size(); i++)
-    {
-        if (dim == 1)
-            values.at<float>(i,0) = plane.points[i].x;
-        else if (dim == 2)
-            values.at<float>(i,0) = plane.points[i].y;
-        else
-            values.at<float>(i,0) = plane.points[i].z;
-    }
-    
-    cv::Scalar mean, stddev;
-    cv::meanStdDev(values, mean, stddev);
-    
     float pval;
-    if (alpha == 0.80) pval = 1.28;
-    else if (alpha == 0.85) pval = 1.44;
-    else if (alpha == 0.90) pval = 1.65;
-    else if (alpha == 0.95) pval = 1.96;
-    else if (alpha == 0.99) pval = 2.57;
+    
+    if (confidence == 80) pval = 1.28;
+    else if (confidence == 85) pval = 1.44;
+    else if (confidence == 90) pval = 1.65;
+    else if (confidence == 95) pval = 1.96;
+    else if (confidence == 99) pval = 2.57;
     else pval = 1.96;
     
-    float confidence = pval * (stddev.val[0] / sqrt(values.rows));
-    min = mean.val[0] - confidence;
-    max = mean.val[0] + confidence;
+    return pval;
 }
 
-void TableModeler::estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud,
-		pcl::PointXYZ& min, pcl::PointXYZ& max, Eigen::Affine3f& yton)
+void TableModeler::getMinMax3D(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, int dim, int confidence, pcl::PointXYZ& min, pcl::PointXYZ& max)
+{
+    cv::Mat values (pCloud->size(), 3, cv::DataType<float>::type);
+    for (int i = 0; i < pCloud->size(); i++)
+    {
+        values.at<float>(i,0) = pCloud->points[i].x;
+        values.at<float>(i,1) = pCloud->points[i].y;
+        values.at<float>(i,2) = pCloud->points[i].z;
+    }
+
+    for (int i = 0; i < 3; i++)
+    {
+        if (i == dim)
+        {
+            cv::Scalar mean, stddev;
+            cv::meanStdDev(values.col(dim), mean, stddev);
+            
+            float pm = getPVal(confidence) * (stddev.val[0] / sqrt(values.rows));
+
+            min.data[i] = mean.val[0] - pm;
+            max.data[i] = mean.val[0] + pm;
+        }
+        else
+        {
+            double minVal, maxVal;
+            cv::minMaxIdx(values.col(i), &minVal, &maxVal);
+             
+            min.data[i] = minVal;
+            max.data[i] = maxVal;
+        }
+    }
+}
+
+void TableModeler::computeTransformation(pcl::ModelCoefficients::Ptr pCoefficients, Eigen::Affine3f& yton)
+{
+    // Compute a transformation in which a bounding box in a convenient base
+
+    Eigen::Vector3f origin (0, 0, pCoefficients->values[3]/pCoefficients->values[2]);
+    Eigen::Vector3f n (pCoefficients->values[0], pCoefficients->values[1], pCoefficients->values[2]);
+    //n = -n; // it is upside down
+    Eigen::Vector3f u ( 1, 1, (- n.x() - n.y() ) / n.z() );
+    Eigen::Vector3f v = n.cross(u);
+
+    pcl::getTransformationFromTwoUnitVectorsAndOrigin(n.normalized(), v.normalized(), -origin, yton);
+}
+
+//void TableModeler::transform(pcl::PointCloud<pcl::PointXYZ>::Ptr pPlane, Eigen::Affine3f transformation, pcl::PointCloud<pcl::PointXYZ> planeTransformed)
+//{
+//    pcl::PointCloud<pcl::PointXYZ>::Ptr pPlaneT (new pcl::PointCloud<pcl::PointXYZ>);
+//    pcl::transformPointCloud(*pPlane, *pPlaneT, yton);
+//
+//    pcl::PointCloud<pcl::PointXYZ>::Ptr pPlaneTF (new pcl::PointCloud<pcl::PointXYZ>);
+//    pcl::PointCloud<pcl::PointXYZ>::Ptr pPlaneF (new pcl::PointCloud<pcl::PointXYZ>);
+//
+//    // Create the filtering object
+//    pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+//    sor.setInputCloud (pPlaneT);
+//    sor.setMeanK (100);
+//    sor.setStddevMulThresh (1);
+//    sor.filter (*pPlaneTF);
+//
+//    pcl::PointCloud<pcl::PointXYZ>::Ptr pBiggestClusterT (new pcl::PointCloud<pcl::PointXYZ>);
+////			pcl::PointCloud<pcl::PointXYZ>::Ptr pBiggestCluster (new pcl::PointCloud<pcl::PointXYZ>);
+//    pBiggestCluster = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
+//
+//    biggestEuclideanCluster(pPlaneTF, 2.5 * m_LeafSize, *pBiggestClusterT);
+//
+//    pcl::getMinMax3D(*pBiggestClusterT, min, max);
+//    getPointsDimensionCI(*pBiggestClusterT, 2, 0.8, min.y, max.y);
+//
+//    pcl::transformPointCloud(*pBiggestClusterT, *pBiggestCluster, yton.inverse());
+//    pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudT (new pcl::PointCloud<pcl::PointXYZ>);
+//    pcl::transformPointCloud(*pCloud, *pCloudT, yton);
+//}
+
+void TableModeler::estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, pcl::PointCloud<pcl::PointXYZ>& planeSegmented, pcl::PointCloud<pcl::PointXYZ>& nonPlaneSegmented, pcl::ModelCoefficients& coefficients)
 {
 	// downsampling
 
-	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudF (new pcl::PointCloud<pcl::PointXYZ>);
-    
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudFiltered (new pcl::PointCloud<pcl::PointXYZ>);
     
 	pcl::ApproximateVoxelGrid<pcl::PointXYZ> sor;
 	sor.setInputCloud (pCloud);
 	sor.setLeafSize (m_LeafSize, m_LeafSize, m_LeafSize);
-	sor.filter(*pCloudF);
+	sor.filter(*pCloudFiltered);
 	
 	// normal estimation
 
-	pcl::PointCloud<pcl::Normal>::Ptr pNormalsF (new pcl::PointCloud<pcl::Normal>);
+	pcl::PointCloud<pcl::Normal>::Ptr pNormalsFiltered (new pcl::PointCloud<pcl::Normal>);
     
     pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
-    ne.setInputCloud(pCloudF);
-    
+    ne.setInputCloud(pCloudFiltered);
     pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ> ());
     ne.setSearchMethod (tree);
- 
-    ne.setRadiusSearch (m_NormalRadius); // neighbors in a sphere of radius X meters
-    
-    ne.compute (*pNormalsF);
+    ne.setRadiusSearch (m_NormalRadius); // neighbors in a sphere of radius X meter
+    ne.compute (*pNormalsFiltered);
 
 	// model estimation
 
-    pcl::SACSegmentationFromNormals<pcl::PointXYZ, pcl::Normal> sac;
+    pcl::SACSegmentationFromNormals<pcl::PointXYZ, pcl::Normal> sac (false);
 	sac.setOptimizeCoefficients (true); // optional
     sac.setModelType (pcl::SACMODEL_NORMAL_PLANE);
     sac.setMethodType (pcl::SAC_RANSAC);
-
     sac.setMaxIterations (m_SACIters);
     sac.setDistanceThreshold (m_SACDistThresh);
 
@@ -181,119 +253,167 @@ void TableModeler::estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud,
     pcl::ExtractIndices<pcl::PointXYZ> pointExtractor;
     pcl::ExtractIndices<pcl::Normal>   normalExtractor;
 
-	pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
     pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
     pcl::PointCloud<pcl::PointXYZ>::Ptr pPlane (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pNonPlane (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::Normal>::Ptr   pNonPlaneNormals (new pcl::PointCloud<pcl::Normal>);
+    
+    pcl::ModelCoefficients::Ptr pCoefficients (new pcl::ModelCoefficients);
 
-
-	// (define some auxiliary cloud variables)
-
-    pcl::PointCloud<pcl::PointXYZ>::Ptr pAuxCloudF (new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::Normal>::Ptr   pAuxNormalsF (new pcl::PointCloud<pcl::Normal>);
-
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudFilteredAux (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::Normal>::Ptr pNormalsFilteredAux (new pcl::PointCloud<pcl::Normal>);
+    pcl::copyPointCloud(*pCloudFiltered, *pCloudFilteredAux);
+    pcl::copyPointCloud(*pNormalsFiltered, *pNormalsFilteredAux);
+    
 	bool found = false; // table plane was found
-    int nr_points = (int) pCloudF->points.size();
-	while (!found && pCloudF->points.size() > 0.3 * nr_points) // Do just one iteration!
+    int numOfInitialPoints = pCloudFiltered->points.size();
+	while (!found && pCloudFilteredAux->points.size() > 0.3 * numOfInitialPoints) // Do just one iteration!
     {
         // Segment the largest planar component from the remaining cloud
-        
-        sac.setInputCloud(pCloudF);
-        sac.setInputNormals(pNormalsF);
-        sac.segment(*inliers, *coefficients);
-          
-        if (inliers->indices.size () == 0)
-        {
-            std::cerr << "Could not estimate a planar model for the given dataset." << std::endl;
-            exit(-1); // panic
-        }
+        sac.setInputCloud(pCloudFilteredAux);
+        sac.setInputNormals(pNormalsFilteredAux);
+        sac.segment(*inliers, *pCoefficients);
 
         // Extract the inliers (points in the plane)
-        
-        pointExtractor.setInputCloud (pCloudF);
-        normalExtractor.setInputCloud(pNormalsF);
-        
+        pointExtractor.setInputCloud (pCloudFilteredAux);
         pointExtractor.setIndices (inliers);
-        normalExtractor.setIndices (inliers);
-        
         pointExtractor.setNegative (false);
         pointExtractor.filter (*pPlane);
-          
-        std::cerr << "PointCloud representing the planar component: " << pPlane->width * pPlane->height << " data points." << std::endl;
-		
-		pointExtractor.setNegative (true); // we keep what is not in the plane
-        normalExtractor.setNegative(true); // and the associated normals
+        pointExtractor.setNegative(true);
+        pointExtractor.filter(*pNonPlane);
         
-        pointExtractor.filter (*pAuxCloudF);
-        normalExtractor.filter (*pAuxNormalsF);
-        
-        // update variables
-        pCloudF.swap (pAuxCloudF);
-        pNormalsF.swap (pAuxNormalsF);
-
-		// Check
-        pcl::PointCloud<pcl::PointXYZ>::Ptr pBiggestCluster (new pcl::PointCloud<pcl::PointXYZ>);
+        normalExtractor.setInputCloud(pNormalsFilteredAux);
+        normalExtractor.setIndices(inliers);
+        normalExtractor.setNegative(true);
+        normalExtractor.filter(*pNonPlaneNormals);
 
 		if ( (found = isPlaneIncludingOrigin(pPlane)) )
 		{
-			// Compute a transformation in which a bounding box in a convenient base
-
-			Eigen::Vector3f origin (0, 0, coefficients->values[3]/coefficients->values[2]);
-			Eigen::Vector3f n (coefficients->values[0], coefficients->values[1], coefficients->values[2]);
-			//n = -n; // it is upside down
-			Eigen::Vector3f u ( 1, 1, (- n.x() - n.y() ) / n.z() );
-			Eigen::Vector3f v = n.cross(u);
-
-			pcl::getTransformationFromTwoUnitVectorsAndOrigin(n.normalized(), v.normalized(), -origin, yton);
-
-			pcl::PointCloud<pcl::PointXYZ>::Ptr pPlaneT (new pcl::PointCloud<pcl::PointXYZ>);
-			pcl::transformPointCloud(*pPlane, *pPlaneT, yton);
-
-			pcl::PointCloud<pcl::PointXYZ>::Ptr pPlaneTF (new pcl::PointCloud<pcl::PointXYZ>);
-			pcl::PointCloud<pcl::PointXYZ>::Ptr pPlaneF (new pcl::PointCloud<pcl::PointXYZ>);
-			 
-			// Create the filtering object
-			pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
-			sor.setInputCloud (pPlaneT);
-			sor.setMeanK (100);
+            // Prepare to return the segmented plane
+            pcl::PointCloud<pcl::PointXYZ>::Ptr pPlaneFiltered (new pcl::PointCloud<pcl::PointXYZ>);
+            
+            pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+			sor.setInputCloud (pPlane);
+			sor.setMeanK (50);
 			sor.setStddevMulThresh (1);
-			sor.filter (*pPlaneTF);
-
-			pcl::PointCloud<pcl::PointXYZ>::Ptr pBiggestClusterT (new pcl::PointCloud<pcl::PointXYZ>);
-//			pcl::PointCloud<pcl::PointXYZ>::Ptr pBiggestCluster (new pcl::PointCloud<pcl::PointXYZ>);
-            pBiggestCluster = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
-
-			biggestEuclideanCluster(pPlaneTF, 2.5 * m_LeafSize, *pBiggestClusterT);
-
-			pcl::getMinMax3D(*pBiggestClusterT, min, max);
-            getPointsDimensionCI(*pBiggestClusterT, 2, 0.8, min.y, max.y);
-
-			pcl::transformPointCloud(*pBiggestClusterT, *pBiggestCluster, yton.inverse());
-            pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudT (new pcl::PointCloud<pcl::PointXYZ>);
-            pcl::transformPointCloud(*pCloud, *pCloudT, yton);
-            //pcl::copyPointCloud(*pPlane, plane);
+			sor.filter (*pPlaneFiltered);
+            biggestEuclideanCluster(pPlaneFiltered, 2.5f * m_LeafSize, planeSegmented);
             
-            // DEBUG
-            // Visualization
+            coefficients = *pCoefficients;
             
-//            pcl::visualization::PCLVisualizer pViz(pCloud->header.frame_id);
-//            pViz.addCoordinateSystem();
-//            //pViz.addPointCloud(pCloudF, "filtered");
-//            pViz.addPointCloud(pBiggestCluster, "biggestCluster");
-//            pViz.addPointCloud(pBiggestClusterT, "biggestClusterT");
-//            pViz.addPointCloud(pCloudT, "pCloudT");
-//            pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.61, 0.1, 1.0, "biggestCluster");
-//            pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.21, 0.1, 1.0, "biggestClusterT");
-//            pViz.addCube(min.x, max.x, min.y, max.y + m_OffsetA, min.z, max.z, 1, 0, 0, "cube");
-//            pViz.addCube(min.x - m_InteractionBorder, max.x + m_InteractionBorder,
-//                         min.y, max.y + 2.0,
-//                         min.z - m_InteractionBorder, max.z + m_InteractionBorder, 1, 1, 1, "cube2");
+            // Prepare to return the non-plane cloud
+            nonPlaneSegmented += *pNonPlane;
+            
+            return;
+        }
+        else
+        {
+            nonPlaneSegmented += *pPlane;
+        }
+        
+        pCloudFilteredAux.swap(pNonPlane);
+        pNormalsFilteredAux.swap(pNonPlaneNormals);
+        
+//			// Compute a transformation in which a bounding box in a convenient base
 //
-//            pViz.spin();
+//			Eigen::Vector3f origin (0, 0, coefficients->values[3]/coefficients->values[2]);
+//			Eigen::Vector3f n (coefficients->values[0], coefficients->values[1], coefficients->values[2]);
+//			//n = -n; // it is upside down
+//			Eigen::Vector3f u ( 1, 1, (- n.x() - n.y() ) / n.z() );
+//			Eigen::Vector3f v = n.cross(u);
+//
+//			pcl::getTransformationFromTwoUnitVectorsAndOrigin(n.normalized(), v.normalized(), -origin, yton);
+//
+//			pcl::PointCloud<pcl::PointXYZ>::Ptr pPlaneT (new pcl::PointCloud<pcl::PointXYZ>);
+//			pcl::transformPointCloud(*pPlane, *pPlaneT, yton);
+//
+//			pcl::PointCloud<pcl::PointXYZ>::Ptr pPlaneTF (new pcl::PointCloud<pcl::PointXYZ>);
+//			pcl::PointCloud<pcl::PointXYZ>::Ptr pPlaneF (new pcl::PointCloud<pcl::PointXYZ>);
+//			 
+//			// Create the filtering object
+//			pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+//			sor.setInputCloud (pPlaneT);
+//			sor.setMeanK (100);
+//			sor.setStddevMulThresh (1);
+//			sor.filter (*pPlaneTF);
+//
+//			pcl::PointCloud<pcl::PointXYZ>::Ptr pBiggestClusterT (new pcl::PointCloud<pcl::PointXYZ>);
+////			pcl::PointCloud<pcl::PointXYZ>::Ptr pBiggestCluster (new pcl::PointCloud<pcl::PointXYZ>);
+//            pBiggestCluster = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
+//
+//			biggestEuclideanCluster(pPlaneTF, 2.5 * m_LeafSize, *pBiggestClusterT);
+//
+//			pcl::getMinMax3D(*pBiggestClusterT, min, max);
+//            getPointsDimensionCI(*pBiggestClusterT, 2, 0.8, min.y, max.y);
+//
+//			pcl::transformPointCloud(*pBiggestClusterT, *pBiggestCluster, yton.inverse());
+//            pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudT (new pcl::PointCloud<pcl::PointXYZ>);
+//            pcl::transformPointCloud(*pCloud, *pCloudT, yton);
+//            //pcl::copyPointCloud(*pPlane, plane);
+//            
+//            // DEBUG
+//            // Visualization
+//            
+////            pcl::visualization::PCLVisualizer pViz(pCloud->header.frame_id);
+////            pViz.addCoordinateSystem();
+////            //pViz.addPointCloud(pCloudF, "filtered");
+////            pViz.addPointCloud(pBiggestCluster, "biggestCluster");
+////            pViz.addPointCloud(pBiggestClusterT, "biggestClusterT");
+////            pViz.addPointCloud(pCloudT, "pCloudT");
+////            pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.61, 0.1, 1.0, "biggestCluster");
+////            pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.21, 0.1, 1.0, "biggestClusterT");
+////            pViz.addCube(min.x, max.x, min.y, max.y + m_OffsetA, min.z, max.z, 1, 0, 0, "cube");
+////            pViz.addCube(min.x - m_InteractionBorder, max.x + m_InteractionBorder,
+////                         min.y, max.y + 2.0,
+////                         min.z - m_InteractionBorder, max.z + m_InteractionBorder, 1, 1, 1, "cube2");
+////
+////            pViz.spin();
+//
+//			return;
+//		}
 
-			return;
-		}
+    }
+}
 
-	}
+void TableModeler::visualizePlaneEstimation(pcl::PointCloud<pcl::PointXYZ>::Ptr pScene, pcl::PointCloud<pcl::PointXYZ>::Ptr pPlane, Eigen::Affine3f transformation, pcl::PointXYZ min, pcl::PointXYZ max)
+{
+    
+    pcl::visualization::PCLVisualizer pViz;
+    pViz.addCoordinateSystem();
+
+    pViz.addPointCloud(pScene, "scene");
+    pViz.addPointCloud(pPlane, "plane");
+    
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pSceneTransformed(new pcl::PointCloud<pcl::PointXYZ>), pPlaneTransformed(new pcl::PointCloud<pcl::PointXYZ>);
+    
+    pcl::transformPointCloud(*pScene, *pSceneTransformed, transformation);
+    pcl::transformPointCloud(*pPlane, *pPlaneTransformed, transformation);
+    
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pPlaneTransformedFiltered(new pcl::PointCloud<pcl::PointXYZ>), pPlaneTransformedRemoved(new pcl::PointCloud<pcl::PointXYZ>);
+    
+    filter(pPlaneTransformed, min, max, *pPlaneTransformedFiltered, *pPlaneTransformedRemoved);
+    
+    pViz.addPointCloud(pSceneTransformed, "scene transformed");
+    pViz.addPointCloud(pPlaneTransformedFiltered, "plane transformed filtered");
+    pViz.addPointCloud(pPlaneTransformedRemoved, "plane transformed removed");
+
+    pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.5, 0.5, 0.5, "scene");
+    pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 0.5, 0.5, 0.5, "plane");
+    
+    pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 1.0, 1.0, 1.0, "scene transformed");
+    
+    pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 1.0, 1.0, 1.0, "plane transformed filtered");
+    pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "plane transformed filtered");
+    
+    pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "plane transformed removed");
+    pViz.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "plane transformed removed");
+    
+    pViz.addCube(min.x, max.x, min.y, max.y + m_OffsetA, min.z, max.z, 1, 1, 0, "cube");
+    pViz.addCube(min.x - m_InteractionBorder, max.x + m_InteractionBorder,
+                 min.y, max.y + 2.0,
+                 min.z - m_InteractionBorder, max.z + m_InteractionBorder, 0, 1, 1, "cube2");
+
+    pViz.spin();
 }
 
 
@@ -305,10 +425,9 @@ bool TableModeler::isPlaneIncludingOrigin(pcl::PointCloud<pcl::PointXYZ>::Ptr pP
 		// That is having x and y close to 0
 		const pcl::PointXYZ & p =  pPlane->points[i];
         float dist = sqrtf(powf(p.x,2)+powf(p.y,2)+powf(p.z,2));
+        
 		if ( dist > 0 && dist < 2 * m_LeafSize)
-		{
 			return true;
-		}
 	}
     
 	return false;
@@ -322,16 +441,14 @@ void TableModeler::segmentTableTop(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud,
 }
 
 
-void TableModeler::segmentTableTop(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB,
-                                   pcl::PointCloud<pcl::PointXYZ>& cloudObjsA, pcl::PointCloud<pcl::PointXYZ>& cloudObjsB)
+void TableModeler::segmentTableTop(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA, pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudB, pcl::PointCloud<pcl::PointXYZ>& cloudObjsA, pcl::PointCloud<pcl::PointXYZ>& cloudObjsB)
 {
 	segmentTableTop(pCloudA, m_MinA, m_MaxA, m_OffsetA, m_ytonA, m_ytonAInv, cloudObjsA);
 	segmentTableTop(pCloudB, m_MinB, m_MaxB, m_OffsetB, m_ytonB, m_ytonBInv, cloudObjsB);
 }
 
 
-void TableModeler::segmentTableTop(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, pcl::PointXYZ min, pcl::PointXYZ max,
-                                   float offset, Eigen::Affine3f yton, Eigen::Affine3f ytonInv, pcl::PointCloud<pcl::PointXYZ>& cloudObjs)
+void TableModeler::segmentTableTop(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, pcl::PointXYZ min, pcl::PointXYZ max, float offset, Eigen::Affine3f yton, Eigen::Affine3f ytonInv, pcl::PointCloud<pcl::PointXYZ>& cloudObjs)
 {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudAux (new pcl::PointCloud<pcl::PointXYZ>());
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudAuxF (new pcl::PointCloud<pcl::PointXYZ>());
@@ -360,6 +477,31 @@ void TableModeler::segmentTableTop(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, p
 	// De-transformation
     
 	pcl::transformPointCloud(*pCloudAuxF, cloudObjs, ytonInv);
+}
+
+void TableModeler::filter(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, pcl::PointXYZ min, pcl::PointXYZ max, pcl::PointCloud<pcl::PointXYZ>& cloudFiltered, pcl::PointCloud<pcl::PointXYZ>& cloudRemoved)
+{
+    // build the condition for "within tabletop region"
+    pcl::ConditionAnd<pcl::PointXYZ>::Ptr condition (new pcl::ConditionAnd<pcl::PointXYZ> ());
+    
+    condition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("x", pcl::ComparisonOps::GT, min.x)));
+    condition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("x", pcl::ComparisonOps::LT, max.x)));
+    
+    condition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("y", pcl::ComparisonOps::GT, min.y)));
+    condition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("y", pcl::ComparisonOps::LT, max.y)));
+    
+    condition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("z", pcl::ComparisonOps::GT, min.z)));
+    condition->addComparison (pcl::FieldComparison<pcl::PointXYZ>::ConstPtr (new pcl::FieldComparison<pcl::PointXYZ> ("z", pcl::ComparisonOps::LT, max.z)));
+    
+    // build the filter
+    pcl::ConditionalRemoval<pcl::PointXYZ> removal (condition, true); // true = keep indices from filtered points
+    removal.setInputCloud (pCloud);
+    removal.filter(cloudFiltered);
+    
+    pcl::ExtractIndices<pcl::PointXYZ> extractor;
+    extractor.setInputCloud(pCloud);
+    extractor.setIndices(removal.getRemovedIndices());
+    extractor.filter(cloudRemoved);
 }
 
 void TableModeler::segmentInteractionRegion(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud,
@@ -448,5 +590,42 @@ void TableModeler::segmentInteractionRegion(pcl::PointCloud<pcl::PointXYZ>::Ptr 
 //    }
     
 	pcl::transformPointCloud(*pCloudAuxF, cloudObjs, ytonInv);
+}
+
+void TableModeler::read(string path, string filename, string extension)
+{
+    ifstream file;
+    string filepath = path + filename + "." + extension;
+    file.open(filepath, ios::in);
+    
+    file >> m_MinA.x >> m_MinA.y >> m_MinA.z;
+    file >> m_MaxA.x >> m_MaxA.y >> m_MaxA.z;
+    
+    m_pPlaneCoeffsA->values.resize(4);
+    file >> m_pPlaneCoeffsA->values[0] >> m_pPlaneCoeffsA->values[1] >> m_pPlaneCoeffsA->values[2] >> m_pPlaneCoeffsA->values[3];
+    computeTransformation(m_pPlaneCoeffsA, m_ytonA);
+    m_ytonAInv = m_ytonA.inverse();
+    
+    file >> m_MinB.x >> m_MinB.y >> m_MinB.z;
+    file >> m_MaxB.x >> m_MaxB.y >> m_MaxB.z;
+    
+    m_pPlaneCoeffsB->values.resize(4);
+    file >> m_pPlaneCoeffsB->values[0] >> m_pPlaneCoeffsB->values[1] >> m_pPlaneCoeffsB->values[2] >> m_pPlaneCoeffsB->values[3];
+    computeTransformation(m_pPlaneCoeffsB, m_ytonB);
+    m_ytonBInv = m_ytonB.inverse();
+}
+
+void TableModeler::write(string path, string filename, string extension)
+{
+    ofstream file;
+    string filepath = path + filename + "." + extension;
+    file.open(filepath, ios::out);
+    file << m_MinA.x << " " << m_MinA.y << " " << m_MinA.z << endl;
+    file << m_MaxA.x << " " << m_MaxA.y << " " << m_MaxA.z << endl;
+    file << m_pPlaneCoeffsA->values[0] << " " << m_pPlaneCoeffsA->values[1] << " " << m_pPlaneCoeffsA->values[2] << " " << m_pPlaneCoeffsA->values[3] << endl;
+    
+    file << m_MinB.x << " " << m_MinB.y << " " << m_MinB.z << endl;
+    file << m_MaxB.x << " " << m_MaxB.y << " " << m_MaxB.z << endl;
+    file << m_pPlaneCoeffsB->values[0] << " " << m_pPlaneCoeffsB->values[1] << " " << m_pPlaneCoeffsB->values[2] << " " << m_pPlaneCoeffsB->values[3] << endl;
 }
 

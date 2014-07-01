@@ -18,14 +18,15 @@ public:
 	void operator()(DepthFrame, DepthFrame, float alpha = 0);
     
     void setInputSequence(Sequence::Ptr pSeq);
-    void setNumOfMixtureComponents(int k = 5);
-    void setLearningRate(float rate = 0.02);
+    void setNumOfMixtureComponents(int k);
+    void setLearningRate(float rate);
+    void setBackgroundRatio(float ratio);
 
     void model();
     
 	void subtract(DepthFrame, DepthFrame&);
 	void subtract(DepthFrame, DepthFrame, DepthFrame&, DepthFrame&);
-    
+        
     typedef boost::shared_ptr<BackgroundSubtractor> Ptr;
 
 private:
@@ -37,5 +38,6 @@ private:
 	cv::BackgroundSubtractorMOG2	m_subtractorB;
     int m_NumOfMixtureComponents;
     float m_LearningRate;
+    float m_BackgroundRatio;
 };
 

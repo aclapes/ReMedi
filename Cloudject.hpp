@@ -22,11 +22,11 @@ class CloudjectBase
 	typedef typename PointCloud::Ptr PointCloudPtr;
     
 public:
-	CloudjectBase(void) { m_ID = -1; }
+	CloudjectBase(void) { m_ID = 0; }
 
 	CloudjectBase(PointCloudPtr view, int viewpoint, float leafSize = 0.0)
 	{
-		m_ID = -1;
+		m_ID = 0;
         m_Name = "";
         
         m_Viewpoint = viewpoint;
@@ -48,7 +48,7 @@ public:
 
 	CloudjectBase(PointCloudPtr viewA, PointCloudPtr viewB, float leafSize = 0.0)
 	{
-		m_ID = -1;
+		m_ID = 0;
         m_Name = "";
         
         m_Viewpoint = BINOCULAR_VIEWPOINT;
@@ -68,7 +68,7 @@ public:
 
 	CloudjectBase(const char* viewPath, int viewpoint, float leafSize = 0.0)
 	{
-		m_ID = -1;
+		m_ID = 0;
         m_Name = "";
         
         m_Viewpoint = viewpoint;
@@ -90,7 +90,7 @@ public:
     
 	CloudjectBase(const char* viewPathA, const char* viewPathB, float leafSize = 0.0)
 	{
-		m_ID = -1;
+		m_ID = 0;
         m_Name = "";
         
         m_Viewpoint = BINOCULAR_VIEWPOINT;

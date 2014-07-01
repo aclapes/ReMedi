@@ -179,11 +179,9 @@ protected:
 	LFCloudjectModelBase(void) 
 		: CloudjectModelBase<PointT,SignatureT>() {}
 
-	LFCloudjectModelBase(int ID, string name, float leafSize = 0.0, float pointRejectionThresh = 1.0,
-		float ratioRejectionThresh = 1.0, int sizePenalty = 1, float sigmaPenaltyThresh = 0.1)
+	LFCloudjectModelBase(int ID, string name, float leafSize = 0.0, int penalty = 2, float pointRejectionThresh = 1.0, float ratioRejectionThresh = 1.0, float sigmaPenaltyThresh = 0.1)
 		: CloudjectModelBase<PointT,SignatureT>(ID, name, leafSize),
-		  m_PointRejectionThresh(pointRejectionThresh), m_RatioRejectionThresh(ratioRejectionThresh), 
-		  m_SizePenalty(sizePenalty), m_SigmaPenaltyThresh(sigmaPenaltyThresh) 
+		  m_Penalty(penalty), m_PointRejectionThresh(pointRejectionThresh), m_RatioRejectionThresh(ratioRejectionThresh), m_SigmaPenaltyThresh(sigmaPenaltyThresh)
 	{}
     
     LFCloudjectModelBase(const LFCloudjectModelBase& rhs)
@@ -200,11 +198,11 @@ protected:
         {
             m_ViewsDescriptors = rhs.m_ViewsDescriptors;
 
+            m_Penalty = rhs.m_Penalty;
+            
             m_PointRejectionThresh = rhs.m_PointRejectionThresh;
             m_RatioRejectionThresh = rhs.m_RatioRejectionThresh;
             m_SigmaPenaltyThresh = rhs.m_SigmaPenaltyThresh;
-            
-            m_SizePenalty = rhs.m_SizePenalty;
         }
         
         return *this;
@@ -239,9 +237,9 @@ protected:
 		{
 			float score = c.getViewB()->empty() ?
                 matchView(c.getDescriptionA()) : matchView(c.getDescriptionB());
-			float penalty;
+			float penalty = 1.f;
 			
-			if (getSizePenalty() == 0 /*SizePenalty::NumOfPoints*/)
+			if (getPenalty() == 0)
 			{
 				float ratio = c.getViewB()->empty() ? (((float) c.getNumOfPointsInViewA()) / averageNumOfPointsInModels()) : (((float) c.getNumOfPointsInViewB()) / averageNumOfPointsInModels());
 				
@@ -250,13 +248,13 @@ protected:
 
 				penalty = (1.0 / (sigma * std::sqrtf(2 * 3.14159))) * std::expf(-0.5 * powf((x-1)/sigma, 2));
 			}
-			else // SizePenalty::MeanDistToCentroid
+			else if (getPenalty() == 1)
 			{
 				float diff = c.getViewB()->empty() ? (c.medianDistToCentroidInViewA() - averageMedianDistanceToCentroids()) : (c.medianDistToCentroidInViewB() - averageMedianDistanceToCentroids());
 				penalty = (1.0 / (sigma * std::sqrtf(2 * 3.14159))) * std::expf(-0.5 * powf(diff/sigma, 2));
 			}
 
-            c.getViewB()->empty() ? cout << "(" << score << "*" << penalty << ",)": cout << "(," << score << "*" << penalty << ")";
+//            c.getViewB()->empty() ? cout << "(" << score << "*" << penalty << ",)": cout << "(," << score << "*" << penalty << ")";
 			return score * penalty;
 		}
 		else
@@ -264,9 +262,9 @@ protected:
 			float scoreA = matchView(c.getDescriptionA());
 			float scoreB = matchView(c.getDescriptionB());
 
-			float penaltyA, penaltyB;
+			float penaltyA = 1.f, penaltyB = 1.f;
 
-			if (getSizePenalty() == 0 /*SizePenalty::NumOfPoints*/)
+			if (getPenalty() == 0)
 			{
 				float ratioA = ((float) c.getNumOfPointsInViewA()) / averageNumOfPointsInModels();
 				float ratioB = ((float) c.getNumOfPointsInViewB()) / averageNumOfPointsInModels();
@@ -278,7 +276,7 @@ protected:
 				penaltyA = (1.0 / (sigma * std::sqrtf(2 * 3.14159))) * std::expf(-0.5 * powf((xA-1)/sigma, 2));
 				penaltyB = (1.0 / (sigma * std::sqrtf(2 * 3.14159))) * std::expf(-0.5 * powf((xB-1)/sigma, 2));
 			}
-			else // SizePenalty::MeanDistToCentroid
+			else if (getPenalty() == 1)
 			{
 				float diffA = c.medianDistToCentroidInViewA() - averageMedianDistanceToCentroids();
 				float diffB = c.medianDistToCentroidInViewB() - averageMedianDistanceToCentroids();
@@ -293,7 +291,7 @@ protected:
 //            float distanceWeightA = 1.0 / c.getPosA();
 //            float distanceWeightB = c.getPosB();
             
-            cout << "(" << scoreA << "*" << penaltyA << "," << scoreB << "*" << penaltyB << ")";
+//            cout << "(" << scoreA << "*" << penaltyA << "," << scoreB << "*" << penaltyB << ")";
 			return (penalizedScoreA + penalizedScoreB) / 2.0;
 		}
 	}
@@ -424,9 +422,9 @@ protected:
 	}
 
 
-	int getSizePenalty()
+	int getPenalty()
 	{
-		return m_SizePenalty;
+		return m_Penalty;
 	}
 
 
@@ -441,8 +439,8 @@ protected:
 	float							m_RatioRejectionThresh;
 	float							m_SigmaPenaltyThresh;
 
-	int								m_SizePenalty;
-	enum							SizePenalty { NumOfPoints, MedianDistToCentroid };
+	int								m_Penalty;
+	enum							Penalty { None, NumOfPoints, MedianDistToCentroid };
 
 private:
 
@@ -475,10 +473,9 @@ class LFCloudjectModel<PointT, pcl::FPFHSignature33> : public LFCloudjectModelBa
 
 public:
 
-	LFCloudjectModel(int ID, string name, float leafSize = 0.0, float pointRejectionThresh = 1.0,
-		float ratioRejectionThresh = 1.0, int sizePenalty = 1, float sigmaPenaltyThresh = 0.1)
-		: LFCloudjectModelBase<PointT,pcl::FPFHSignature33>(ID, name, leafSize,
-		  pointRejectionThresh, ratioRejectionThresh, sizePenalty, sigmaPenaltyThresh)
+	LFCloudjectModel(int ID, string name, float leafSize = 0.0, int penalty = 1, float pointRejectionThresh = 1.0, float ratioRejectionThresh = 1.0, float sigmaPenaltyThresh = 0.1)
+		: LFCloudjectModelBase<PointT,pcl::FPFHSignature33>(ID, name, leafSize, penalty,
+		  pointRejectionThresh, ratioRejectionThresh, sigmaPenaltyThresh)
 	{}
     
     LFCloudjectModel(const LFCloudjectModel& rhs)
@@ -522,8 +519,8 @@ public:
         return LFCloudjectModelBase<PointT,pcl::FPFHSignature33>::match(c);
     }
 
-	int getSizePenalty()
-	{ return LFCloudjectModelBase<PointT,pcl::FPFHSignature33>::getSizePenalty(); }
+	int getPenalty()
+	{ return LFCloudjectModelBase<PointT,pcl::FPFHSignature33>::getPenalty(); }
 
 
 	// Describe all the model views
@@ -640,9 +637,9 @@ private:
 //public:
 //
 //	LFCloudjectModel(int ID, int nViewpoints = 3, float leafSize = 0.0, float pointRejectionThresh = 1.0, 
-//		float ratioRejectionThresh = 1.0, int sizePenalty = 1, float sigmaPenaltyThresh = 0.1)
+//		float ratioRejectionThresh = 1.0, int penalty = 1, float sigmaPenaltyThresh = 0.1)
 //		: LFCloudjectModelBase<PointT, pcl::PFHRGBSignature250>(ID, nViewpoints, leafSize,
-//		  pointRejectionThresh, ratioRejectionThresh, sizePenalty, sigmaPenaltyThresh)
+//		  pointRejectionThresh, ratioRejectionThresh, penalty, sigmaPenaltyThresh)
 //	{}
 //
 //	virtual ~LFCloudjectModel() {}
@@ -669,8 +666,8 @@ private:
 //	float match(LFCloudject c)
 //	{ return LFCloudjectModelBase<PointT,pcl::PFHRGBSignature250>::match(c); }
 //
-//	int getSizePenalty()
-//	{ return LFCloudjectModelBase<PointT,pcl::PFHRGBSignature250>::getSizePenalty(); }
+//	int getPenalty()
+//	{ return LFCloudjectModelBase<PointT,pcl::PFHRGBSignature250>::getPenalty(); }
 //
 //
 //	// Describe all the model views

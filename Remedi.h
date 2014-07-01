@@ -24,6 +24,7 @@ public:
     void setVisualization(bool enable = true);
     void setInteractiveRegistration(bool enable = true);
     void setInteractiveRegistrationParameters(int frameID, int numOfPoints);
+    void setTableModeling(bool enable = true);
 	void run();
 
     // Public enums
@@ -33,9 +34,6 @@ public:
     
 private:
 	void interactWithRegisterer(Sequence::Ptr pSequence, int fID, InteractiveRegisterer& registerer);
-	void modelTablePlanes(pcl::PointCloud<pcl::PointXYZ>::Ptr pRegisteredCloudA,
-                          pcl::PointCloud<pcl::PointXYZ>::Ptr pRegisteredCloudB,
-                          TableModeler& tableModeler);
     void loadCloudjectModels(string dir, int nObjects, int nObjectViews,
                              float normalRadius, float fpfhRadius,
                              vector< LFCloudjectModel<pcl::PointXYZ,pcl::FPFHSignature33> >& cloudjectModels);
@@ -47,4 +45,5 @@ private:
     bool m_bRegistration;
     int m_RegistrationFrameID;
     int m_NumOfRegistrationPoints;
+    bool m_bTableModeling;
 };

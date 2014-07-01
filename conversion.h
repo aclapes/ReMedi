@@ -11,6 +11,9 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/filters/extract_indices.h>
 
+void pcl2cv(pcl::PointXYZ p, cv::Mat& m);
+void pcl2cv(pcl::PointXYZRGB p, cv::Mat& m);
+
 void ProjectiveToRealworld(pcl::PointXYZ p, int xres, int yres, pcl::PointXYZ& rw);
 void RealworldToProjective(pcl::PointXYZ rw, int xres, int yres, pcl::PointXYZ& p);
 void ProjectiveToRealworld(pcl::PointCloud<pcl::PointXYZ>::Ptr pProjCloud, pcl::PointCloud<pcl::PointXYZ>& realCloud);

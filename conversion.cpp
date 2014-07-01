@@ -2,6 +2,31 @@
 
 #include <math.h>
 
+void pcl2cv(pcl::PointXYZ p, cv::Mat& m)
+{
+    m = cv::Mat(1, 3, cv::DataType<float>::type);
+    
+    m.at<float>(0,0) = p.x;
+    m.at<float>(0,1) = p.y;
+    m.at<float>(0,2) = p.z;
+    
+    return m;
+}
+
+void pcl2cv(pcl::PointXYZRGB p, cv::Mat& m)
+{
+    m = cv::Mat(1, 6, cv::DataType<float>::type);
+    
+    m.at<float>(0,0) = p.x;
+    m.at<float>(0,1) = p.y;
+    m.at<float>(0,2) = p.z;
+    m.at<float>(0,3) = p.r;
+    m.at<float>(0,4) = p.g;
+    m.at<float>(0,2) = p.b;
+    
+    return m;
+}
+
 void ProjectiveToRealworld(pcl::PointXYZ p, int xres, int yres, pcl::PointXYZ& rw)
 {
     float invfocal = (1/285.63f) / (xres/320.f);

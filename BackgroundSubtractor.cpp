@@ -6,6 +6,7 @@
 int type = CV_16UC1;
 
 BackgroundSubtractor::BackgroundSubtractor()
+    : m_NumOfMixtureComponents(4), m_LearningRate(0.02), m_BackgroundRatio(0.999)
 { }
 
 BackgroundSubtractor::BackgroundSubtractor(const BackgroundSubtractor& rhs)
@@ -13,7 +14,7 @@ BackgroundSubtractor::BackgroundSubtractor(const BackgroundSubtractor& rhs)
     *this = rhs;
 }
 
-BackgroundSubtractor::~BackgroundSubtractor(void)
+BackgroundSubtractor::~BackgroundSubtractor()
 {
 
 }
@@ -47,13 +48,18 @@ void BackgroundSubtractor::setLearningRate(float rate)
     m_LearningRate = rate;
 }
 
+void BackgroundSubtractor::setBackgroundRatio(float ratio)
+{
+    m_BackgroundRatio = ratio;
+}
+
 void BackgroundSubtractor::model()
 {
     m_subtractorA = cv::BackgroundSubtractorMOG2(m_pSeq->getNumOfFrames()[0], m_NumOfMixtureComponents, false);
 	m_subtractorB = cv::BackgroundSubtractorMOG2(m_pSeq->getNumOfFrames()[1], m_NumOfMixtureComponents, false);
     
-	m_subtractorA.set("backgroundRatio", 0.999);
-	m_subtractorB.set("backgroundRatio", 0.999);
+	m_subtractorA.set("backgroundRatio", m_BackgroundRatio);
+	m_subtractorB.set("backgroundRatio", m_BackgroundRatio);
     
     vector<DepthFrame> depthFrames = m_pSeq->nextDepthFrame();
     

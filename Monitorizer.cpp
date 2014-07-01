@@ -1,5 +1,7 @@
-
+  
 #include "Monitorizer.h"
+
+#include <boost/timer.hpp>
 
 Monitorizer::Monitorizer()
 : m_pInteractionCloudA(new PointCloud), m_pInteractionCloudB(new PointCloud), m_bVisualize(false)
@@ -21,10 +23,6 @@ Monitorizer::Monitorizer(const Monitorizer& rhs)
 
 Monitorizer::~Monitorizer(void)
 {
-//    if (m_pViz != NULL && !m_pViz->wasStopped())
-//        m_pViz->close();
-    
-    cout << "~Monitorizer" << endl;
 }
 
 Monitorizer& Monitorizer::operator=(const Monitorizer& rhs)
@@ -133,12 +131,13 @@ void Monitorizer::monitor(DetectionOutput& output)
     while (m_pSeq->hasNextDepthFrame())
     {
         cout << m_pSeq->getDepthProgress()[0] * 100 << "%" << endl;
-        
+        boost::timer t;
         DepthFrame fgDepthFrameA, fgDepthFrameB;
         vector<DepthFrame> frames = m_pSeq->nextDepthFrame();
         m_pBS->subtract(frames[0], frames[1], fgDepthFrameA, fgDepthFrameB);
         
         process(fgDepthFrameA, fgDepthFrameB);
+        cout << "Elapsed: " << t.elapsed() << endl;
     }
     cout << endl;
     
@@ -183,6 +182,7 @@ void Monitorizer::process(DepthFrame dFrameA, DepthFrame dFrameB)
     extractClustersFromView(m_pInteractionCloudA, interactionClustersA, m_LeafSize);
     extractClustersFromView(m_pInteractionCloudB, interactionClustersB, m_LeafSize);
     
+    cout << "tabletop clusters: " << tabletopClustersA.size() << " " <<tabletopClustersB.size() << endl;
     vector<PointCloudPtr> actorClustersA, actorClustersB; // tabletop inliers
     segmentTabletop(tabletopClustersA, interactionClustersA,
                      actorClustersA, m_InteractorClustersA,
@@ -209,7 +209,7 @@ void Monitorizer::process(DepthFrame dFrameA, DepthFrame dFrameB)
     
     vector<vector<vector<pcl::PointXYZ> > > positions(2);
     for (int i = 0; i < positions.size(); i++)
-        positions[i].resize(m_pCD->getNumCloudjectModels());
+        positions[i].resize(m_pCD->getNumCloudjectModels()+1);
     
     for (int i = 0; i < m_PresentCloudjects.size(); i++)
     {
@@ -217,8 +217,8 @@ void Monitorizer::process(DepthFrame dFrameA, DepthFrame dFrameB)
         
         // Detector output (xyz positions)
         int oid  = cloudject.getID();
-        if (oid >= 0)
-        {
+//        if (oid >= 0)
+//        {
             int view = cloudject.getViewpoint();
             if (view != BINOCULAR_VIEWPOINT)
             {
@@ -230,7 +230,7 @@ void Monitorizer::process(DepthFrame dFrameA, DepthFrame dFrameB)
                 positions[MASTER_VIEWPOINT][oid].push_back(m_pIR->deregistration(cloudject.getPosA(), MASTER_VIEWPOINT));
                 positions[SLAVE_VIEWPOINT][oid].push_back(m_pIR->deregistration(cloudject.getPosB(), SLAVE_VIEWPOINT));
             }
-        }
+//        }
     }
     
     m_DetectionOutput.add(positions);
@@ -250,8 +250,8 @@ void Monitorizer::process(DepthFrame dFrameA, DepthFrame dFrameB)
 //        //    cout << m_DisappearedCloudjects[i].getName() << endl;
 //    }
     
-    if (m_bVisualize)
-        visualize();
+    //if (m_bVisualize)
+    //    visualize();
 }
 
 void Monitorizer::visualize()

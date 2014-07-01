@@ -23,18 +23,18 @@ int main (int argc, char** argv)
         dataPath += g_ParentDir + "Data/";
     cout << "[" << dataPath << "]" << endl;
     
-    bool visualization = false;
+    bool bVisualization = false;
     cout << "Processing visualization ";
-    if ( (visualization = (pcl::console::find_argument (argc, argv, "-v") >= 0)) )
+    if ( (bVisualization = (pcl::console::find_argument (argc, argv, "-v") >= 0)) )
         cout << "[YES]" << endl;
     else
         cout << "[NO]" << endl;
     
-    bool registration = false;
+    bool bRegistration = false;
     int registrationFrameID = -1;
     int numOfPoints = 0;
     cout << "Views landmarks interactive selection for registration ";
-    if ( (registration = pcl::console::parse (argc, argv, "-r", registrationFrameID) >= 0) )
+    if ( (bRegistration = pcl::console::parse (argc, argv, "-r", registrationFrameID) >= 0) )
     {
         cout << "[YES]" << endl;
         if ( pcl::console::parse (argc, argv, "-p", numOfPoints) < 0 )
@@ -45,11 +45,19 @@ int main (int argc, char** argv)
         cout << "[NO]" << endl;
     }
     
+    cout << "Table modeling ";
+    bool bTableModeling = false;
+    if ( (bTableModeling = (pcl::console::find_argument (argc, argv, "-t") >= 0)) )
+        cout << "[YES]" << endl;
+    else
+        cout << "[NO]" << endl;
+    
     Remedi app;
     app.setInputDataPath(dataPath);
-    app.setVisualization(visualization);
-    app.setInteractiveRegistration(registration);
+    app.setVisualization(bVisualization);
+    app.setInteractiveRegistration(bRegistration);
     app.setInteractiveRegistrationParameters(registrationFrameID, numOfPoints);
+    app.setTableModeling(bTableModeling);
     
 	app.run();
 

@@ -45,6 +45,11 @@ void Remedi::setInteractiveRegistrationParameters(int frame, int numOfPoints)
     m_NumOfRegistrationPoints = numOfPoints;
 }
 
+void Remedi::setTableModeling(bool enable)
+{
+    m_bTableModeling = enable;
+}
+
 void Remedi::interactWithRegisterer(Sequence::Ptr pSequence, int fID, InteractiveRegisterer& registerer)
 {
     vector<DepthFrame> depthFrames = pSequence->getDepthFrame(fID);
@@ -63,21 +68,6 @@ void Remedi::interactWithRegisterer(Sequence::Ptr pSequence, int fID, Interactiv
     writer.write("registeredB.pcd", *registerer.getRegisteredClouds().second);
     
     registerer.saveTransformation(m_DataPath + "transformation.yml");
-}
-
-void Remedi::modelTablePlanes(pcl::PointCloud<pcl::PointXYZ>::Ptr pRegisteredCloudA,
-                              pcl::PointCloud<pcl::PointXYZ>::Ptr pRegisteredCloudB,
-                              TableModeler& tableModeler)
-{
-	tableModeler.setInputClouds(pRegisteredCloudA, pRegisteredCloudB);
-	tableModeler.setLeafSize(0.02); // 2cm
-	tableModeler.setNormalRadius(0.05);
-	tableModeler.setSACIters(200);
-	tableModeler.setSACDistThresh(0.03);
-	tableModeler.setYOffset(0.4);
-    tableModeler.setInteractionBorder(0.7);
-    
-	tableModeler.model();
 }
 
 void Remedi::run()
@@ -129,19 +119,39 @@ void Remedi::run()
 	 * PLANE SEGMENTATION
 	 */
 
-    TableModeler::Ptr pTableModeler (new TableModeler);// (new TableModeler);
-    
     PointCloudPtr pCloudRegA (new PointCloud), pCloudRegB (new PointCloud);
     pRegisterer->registration(depthFrames[0], depthFrames[1], *pCloudRegA, *pCloudRegB);
-	modelTablePlanes(pCloudRegA, pCloudRegB, *pTableModeler);
-	
+    
+    TableModeler::Ptr pTableModeler (new TableModeler);// (new TableModeler);
+    pTableModeler->setInputClouds(pCloudRegA, pCloudRegB);
+	pTableModeler->setLeafSize(0.02); // 2cm
+	pTableModeler->setNormalRadius(0.05);
+	pTableModeler->setSACIters(200);
+	pTableModeler->setSACDistThresh(0.03);
+	pTableModeler->setYOffset(0.4);
+    pTableModeler->setInteractionBorder(0.7);
+    pTableModeler->setConfidenceLevel(99);
+    if (!m_bTableModeling)
+    {
+        pTableModeler->read("", "TableModeler", "dat");
+        pTableModeler->model();
+    }
+    else
+    {
+        pTableModeler->model();
+        pTableModeler->write("", "TableModeler", "dat");
+    }
+    
 	/*
 	 * BACKGROUND SUBTRACTION
 	 */
     
+    cv::theRNG().state = 74;
     BackgroundSubtractor::Ptr pBackgroundSubtractor (new BackgroundSubtractor);
     pBackgroundSubtractor->setInputSequence(pBackgroundSeq);
-    pBackgroundSubtractor->setNumOfMixtureComponents(5);
+    pBackgroundSubtractor->setNumOfMixtureComponents(3);
+    pBackgroundSubtractor->setLearningRate(0.005);
+    pBackgroundSubtractor->setBackgroundRatio(0.9);
     pBackgroundSubtractor->model();
     
     /*
@@ -185,16 +195,18 @@ void Remedi::run()
     DetectionOutput output;
     
     pMonitorizer->setInputSequence(pMonitorSeq);
-    pMonitorizer->monitor(output);
-    output.write("", pMonitorSeq->getName(), "yml");
+//    pMonitorizer->monitor(output);
+//    output.write("", pMonitorSeq->getName(), "csv");
     
-//    DetectionOutput prediction ("", pMonitorSeq->getName(), "csv");
+    output.read("", pMonitorSeq->getName(), "csv");
     DetectionOutput groundtruth (m_DataPath + "ObjectLabels/", pMonitorSeq->getName(), "csv");
     
     cout << output.getNumOfDetections() << "/" << groundtruth.getNumOfDetections() << endl;
 
-    int tp, fp, fn;
-    output.getResults(groundtruth, tp, fp, fn);
-    cout << "tp: " << tp << "\t fp: " << fp << "\tfn: " << fn << endl;
-    
+    int segtp, segfp, segfn;
+    output.getSegmentationResults(groundtruth, segtp, segfn, segfp);
+    cout << "segmenentation,\t tp: " << segtp << "\t fn: " << segfn << "\tfp: " << segfp << endl;
+    int rectp, recfp, recfn;
+    output.getRecognitionResults(groundtruth, rectp, recfn, recfp);
+    cout << "recognition,\t tp: " << rectp << "\t fn: " << recfn << "\tfp: " << recfp << endl;
 }

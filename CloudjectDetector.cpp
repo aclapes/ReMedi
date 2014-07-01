@@ -90,13 +90,13 @@ void CloudjectDetector::loadCloudjectModels(string dir)
                 
                 if (nview == 0)
                 {
-                    cout << "Created model " << name << endl;
+                    //cout << "Created model " << name << endl;
                     
-                    CloudjectModel cloudjectModel (id, name, m_ModelLeafSize);
+                    CloudjectModel cloudjectModel (id, name, m_ModelLeafSize, 1);
                     m_CloudjectModels.push_back(cloudjectModel);
                 }
                 
-                cout << "Adding view to " << name << " ..." << endl;
+                //cout << "Adding view to " << name << " ..." << endl;
                 
                 m_CloudjectModels.back().addView(pObject);
             }
@@ -105,9 +105,11 @@ void CloudjectDetector::loadCloudjectModels(string dir)
 
     for (int i = 0; i < m_CloudjectModels.size(); i++)
     {
-        cout << "Describing model " << m_CloudjectModels[i].getName() << " ..." << endl;
+        //cout << "Describing model " << m_CloudjectModels[i].getName() << " ..." << endl;
         m_CloudjectModels[i].describe(m_NormalRadius, m_FpfhRadius);
     }
+    
+    cout << "Cloudject models created" << endl;
 }
 
 void CloudjectDetector::setInputClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloudA,
@@ -655,11 +657,11 @@ void CloudjectDetector::detect()
 
     makeSpatiotemporalCorrespondences(cloudjects, m_AppearedCloudjects, m_DisappearedCloudjects, m_CloudjectsHistory);
     
-    recognize(m_CloudjectsHistory);
+//    recognize(m_CloudjectsHistory);
     
 
-    // Handle predictions/outputs
-    
+//    // Handle predictions/outputs
+//    
 //    vector<vector<vector<pcl::PointXYZ> > > positions(2);
 //    for (int i = 0; i < positions.size(); i++)
 //        positions[i].resize(m_CloudjectModels.size());
@@ -954,12 +956,12 @@ void CloudjectDetector::recognize(vector< vector<Cloudject> >& history)
         {
             double score = m_CloudjectModels[j].match(history[i][0]);
             cloudjectScores[i].push_back(score);
-            cout << "\t";
+//            cout << "\t";
             //cout << score << "\t";
         }
-        cout << endl;
+        //cout << endl;
     }
-    cout << endl;
+    //cout << endl;
     
     vector<int> assignations;
     vector<double> assignscores;

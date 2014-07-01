@@ -20,6 +20,8 @@
 
 #include <opencv2/opencv.hpp>
 
+using namespace std;
+
 class TableModeler
 {
 public:
@@ -35,6 +37,7 @@ public:
 	void setSACDistThresh(float);
 	void setYOffset(float);
     void setInteractionBorder(float);
+    void setConfidenceLevel(int level);
     
 	void model();
 
@@ -46,19 +49,29 @@ public:
     void segmentInteractionRegion(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>&);
 	void segmentInteractionRegion(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointCloud<pcl::PointXYZ>&, pcl::PointCloud<pcl::PointXYZ>&);
     
+    void read(string path, string name, string extension);
+    void write(string path, string name, string extension);
+    
+    void visualizePlaneEstimation(pcl::PointCloud<pcl::PointXYZ>::Ptr pScene, pcl::PointCloud<pcl::PointXYZ>::Ptr pPlane, Eigen::Affine3f transformation, pcl::PointXYZ min, pcl::PointXYZ max);
+    
     typedef boost::shared_ptr<TableModeler> Ptr;
     
 private:
 
-	void estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr, pcl::PointXYZ& min, pcl::PointXYZ& max, Eigen::Affine3f& transformation);
+	void estimate(pcl::PointCloud<pcl::PointXYZ>::Ptr pScene, pcl::PointCloud<pcl::PointXYZ>& plane, pcl::PointCloud<pcl::PointXYZ>& nonplane, pcl::ModelCoefficients& coeffs);
     bool isPlaneIncludingOrigin(pcl::PointCloud<pcl::PointXYZ>::Ptr pPlane);
+    void computeTransformation(pcl::ModelCoefficients::Ptr pCoefficients, Eigen::Affine3f& yton);
+//    void transform(pcl::PointCloud<pcl::PointXYZ>::Ptr pPlane, Eigen::Affine3f transformation, pcl::PointCloud<pcl::PointXYZ> planeTransformed);
 
-    void getPointsDimensionCI(pcl::PointCloud<pcl::PointXYZ>& plane, int dim, float alpha, float& minZ, float& maxZ);
+    void getMinMax3D(pcl::PointCloud<pcl::PointXYZ>::Ptr pPlane, int dim, int confidence, pcl::PointXYZ& min, pcl::PointXYZ& max);
 
 	void segmentTableTop(pcl::PointCloud<pcl::PointXYZ>::Ptr,
                          pcl::PointXYZ, pcl::PointXYZ, float offset,
                          Eigen::Affine3f, Eigen::Affine3f,
                          pcl::PointCloud<pcl::PointXYZ>&);
+    
+    void filter(pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud, pcl::PointXYZ min, pcl::PointXYZ max, pcl::PointCloud<pcl::PointXYZ>& cloudFiltered, pcl::PointCloud<pcl::PointXYZ>& cloudRemoved);
+    
     void segmentInteractionRegion(pcl::PointCloud<pcl::PointXYZ>::Ptr,
                                   pcl::PointXYZ, pcl::PointXYZ, float offset,
                                   Eigen::Affine3f, Eigen::Affine3f,
@@ -71,6 +84,9 @@ private:
 	float m_NormalRadius;
 	float m_SACIters;
 	float m_SACDistThresh;
+    float m_ConfidenceLevel;
+    
+    pcl::ModelCoefficients::Ptr m_pPlaneCoeffsA, m_pPlaneCoeffsB;
 
 	pcl::PointXYZ m_MinA, m_MaxA, m_MinB, m_MaxB;
 	float m_OffsetA, m_OffsetB; // sum to the axis corresponding to plane's normal (probably the y dimension)
