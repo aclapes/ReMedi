@@ -969,7 +969,7 @@ void CloudjectDetector::recognize(vector< vector<Cloudject> >& history)
     
     for (int i = 0; i < history.size(); i++)
     {
-        cout << assignations[i] << " ";
+        //cout << assignations[i] << " ";
         history[i][0].setID(assignations[i] + 1);
         if (assignations[i] >= 0)
             history[i][0].setName(m_CloudjectModels[assignations[i]].getName());

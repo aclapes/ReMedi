@@ -25,7 +25,12 @@ public:
     void setInteractiveRegistration(bool enable = true);
     void setInteractiveRegistrationParameters(int frameID, int numOfPoints);
     void setTableModeling(bool enable = true);
-	void run();
+    
+//    void setValidationResultsPath(string path, string name, string extension);
+    void setValidationParameters(vector<vector<float> > parameters);
+    void validate();
+    
+    void run(vector<float> parameters);
 
     // Public enums
     
@@ -46,4 +51,9 @@ private:
     int m_RegistrationFrameID;
     int m_NumOfRegistrationPoints;
     bool m_bTableModeling;
+    
+    vector<vector<float> > m_Parameters;
+    vector<vector<float> > m_ExpandedParameters;
+    
+//    string m_ValidationFilePath;
 };

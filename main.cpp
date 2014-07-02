@@ -2,6 +2,7 @@
 
 #include <pcl/console/parse.h>
 #include <boost/assign/std/vector.hpp>
+#include "StatTools.h"
 
 using namespace boost::assign;
 
@@ -59,7 +60,21 @@ int main (int argc, char** argv)
     app.setInteractiveRegistrationParameters(registrationFrameID, numOfPoints);
     app.setTableModeling(bTableModeling);
     
-	app.run();
+    //    app.run();
+    
+    vector<float> components;
+    components += 2, 3, 5;
+    vector<float> learningRates;
+    learningRates += 0.001, 0.005, 0.01, 0.02;
+    vector<float> backgroundRatios;
+    backgroundRatios += 0.5, 0.9, 0.99, 0.999;
+    
+    vector<vector<float> > parameters;
+    parameters += components, learningRates, backgroundRatios;
+   
+    app.setValidationParameters(parameters);
+    app.validate();
+
 
 	return 0;
 }

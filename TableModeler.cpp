@@ -123,8 +123,8 @@ void TableModeler::model()
     pcl::transformPointCloud(*m_pPlaneB, *m_pPlaneTransformedB, m_ytonB);
     getMinMax3D(m_pPlaneTransformedB, 1, m_ConfidenceLevel, m_MinB, m_MaxB);
     
-//    cout << "minB : " << m_MinB << endl;
-//    cout << "maxB : " << m_MaxB << endl;
+    cout << "minB : " << m_MinB << endl;
+    cout << "maxB : " << m_MaxB << endl;
 //    visualizePlaneEstimation(m_pSceneA, m_pPlaneA, m_ytonB, m_MinB, m_MaxB);
 }
 
@@ -597,22 +597,39 @@ void TableModeler::read(string path, string filename, string extension)
     ifstream file;
     string filepath = path + filename + "." + extension;
     file.open(filepath, ios::in);
-    
-    file >> m_MinA.x >> m_MinA.y >> m_MinA.z;
-    file >> m_MaxA.x >> m_MaxA.y >> m_MaxA.z;
-    
-    m_pPlaneCoeffsA->values.resize(4);
-    file >> m_pPlaneCoeffsA->values[0] >> m_pPlaneCoeffsA->values[1] >> m_pPlaneCoeffsA->values[2] >> m_pPlaneCoeffsA->values[3];
-    computeTransformation(m_pPlaneCoeffsA, m_ytonA);
-    m_ytonAInv = m_ytonA.inverse();
-    
-    file >> m_MinB.x >> m_MinB.y >> m_MinB.z;
-    file >> m_MaxB.x >> m_MaxB.y >> m_MaxB.z;
-    
-    m_pPlaneCoeffsB->values.resize(4);
-    file >> m_pPlaneCoeffsB->values[0] >> m_pPlaneCoeffsB->values[1] >> m_pPlaneCoeffsB->values[2] >> m_pPlaneCoeffsB->values[3];
-    computeTransformation(m_pPlaneCoeffsB, m_ytonB);
-    m_ytonBInv = m_ytonB.inverse();
+    if (file.is_open())
+    {
+        cout << "Reading plane from A ... " << endl;
+        
+        file >> m_MinA.x >> m_MinA.y >> m_MinA.z;
+        file >> m_MaxA.x >> m_MaxA.y >> m_MaxA.z;
+        
+        m_pPlaneCoeffsA->values.resize(4);
+        file >> m_pPlaneCoeffsA->values[0] >> m_pPlaneCoeffsA->values[1] >> m_pPlaneCoeffsA->values[2] >> m_pPlaneCoeffsA->values[3];
+        computeTransformation(m_pPlaneCoeffsA, m_ytonA);
+        m_ytonAInv = m_ytonA.inverse();
+        
+        // Debug
+        cout << "minA : " << m_MinA << endl;
+        cout << "maxA : " << m_MaxA << endl;
+        cout << "coefficientsA : (" << m_pPlaneCoeffsA->values[0] << "," << m_pPlaneCoeffsA->values[1] << "," << m_pPlaneCoeffsA->values[2] << "," << m_pPlaneCoeffsA->values[3] << ")" << endl;
+        
+        
+        cout << "Reading plane from B ... " << endl;
+        
+        file >> m_MinB.x >> m_MinB.y >> m_MinB.z;
+        file >> m_MaxB.x >> m_MaxB.y >> m_MaxB.z;
+        
+        m_pPlaneCoeffsB->values.resize(4);
+        file >> m_pPlaneCoeffsB->values[0] >> m_pPlaneCoeffsB->values[1] >> m_pPlaneCoeffsB->values[2] >> m_pPlaneCoeffsB->values[3];
+        computeTransformation(m_pPlaneCoeffsB, m_ytonB);
+        m_ytonBInv = m_ytonB.inverse();
+        
+        // Debug
+        cout << "minB : " << m_MinB << endl;
+        cout << "maxB : " << m_MaxB << endl;
+        cout << "coefficientsB : (" << m_pPlaneCoeffsB->values[0] << "," << m_pPlaneCoeffsB->values[1] << "," << m_pPlaneCoeffsB->values[2] << "," << m_pPlaneCoeffsB->values[3] << ")" << endl;
+    }
 }
 
 void TableModeler::write(string path, string filename, string extension)

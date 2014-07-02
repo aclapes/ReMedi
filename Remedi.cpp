@@ -6,8 +6,11 @@
 #include "TableModeler.h"
 #include "Table.hpp"
 #include "CloudjectModel.hpp"
+#include "StatTools.h"
+
 #include <pcl/visualization/pcl_visualizer.h>
 #include <boost/assign/std/vector.hpp>
+
 
 using namespace boost::assign;
 
@@ -16,7 +19,6 @@ using namespace boost::assign;
 Remedi::Remedi()
 : m_RegistrationFrameID(2)
 {
-	
 }
 
 Remedi::~Remedi()
@@ -50,6 +52,30 @@ void Remedi::setTableModeling(bool enable)
     m_bTableModeling = enable;
 }
 
+//void Remedi::setValidationResultsPath(string path, string name, string extension)
+//{
+//    m_ValidationFilePath = path + path + "." + extension;
+//}
+
+void Remedi::setValidationParameters(vector<vector<float> > parameters)
+{
+    m_Parameters = parameters;
+    expandParameters<float>(m_Parameters, m_ExpandedParameters);
+    
+    ofstream file;
+    file.open("results.csv", ios::out);
+    if (file.is_open())
+    {
+        for (int i = 0; i < m_Parameters.size(); i++)
+            file << "v" << to_string(i) << "\t";
+        file << "NGT\tNPR\t";
+        file << "STP\tSFN\tSFP\tSPR\tSRE\tSF1\t";
+        file << "RTP\tRFN\tRFP\tRPR\tRRE\tRF1";
+        file << endl;
+    }
+    file.close();
+}
+
 void Remedi::interactWithRegisterer(Sequence::Ptr pSequence, int fID, InteractiveRegisterer& registerer)
 {
     vector<DepthFrame> depthFrames = pSequence->getDepthFrame(fID);
@@ -70,7 +96,7 @@ void Remedi::interactWithRegisterer(Sequence::Ptr pSequence, int fID, Interactiv
     registerer.saveTransformation(m_DataPath + "transformation.yml");
 }
 
-void Remedi::run()
+void Remedi::run(vector<float> parameters)
 {
 	/*
 	 * LOAD DATA
@@ -134,7 +160,6 @@ void Remedi::run()
     if (!m_bTableModeling)
     {
         pTableModeler->read("", "TableModeler", "dat");
-        pTableModeler->model();
     }
     else
     {
@@ -149,9 +174,9 @@ void Remedi::run()
     cv::theRNG().state = 74;
     BackgroundSubtractor::Ptr pBackgroundSubtractor (new BackgroundSubtractor);
     pBackgroundSubtractor->setInputSequence(pBackgroundSeq);
-    pBackgroundSubtractor->setNumOfMixtureComponents(3);
-    pBackgroundSubtractor->setLearningRate(0.005);
-    pBackgroundSubtractor->setBackgroundRatio(0.9);
+    pBackgroundSubtractor->setNumOfMixtureComponents(parameters[0]);
+    pBackgroundSubtractor->setLearningRate(parameters[1]);
+    pBackgroundSubtractor->setBackgroundRatio(parameters[2]);
     pBackgroundSubtractor->model();
     
     /*
@@ -195,18 +220,49 @@ void Remedi::run()
     DetectionOutput output;
     
     pMonitorizer->setInputSequence(pMonitorSeq);
-//    pMonitorizer->monitor(output);
-//    output.write("", pMonitorSeq->getName(), "csv");
+    pMonitorizer->monitor(output);
+    output.write("", pMonitorSeq->getName(), "csv");
     
     output.read("", pMonitorSeq->getName(), "csv");
     DetectionOutput groundtruth (m_DataPath + "ObjectLabels/", pMonitorSeq->getName(), "csv");
     
-    cout << output.getNumOfDetections() << "/" << groundtruth.getNumOfDetections() << endl;
+    ofstream file;
+    file.open("results.csv", ios::app);
+    if (file.is_open())
+    {
+        file.precision(3);
+        
+        for (int i = 0; i < parameters.size(); i++)
+            file << parameters[i] << "\t";
+        
+        file << groundtruth.getNumOfDetections() << "\t" << output.getNumOfDetections() << "\t";
 
-    int segtp, segfn, segfp;
-    output.getSegmentationResults(groundtruth, segtp, segfn, segfp);
-    cout << "segmenentation,\t tp: " << segtp << "\t fn: " << segfn << "\t fp: " << segfp << endl;
-    int rectp, recfn, recfp;
-    output.getRecognitionResults(groundtruth, rectp, recfn, recfp);
-    cout << "recognition,\t tp: " << rectp << "\t fn: " << recfn << "\t fp: " << recfp << endl;
+        int TP, FN, FP;
+        float precision, recall, f1;
+        
+        output.getSegmentationResults(groundtruth, TP, FN, FP);
+        
+        precision = ((float) TP) / (TP + FP);
+        recall = ((float) TP) / (TP + FN);
+        f1 = 2.f * ((precision * recall) / (precision + recall));
+        file << TP << "\t" << FN << "\t" << FP << "\t" << precision << "\t" << recall << "\t" << f1 << "\t";
+        
+        output.getRecognitionResults(groundtruth, TP, FN, FP);
+        
+        precision = ((float) TP) / (TP + FP);
+        recall = ((float) TP) / (TP + FN);
+        f1 = 2.f * ((precision * recall) / (precision + recall));
+        file << TP << "\t" << FN << "\t" << FP << "\t" << precision << "\t" << recall << "\t" << f1;
+        file << endl;
+        
+        file.close();
+    }
+}
+
+void Remedi::validate()
+{
+    for (int i = 0; i < m_ExpandedParameters.size(); i++)
+    {
+        run(m_ExpandedParameters[i]);
+    }
 }

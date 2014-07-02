@@ -128,17 +128,18 @@ void Monitorizer::monitor(DetectionOutput& output)
     }
     
     cout << "Processing sequence " << m_pSeq->getName() << "... " << endl;
+    boost::timer t;
     while (m_pSeq->hasNextDepthFrame())
     {
-        cout << m_pSeq->getDepthProgress()[0] * 100 << "%" << endl;
+//        cout << m_pSeq->getDepthProgress()[0] * 100 << "%" << endl;
         boost::timer t;
         DepthFrame fgDepthFrameA, fgDepthFrameB;
         vector<DepthFrame> frames = m_pSeq->nextDepthFrame();
         m_pBS->subtract(frames[0], frames[1], fgDepthFrameA, fgDepthFrameB);
         
         process(fgDepthFrameA, fgDepthFrameB);
-        cout << "Elapsed: " << t.elapsed() << endl;
     }
+    cout << "Elapsed: " << t.elapsed() << endl;
     cout << endl;
     
     output = m_DetectionOutput;
@@ -182,7 +183,7 @@ void Monitorizer::process(DepthFrame dFrameA, DepthFrame dFrameB)
     extractClustersFromView(m_pInteractionCloudA, interactionClustersA, m_LeafSize);
     extractClustersFromView(m_pInteractionCloudB, interactionClustersB, m_LeafSize);
     
-    cout << "tabletop clusters: " << tabletopClustersA.size() << " " <<tabletopClustersB.size() << endl;
+//    cout << "tabletop clusters: " << tabletopClustersA.size() << " " <<tabletopClustersB.size() << endl;
     vector<PointCloudPtr> actorClustersA, actorClustersB; // tabletop inliers
     segmentTabletop(tabletopClustersA, interactionClustersA,
                      actorClustersA, m_InteractorClustersA,
